@@ -18,12 +18,29 @@ use app\mall\model\MallModelModel;
 
 class AdminAttrController extends AdminBaseController
 {
+    /**
+     * 属性管理
+     * @adminMenu(
+     *     'name'   => '属性管理',
+     *     'parent' => 'mall/AdminIndex/default',
+     *     'display'=> true,
+     *     'hasView'=> true,
+     *     'order'  => 10000,
+     *     'icon'   => '',
+     *     'remark' => '属性管理',
+     *     'param'  => ''
+     * )
+     * @return mixed
+     */
+    public function index(){
+
+    }
 
     /**
      * 添加商品模型属性提交保存
      * @adminMenu(
      *     'name'   => '添加商品模型属性提交保存',
-     *     'parent' => 'mall/AdminIndex/default',
+     *     'parent' => 'index',
      *     'display'=> false,
      *     'hasView'=> false,
      *     'order'  => 10000,
