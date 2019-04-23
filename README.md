@@ -1,4 +1,4 @@
-ThinkCMF电商版 让你更自由地飞
+ThinkCMF电商版Beta 让你更自由地飞
 ===============
 基于ThinkCMF5.1开发的电商系统，方便用户基于ThinkCMF做更强的电商解决方案
 
