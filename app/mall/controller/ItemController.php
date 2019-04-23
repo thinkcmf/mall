@@ -36,7 +36,7 @@ class ItemController extends HomeBaseController
         $this->assign('item', $item);
 
         $mallItemSkuModel = new MallItemSkuModel();
-        $skuList          = $mallItemSkuModel->where('item_id', $id)->where('delete_time', 0)->select();
+        $skuList          = $mallItemSkuModel->where('status',1)->where('item_id', $id)->where('delete_time', 0)->select();
 
         $skuIds = [];
 
