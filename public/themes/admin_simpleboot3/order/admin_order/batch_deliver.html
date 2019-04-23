@@ -1,0 +1,167 @@
+<include file="order@public/status"/>
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap js-check-wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a>已选择订单</a></li>
+        <li><a
+                href="javascript:parent.openIframeLayer('{:url('AdminOrder/batchDeliveryOrder')}?ids={$ids}', '打印出库单', {});"
+        >打印出库单</a></li>
+        <li><a
+                href="javascript:parent.openIframeLayer('{:url('AdminOrder/batchExpressWaybill')}?ids={$ids}', '打印快递面单', {});"
+        >打印快递面单</a></li>
+    </ul>
+
+    <form method="post" class="js-ajax-form margin-top-20">
+        <table class="table table-hover table-bordered table-list form-inline">
+            <thead>
+            <tr>
+                <th width="16">
+                    <label>
+                        <input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x">
+                    </label>
+                </th>
+                <th>订单号</th>
+                <th>收货人</th>
+                <th>单位</th>
+                <!-- <th>收件人</th>
+                <th>物流名称</th> -->
+                <!--<th>支付方式</th>-->
+                <th>发货时间</th>
+                <!--<th>过期时间</th>-->
+                <th>{:lang('STATUS')}</th>
+                <th align="center">
+                    物流:<select class="form-control" name="shipment_code" id="input-shipment_code">
+                    <foreach name="shipments" item="vo">
+                        <option value="{$vo.code}">{$vo.name}</option>
+                    </foreach>
+                </select>
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="orders" item="vo">
+                <tr>
+                    <td>
+                        <input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]"
+                               value="{$vo.id}">
+                    </td>
+                    <td>
+                        <a href="javascript:;" onclick="openDetailDialog(this);" data-id="{$vo.id}"
+                           data-toggle="tooltip" title="订单详情">
+                            {$vo.order_sn}
+                        </a>
+                    </td>
+                    <td>
+                        {$vo.consignee}<br>
+                        {$vo.mobile}<br>
+                        {$vo.mobile2}
+                    </td>
+                    <td>
+                        {$customers[$vo['user_id']]['company']|default=''}
+                    </td>
+                    <!-- <td>{$vo.consignee}</td>
+                    <td>{$vo.shipment_name}</td> -->
+                    <td>{:date('Y-m-d H:i',$vo['create_time'])}</td>
+                    <td>
+                        {$user_confirmed[$vo['user_confirmed']]}<br>
+                        {$pay_status[$vo['pay_status']]}<br>
+                        {$shipping_status[$vo['shipping_status']]}<br>
+                        {$order_status[$vo['order_status']]}
+                    </td>
+                    <td>
+                        <input type="text" class="form-control input-sm input-tracking_number" data-id="{$vo.id}"
+                               placeholder="运单号"
+                        />
+                        <!--<a class="btn btn-primary btn-sm">生成</a>-->
+                    </td>
+                </tr>
+            </foreach>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th width="16">
+                    <label>
+                        <input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x">
+                    </label>
+                </th>
+                <th>订单号</th>
+                <th>收货人</th>
+                <th>单位</th>
+                <!-- <th>收件人</th>
+                <th>物流名称</th> -->
+                <!--<th>支付方式</th>-->
+                <th>发货时间</th>
+                <!--<th>过期时间</th>-->
+                <th>{:lang('STATUS')}</th>
+                <th align="center">{:lang('ACTIONS')}</th>
+            </tr>
+            </tfoot>
+        </table>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+
+    $('.input-tracking_number').change(function () {
+        var $this          = $(this);
+        var shipmentCode   = $('#input-shipment_code').val();
+        var trackingNumber = $this.val();
+        var id             = $this.data('id');
+        $.ajax({
+            url: "{:url('AdminOrder/setTrackingNumber')}",
+            type: "POST",
+            dataType: 'json',
+            data: {
+                shipment_code: shipmentCode,
+                tracking_number: trackingNumber,
+                id: id
+            },
+            success: function (data) {
+
+
+            },
+            error: function () {
+
+            }
+        })
+    });
+
+    function openDeliverDialog(obj) {
+        var $obj  = $(obj);
+        var id    = $obj.data('id');
+        var title = $obj.data('title');
+        parent.openIframeLayer("{:url('AdminOrder/deliver')}?id=" + id, '修改物流信息', {
+            area: ['95%', '90%'],
+            btn: ['确定', '取消'],
+            yes: function (index, layero) {
+                console.log(layero);
+                var iframeWin = parent.window[layero.find('iframe')[0]['name']];
+                //iframeWin.confirm();
+                parent.layer.close(index); //如果设定了yes回调，需进行手工关闭
+            },
+            end: function () {
+                location.reload(true);
+            }
+        });
+    }
+
+    function openDetailDialog(obj) {
+        var $obj  = $(obj);
+        var id    = $obj.data('id');
+        var title = $obj.data('title');
+        parent.openIframeLayer("{:url('AdminOrder/detail')}?id=" + id, '修改物流信息', {
+            area: ['95%', '90%'],
+            btn: ['确定', '取消'],
+            yes: function (index, layero) {
+                console.log(layero);
+                var iframeWin = parent.window[layero.find('iframe')[0]['name']];
+                //iframeWin.confirm();
+                parent.layer.close(index); //如果设定了yes回调，需进行手工关闭
+            }
+        });
+    }
+</script>
+</body>
+</html>

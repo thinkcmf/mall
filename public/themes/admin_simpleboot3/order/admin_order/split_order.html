@@ -1,0 +1,93 @@
+<include file="order@public/status"/>
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap js-check-wrap">
+    <form class="js-ajax-form" action="" method="post">
+        <div class="table-actions">
+            <button class="btn btn-primary btn-sm js-ajax-submit" type="submit"
+                    data-action="{:url('AdminOrder/splitOrderPost')}" data-subcheck="true"
+                    data-msg="您确定拆分订单吗？">
+                拆分订单
+            </button>
+        </div>
+        <input type="hidden" name="order_id" value="{$order.id}"/>
+        <table class="table table-bordered">
+            <tr>
+                <th width="16">
+                    <label>
+                        <input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x">
+                    </label>
+                </th>
+                <th>商品</th>
+                <th>价格</th>
+                <th>折扣价</th>
+                <th>数量</th>
+                <th>金额</th>
+            </tr>
+            <foreach name="order_items" item="vo">
+                <tr>
+                    <td>
+                        <input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]"
+                               value="{$vo.id}">
+                    </td>
+                    <td>{$vo.goods_name}</td>
+                    <td>{$vo.goods_price}</td>
+                    <td>{$vo.goods_price}</td>
+                    <td>
+                        <input class="form-control input-sm" value="{$vo.goods_quantity}" type="number"
+                               name="items[{$vo.id}][quantity]"
+                               style="width:60px;display: inline-block;vertical-align: middle;">/{$vo.goods_quantity}
+                    </td>
+                    <td>{:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}</td>
+                </tr>
+            </foreach>
+        </table>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    $(function () {
+        $('#js-install-info').change(function () {
+            var install_info = $(this).val();
+            $.ajax({
+                url: "{:url('chem/adminOrder/install_info')}",
+                type: "post",
+                dataType: 'json',
+                data: {id: '{$order.id}', install_info: install_info},
+                success: function (data) {
+                    if (data.status == 0) {
+                        alert(data.info);
+                    }
+                },
+                error: function () {
+
+                },
+                complete: function () {
+
+                }
+
+            });
+        });
+    });
+
+    function openSplitOrderDialog(obj) {
+        var $obj  = $(obj);
+        var id    = $obj.data('id');
+        var title = $obj.data('title');
+        parent.openIframeLayer("{:url('AdminOrder/detail')}?id={$order.id}", '订单详情', {
+            area: ['95%', '90%'],
+            btn: ['确定', '取消'],
+            yes: function (index, layero) {
+                console.log(layero);
+                var iframeWin = parent.window[layero.find('iframe')[0]['name']];
+                parent.layer.close(index); //如果设定了yes回调，需进行手工关闭
+            },
+            end: function () {
+                parent.location.reload(true);
+            }
+        });
+    }
+</script>
+</body>
+</html>

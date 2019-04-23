@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$item.title}</title>
+    <meta name="keywords" content="{$site_info.site_seo_keywords|default=''}"/>
+    <meta name="description" content="{$site_info.site_seo_description|default=''}">
+    <include file="public@head"/>
+    <style>
+        #article_content img {
+            height: auto !important;
+            max-width: 100%;
+        }
+
+        #article_content {
+            word-wrap: break-word;
+        }
+
+        div, ul, li {
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            list-style-type: none;
+        }
+
+        /* box */
+        .box {
+        }
+
+        .tb-pic a {
+            display: table-cell;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .tb-pic a img {
+            vertical-align: middle;
+            width: 100%;
+        }
+
+        .tb-pic a {
+            *display: block;
+            *font-family: Arial;
+            *line-height: 1;
+        }
+
+        .tb-thumb {
+            margin: 0 0 0 10px;
+            overflow: hidden;
+        }
+
+        .tb-thumb li {
+            background: none repeat scroll 0 0 transparent;
+            margin: 0 0 5px 0;
+            overflow: hidden;
+            padding: 1px;
+        }
+
+        .tb-s255, .tb-s255 a {
+            height: 255px;
+            width: 255px;
+        }
+
+        .tb-s255, .tb-s255 img {
+            max-height: 255px;
+            max-width: 255px;
+        }
+
+        .tb-s255 a {
+            *font-size: 271px;
+        }
+
+        .tb-s40 a {
+            *font-size: 35px;
+        }
+
+        .tb-s40, .tb-s40 a {
+            height: 85px;
+            width: 85px;
+        }
+
+        .tb-booth {
+            /*border: 1px solid #e8e8e8;*/
+            position: relative;
+            z-index: 1;
+        }
+
+        .tb-thumb .tb-selected {
+
+        }
+
+        .tb-thumb .tb-selected div {
+            /*background-color: #FFFFFF;*/
+            /*border: medium none;*/
+            border: 1px solid #b4a078;
+        }
+
+        .tb-thumb li div {
+            border: 1px solid #e8e8e8;
+        }
+
+        div.zoomDiv {
+            z-index: 999;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            width: 255px;
+            height: 255px;
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            display: none;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        div.zoomMask {
+            position: absolute;
+            background: url("__TMPL__/public/assets/demo/images/mask.png") repeat scroll 0 0 transparent;
+            cursor: move;
+            z-index: 1;
+        }
+
+        .goods-spec-box {
+            border: 1px solid #e8e8e8;
+            padding: 0 15px;
+            display: inline-block;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+
+        .goods-spec-box-selected {
+            border: 1px solid #b4a078;
+        }
+
+        .goods-spec-box-cannot-select {
+            border: 1px dashed #dedede !important;
+        }
+
+        .price-box {
+            background: #efefef;
+            margin: 10px 0;
+            padding: 5px;
+        }
+
+        .price-box dl {
+            margin-bottom: 0;
+        }
+
+        .form-horizontal .control-label {
+            text-align: left;
+            padding-left: 20px;
+            line-height: 30px;
+            padding-top: 0;
+        }
+
+        .goods-title {
+            margin: 0 0 10px 0;
+        }
+
+        .price-txt {
+            font-size: 28px;
+            line-height: 30px;
+            margin-left: 2px;
+            color: #d7282d;
+            vertical-align: top;
+            display: inline-block;
+        }
+
+        .breadcrumb {
+            background-color: transparent;
+            padding-left: 0;
+        }
+
+        .form-control-quantity {
+            width: 50px;
+        }
+
+        .item-price-detail-box .col-sm-2 {
+        }
+
+        .item-price-detail-box .dl-horizontal dt {
+            width: 42px;
+            text-align: left;
+            line-height: 30px;
+        }
+
+        .item-price-detail-box .dl-horizontal dd {
+            margin-left: 40px;
+            line-height: 30px;
+        }
+
+        .item-attrs-list {
+            padding: 20px 0;
+        }
+
+        .item-attrs-list li {
+            width: 25%;
+            padding-left: 42px;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-price-detail-box .dl-horizontal {
+            margin-bottom: 5px;
+        }
+
+        .item-price-detail-box .price-box .dl-horizontal {
+            margin-bottom: 0;
+        }
+    </style>
+    <hook name="before_head_end"/>
+    <script>
+        var skuIds = JSON.parse('{:json_encode($sku_ids)}');
+    </script>
+</head>
+<body class="body-white">
+<include file="public@nav"/>
+<div class="container tc-main">
+    <ol class="breadcrumb">
+        <li><a href="__ROOT__/">首页</a></li>
+        <li class="active">{$item.title}</li>
+    </ol>
+    <div class="row">
+        <div class="col-md-9">
+            <div class="tc-box">
+                <div class="row" style="margin-bottom: 20px;">
+                    <div class="col-md-4">
+                        <div class="box">
+
+                            <div class="tb-booth tb-pic tb-s255 pull-left">
+                                <img src="{:cmf_get_image_url($item.thumbnail)}" alt="{$item.title}"
+                                     rel="{:cmf_get_image_url($item.thumbnail)}" class="jqzoom"/>
+                            </div>
+
+                            <div class="pull-left" style="display:none;">
+                                <ul class="tb-thumb" id="thumblist">
+                                    <li class="tb-selected">
+                                        <div class="tb-pic tb-s40">
+                                            <a href="#">
+                                                <img src="{:cmf_get_image_url($item.thumbnail)}"
+                                                     mid="{:cmf_get_image_url($item.thumbnail)}"
+                                                     big="{:cmf_get_image_url($item.thumbnail)}">
+                                            </a>
+                                        </div>
+                                    </li>
+                                </ul>
+
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="col-md-8 item-price-detail-box">
+                        <h2 class="goods-title">{$item.title}</h2>
+                        {$item.subtitle}
+
+
+                        <div class="price-box">
+                            <dl class="dl-horizontal" s>
+                                <dt>价格</dt>
+                                <dd><span class="price-txt">￥<span class="price-txt-value">{$item.price}</span></span>
+                                </dd>
+                            </dl>
+                        </div>
+
+                        <form class="js-ajax-form" method="post">
+                            <div class="form-horizontal" style="display: none;">
+                                <!--
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">颜色</label>
+                                    <div class="col-sm-10">
+                                        <ul class="list-unstyled list-inline">
+                                            <li>
+                                                <img data-src="holder.js/140x140" class="img-rounded" alt="140x140"
+                                                     style="width: 50px; height: 50px;"
+                                                     src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyI/PjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgdmlld0JveD0iMCAwIDE0MCAxNDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiPjwhLS0KU291cmNlIFVSTDogaG9sZGVyLmpzLzE0MHgxNDAKQ3JlYXRlZCB3aXRoIEhvbGRlci5qcyAyLjYuMC4KTGVhcm4gbW9yZSBhdCBodHRwOi8vaG9sZGVyanMuY29tCihjKSAyMDEyLTIwMTUgSXZhbiBNYWxvcGluc2t5IC0gaHR0cDovL2ltc2t5LmNvCi0tPjxkZWZzPjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+PCFbQ0RBVEFbI2hvbGRlcl8xNWZjODQyZjVhMiB0ZXh0IHsgZmlsbDojQUFBQUFBO2ZvbnQtd2VpZ2h0OmJvbGQ7Zm9udC1mYW1pbHk6QXJpYWwsIEhlbHZldGljYSwgT3BlbiBTYW5zLCBzYW5zLXNlcmlmLCBtb25vc3BhY2U7Zm9udC1zaXplOjEwcHQgfSBdXT48L3N0eWxlPjwvZGVmcz48ZyBpZD0iaG9sZGVyXzE1ZmM4NDJmNWEyIj48cmVjdCB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0iI0VFRUVFRSIvPjxnPjx0ZXh0IHg9IjQ0LjA1NDY4NzUiIHk9Ijc0LjUiPjE0MHgxNDA8L3RleHQ+PC9nPjwvZz48L3N2Zz4="
+                                                     data-holder-rendered="true">
+                                            </li>
+                                            <li>
+                                                <img data-src="holder.js/140x140" class="img-rounded" alt="140x140"
+                                                     style="width: 50px; height: 50px;"
+                                                     src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyI/PjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgdmlld0JveD0iMCAwIDE0MCAxNDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiPjwhLS0KU291cmNlIFVSTDogaG9sZGVyLmpzLzE0MHgxNDAKQ3JlYXRlZCB3aXRoIEhvbGRlci5qcyAyLjYuMC4KTGVhcm4gbW9yZSBhdCBodHRwOi8vaG9sZGVyanMuY29tCihjKSAyMDEyLTIwMTUgSXZhbiBNYWxvcGluc2t5IC0gaHR0cDovL2ltc2t5LmNvCi0tPjxkZWZzPjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+PCFbQ0RBVEFbI2hvbGRlcl8xNWZjODQyZjVhMiB0ZXh0IHsgZmlsbDojQUFBQUFBO2ZvbnQtd2VpZ2h0OmJvbGQ7Zm9udC1mYW1pbHk6QXJpYWwsIEhlbHZldGljYSwgT3BlbiBTYW5zLCBzYW5zLXNlcmlmLCBtb25vc3BhY2U7Zm9udC1zaXplOjEwcHQgfSBdXT48L3N0eWxlPjwvZGVmcz48ZyBpZD0iaG9sZGVyXzE1ZmM4NDJmNWEyIj48cmVjdCB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0iI0VFRUVFRSIvPjxnPjx0ZXh0IHg9IjQ0LjA1NDY4NzUiIHk9Ijc0LjUiPjE0MHgxNDA8L3RleHQ+PC9nPjwvZz48L3N2Zz4="
+                                                     data-holder-rendered="true">
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-2 control-label">尺码</label>
+                                    <div class="col-sm-10">
+                                        <ul class="list-unstyled list-inline">
+                                            <li>
+                                                <span class="goods-spec-box">X</span>
+                                            </li>
+                                            <li>
+                                                <span class="goods-spec-box">M</span>
+                                            </li>
+                                            <li>
+                                                <span class="goods-spec-box">L</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                -->
+                            </div>
+                            <!--
+                            <dt style="line-height: 70px">颜色</dt>
+                            <dd style="line-height: 70px">
+                                <ul class="list-unstyled list-inline">
+                                    <li>
+                                        <img data-src="holder.js/140x140" class="img-rounded" alt="140x140"
+                                             style="width: 50px; height: 50px;"
+                                             src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyI/PjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgdmlld0JveD0iMCAwIDE0MCAxNDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiPjwhLS0KU291cmNlIFVSTDogaG9sZGVyLmpzLzE0MHgxNDAKQ3JlYXRlZCB3aXRoIEhvbGRlci5qcyAyLjYuMC4KTGVhcm4gbW9yZSBhdCBodHRwOi8vaG9sZGVyanMuY29tCihjKSAyMDEyLTIwMTUgSXZhbiBNYWxvcGluc2t5IC0gaHR0cDovL2ltc2t5LmNvCi0tPjxkZWZzPjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+PCFbQ0RBVEFbI2hvbGRlcl8xNWZjODQyZjVhMiB0ZXh0IHsgZmlsbDojQUFBQUFBO2ZvbnQtd2VpZ2h0OmJvbGQ7Zm9udC1mYW1pbHk6QXJpYWwsIEhlbHZldGljYSwgT3BlbiBTYW5zLCBzYW5zLXNlcmlmLCBtb25vc3BhY2U7Zm9udC1zaXplOjEwcHQgfSBdXT48L3N0eWxlPjwvZGVmcz48ZyBpZD0iaG9sZGVyXzE1ZmM4NDJmNWEyIj48cmVjdCB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0iI0VFRUVFRSIvPjxnPjx0ZXh0IHg9IjQ0LjA1NDY4NzUiIHk9Ijc0LjUiPjE0MHgxNDA8L3RleHQ+PC9nPjwvZz48L3N2Zz4="
+                                             data-holder-rendered="true">
+                                    </li>
+                                    <li>
+                                        <img data-src="holder.js/140x140" class="img-rounded" alt="140x140"
+                                             style="width: 50px; height: 50px;"
+                                             src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyI/PjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgdmlld0JveD0iMCAwIDE0MCAxNDAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiPjwhLS0KU291cmNlIFVSTDogaG9sZGVyLmpzLzE0MHgxNDAKQ3JlYXRlZCB3aXRoIEhvbGRlci5qcyAyLjYuMC4KTGVhcm4gbW9yZSBhdCBodHRwOi8vaG9sZGVyanMuY29tCihjKSAyMDEyLTIwMTUgSXZhbiBNYWxvcGluc2t5IC0gaHR0cDovL2ltc2t5LmNvCi0tPjxkZWZzPjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+PCFbQ0RBVEFbI2hvbGRlcl8xNWZjODQyZjVhMiB0ZXh0IHsgZmlsbDojQUFBQUFBO2ZvbnQtd2VpZ2h0OmJvbGQ7Zm9udC1mYW1pbHk6QXJpYWwsIEhlbHZldGljYSwgT3BlbiBTYW5zLCBzYW5zLXNlcmlmLCBtb25vc3BhY2U7Zm9udC1zaXplOjEwcHQgfSBdXT48L3N0eWxlPjwvZGVmcz48ZyBpZD0iaG9sZGVyXzE1ZmM4NDJmNWEyIj48cmVjdCB3aWR0aD0iMTQwIiBoZWlnaHQ9IjE0MCIgZmlsbD0iI0VFRUVFRSIvPjxnPjx0ZXh0IHg9IjQ0LjA1NDY4NzUiIHk9Ijc0LjUiPjE0MHgxNDA8L3RleHQ+PC9nPjwvZz48L3N2Zz4="
+                                             data-holder-rendered="true">
+                                    </li>
+                                </ul>
+                            </dd>
+                            -->
+                            <notempty name="item_sku_attrs">
+                                <foreach name="item_sku_attrs" item="vo" key="attr_id">
+                                    <dl class="dl-horizontal">
+                                        <dt style="line-height: 32px;">
+                                            <eq name="attr_id" value="1">
+                                                <empty name="item.more.color_attr_name">
+                                                    {$vo.name}
+                                                    <else/>
+                                                    {$item.more.color_attr_name}
+                                                </empty>
+                                                <else/>
+                                                {$vo.name}
+                                            </eq>
+                                        </dt>
+                                        <dd>
+                                            <ul class="list-unstyled list-inline list-sku-attr-row">
+                                                <foreach name="vo.values" item="voo" key="voo_key">
+                                                    <li>
+                                                        <span class="goods-spec-box" data-attr_value="{$voo_key}">{$voo.value}</span>
+                                                    </li>
+                                                </foreach>
+                                            </ul>
+                                        </dd>
+                                    </dl>
+                                </foreach>
+
+                            </notempty>
+                            <dl class="dl-horizontal">
+                                <dt>物流</dt>
+                                <dd>免运费</dd>
+                            </dl>
+                            <dl class="dl-horizontal">
+                                <dt>数量</dt>
+                                <dd>
+                                    <input type="number" class="form-control input-sm" id="goods-quantity-input"
+                                           style="width: 100px;display: inline-block;" value="1" name="quantity"
+                                           min="1"/>
+                                    库存<span class="sku-quantity-text"> {$item.quantity}</span>
+                                </dd>
+                                <!--
+                                <dt>总价</dt>
+                                <dd>{$pack.price|default=''}</dd>
+                                -->
+                            </dl>
+                            <div>
+                                <button data-action="{:url('mall/item/addToCart',['id'=>$item.id,'sku_id'=>0,'buy_now'=>1])}"
+                                        class="js-buy-now-btn btn btn-danger"
+                                        type="button">立即购买
+                                </button>
+                                <button data-action="{:url('mall/item/addToCart',['id'=>$item.id,'sku_id'=>0])}"
+                                        class="js-add2cart-btn btn btn-primary"
+                                        type="button">加入购物车
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#home" aria-controls="home" role="tab" data-toggle="tab">详情</a>
+                </li>
+                <!--
+                <li role="presentation">
+                    <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">评价</a>
+                </li>
+                -->
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="home">
+                    <div>
+                        <notempty name="item_attrs">
+                            <ul class="list-inline item-attrs-list">
+                                <foreach name="item_attrs" item="attr">
+                                    <li>
+                                        {$attr.name}:{$attr.value}
+                                    </li>
+                                </foreach>
+                            </ul>
+                        </notempty>
+                    </div>
+
+                    <div>
+                        {$item.content}
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="profile">
+                    <div style="height: 255px;">
+                        这里是评价
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+        <div class="col-md-3">
+            <div class="tc-box first-box">
+                <div class="headtitle">
+                    <h2>服务商信息</h2>
+                </div>
+                <div>
+                    <span class="label label-success">自营</span>
+                </div>
+                <h4>联系客服</h4>
+                <div>
+                    <a target="_blank" href="http://wpa.qq.com/msgrd?v=3&uin=478519726&site=qq&menu=yes"><img
+                            border="0" src="http://wpa.qq.com/pa?p=2:478519726:51" alt="客服咨询" title="客服咨询"/></a>
+                </div>
+
+                <h4>发票服务</h4>
+                <div>
+                    <span class="label label-primary">增税普票</span>
+                    <span class="label label-success">增税专票</span>
+                </div>
+                <h4>配送方式</h4>
+                <div>
+                    <span class="label label-primary">物流配送</span>
+                    <!--<span class="label label-success">上门自提</span>-->
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+</div>
+
+<include file="public@footer"/>
+
+<include file="public@scripts"/>
+<script src="__TMPL__/public/assets/js/jquery.imagezoom.min.js"></script>
+<script>
+    var $priceTxtValue;
+    var $skuQuantityText;
+    $(document).ready(function () {
+
+        $(".jqzoom").imagezoom({xzoom: 453, yzoom: 453});
+
+        $("#thumblist li a").click(function () {
+            $(this).parents("li").addClass("tb-selected").siblings().removeClass("tb-selected");
+            $(".jqzoom").attr('src', $(this).find("img").attr("mid"));
+            $(".jqzoom").attr('rel', $(this).find("img").attr("big"));
+        });
+
+        $priceTxtValue = $('.price-txt-value');
+        $skuQuantityText = $('.sku-quantity-text');
+        var selectedAttrValues = [];
+        $('.goods-spec-box').click(function () {
+            var $this = $(this);
+            var $parents = $this.parents('div.list-inline');
+            var $selected = $parents.find('.goods-spec-box-selected').not($this);
+            $selected.removeClass('goods-spec-box-selected');
+
+            if ($this.is('.goods-spec-box-selected')) {
+                $this.removeClass('goods-spec-box-selected');
+            } else {
+                $this.addClass('goods-spec-box-selected');
+            }
+
+            if ($this.is('.goods-spec-box-cannot-select')) {
+                $('.goods-spec-box-selected').removeClass('goods-spec-box-selected');
+                $this.addClass('goods-spec-box-selected');
+                $('.goods-spec-box-cannot-select').removeClass('goods-spec-box-cannot-select');
+            }
+
+            selectedAttrValues = [];
+
+            $('.list-sku-attr-row .goods-spec-box-selected').each(function () {
+                var $this = $(this);
+                selectedAttrValues.push($this.data('attr_value'));
+            });
+
+            if (selectedAttrValues.length == 0) {
+                $('.goods-spec-box-cannot-select').removeClass('goods-spec-box-cannot-select');
+                return;
+            }
+
+            var canSelectedSkuKeys = [];
+
+            var selectedAttrValuesLength = selectedAttrValues.length;
+
+            $.each(skuIds, function (key, item) {
+                var canSelect = true;
+                for (var i = 0; i < selectedAttrValuesLength; i++) {
+                    var attrValue = selectedAttrValues[i];
+                    if (key.indexOf(";") >= 0) {
+                        if (key.indexOf(attrValue + ';') >= 0 || key.indexOf(';' + attrValue) >= 0) {
+                        } else {
+                            canSelect = false;
+                        }
+                    } else {
+                        if (key == attrValue) {
+                        } else {
+                            canSelect = false;
+                        }
+
+                    }
+                }
+
+                if (canSelect) {
+                    canSelectedSkuKeys.push(key);
+                }
+
+            });
+
+            if (canSelectedSkuKeys.length > 0) {
+                var canSelectedSkuKeysStr = canSelectedSkuKeys.join(';');
+                console.log(canSelectedSkuKeysStr);
+                $('.goods-spec-box-cannot-select').removeClass('goods-spec-box-cannot-select');
+
+                $(".goods-spec-box").each(function (i, item) {
+                    var $this = $(this);
+                    var attrValue = $this.data('attr_value');
+                    if (canSelectedSkuKeysStr.indexOf(attrValue + ';') >= 0 || canSelectedSkuKeysStr.indexOf(';' + attrValue) >= 0) {
+                    } else {
+                        $this.addClass("goods-spec-box-cannot-select");
+                    }
+                });
+
+            }
+
+            var skuSpecKey = selectedAttrValues.join(';');
+            if (skuIds[skuSpecKey]) {
+                $priceTxtValue.text(skuIds[skuSpecKey].price);
+                if (skuIds[skuSpecKey].quantity == 0) {
+                    $skuQuantityText.text("不足");
+                } else {
+                    $skuQuantityText.text(" " + skuIds[skuSpecKey].quantity);
+                }
+
+            }
+        });
+    });
+
+    Wind.use('noty', function () {
+        var skuSpecKey = [];
+        var addingToCart = false;
+        var $quantity = $('#goods-quantity-input');
+
+        $('.js-add2cart-btn').click(function () {
+            addToCart(0);
+        });
+
+        $('.js-buy-now-btn').click(function () {
+            addToCart(1);
+        });
+
+        function addToCart(buyNow) {
+            skuSpecKey = [];
+            var hasSelectedSku = true;
+            $('.list-sku-attr-row').each(function () {
+                var $this = $(this);
+                var $selected = $this.find('.goods-spec-box-selected');
+                // if ($selected.length == 0) {
+                //     hasSelectedSku = false;
+                //     return false;
+                // }
+                if ($selected.length) {
+                    skuSpecKey.push($selected.data('attr_value'));
+                }
+
+            });
+
+            if ($('.size-line').length) {
+                skuSpecKey = skuSpecKey.join(';');
+
+                if (!skuIds[skuSpecKey]) {
+                    noty({
+                        text: "请勾选您要的商品信息！",
+                        type: 'error',
+                        layout: 'center'
+                    });
+                    return;
+                }
+
+
+                if (skuIds[skuSpecKey] && skuIds[skuSpecKey].quantity == 0) {
+                    noty({
+                        text: "您勾选的商品库存为0！",
+                        type: 'error',
+                        layout: 'center'
+                    });
+                    return;
+                }
+            } else {
+
+            }
+
+
+            var skuId = 0;
+
+            if (skuIds[skuSpecKey]) {
+                skuId = skuIds[skuSpecKey].id;
+            }
+
+            if (addingToCart) {
+                return
+            }
+
+            addingToCart = true;
+            var quantity = $quantity.val();
+
+            $.ajax({
+                url: "{:url('mall/item/addToCart')}",
+                data: {
+                    id: '{$item.id}',
+                    buy_now: buyNow,
+                    sku_id: skuId,
+                    quantity: quantity
+                },
+                type: 'POST',
+                dataType: 'JSON',
+                success: function (data) {
+
+                    function _refresh() {
+                        if (data.url) {
+                            if (window.parent.art) {
+                                //iframe弹出页
+                                window.parent.location.href = data.url;
+
+                            } else {
+                                window.location.href = data.url;
+                            }
+                        } else {
+                            if (data.code == 1) {
+                                var wait = $btn.data("wait");
+                                if (window.parent.art) {
+                                    reloadPage(window.parent);
+                                } else {
+                                    //刷新当前页
+                                    reloadPage(window);
+                                }
+                            }
+                        }
+                    }
+
+                    if (data.code) {
+                        noty({
+                            text: data.msg,
+                            type: 'success',
+                            layout: 'center',
+                            callback: {
+                                afterClose: function () {
+                                    _refresh();
+                                }
+                            }
+                        });
+                    } else {
+                        noty({
+                            text: data.msg,
+                            type: 'error',
+                            layout: 'center',
+                            callback: {
+                                afterClose: function () {
+                                    _refresh();
+                                }
+                            }
+                        });
+                    }
+                },
+                error: function () {
+
+                },
+                complete: function () {
+                    addingToCart = false;
+                }
+            })
+
+        }
+    });
+
+</script>
+<hook name="before_body_end"/>
+</body>
+</html>

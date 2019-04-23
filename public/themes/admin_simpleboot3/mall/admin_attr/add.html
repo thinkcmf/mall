@@ -1,0 +1,89 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AdminAttr/index')}">属性列表</a></li>
+        <li class="active"><a href="{:url('AdminAttr/add')}">添加属性</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('AdminAttr/addPost')}">
+        <div class="form-group">
+            <label for="input-name" class="col-sm-2 control-label">
+                <span class="form-required">*</span>名称
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-name" name="name" placeholder="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-type" class="col-sm-2 control-label">
+                <span class="form-required">*</span>类型
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" id="input-type" name="type">
+                    <option value="1">自然属性</option>
+                    <option value="2">销售属性</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-searchable" class="col-sm-2 control-label">
+                可搜索
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" id="input-searchable" name="searchable">
+                    <option value="0">否</option>
+                    <option value="1">是</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-input_type" class="col-sm-2 control-label">
+                 输入类型
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" id="input-input_type" name="input_type">
+                    <option value="1">下拉列表</option>
+                    <option value="2">单行文本</option>
+                    <option value="3">多行文本</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-options" class="col-sm-2 control-label">
+                可选值
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <textarea class="form-control" id="input-options" name="options"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-is_default" class="col-sm-2 control-label">
+                默认属性
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" id="input-is_default" name="is_default">
+                    <option value="0">否</option>
+                    <option value="1">是</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-remark" class="col-sm-2 control-label">
+                备注
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <textarea class="form-control" id="input-remark" name="remark"></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-primary js-ajax-submit">{:lang('ADD')}</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

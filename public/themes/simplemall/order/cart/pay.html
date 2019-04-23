@@ -1,0 +1,78 @@
+<extend name="public@base"/>
+<block name="seo">
+	<title>填写核对订单</title>
+	<meta name="keywords" content=""/>
+	<meta name="description" content=""/>
+</block>
+<block name="css">
+	<style>
+		.table-with-head thead {
+			background: #eee;
+		}
+
+		.table-with-head {
+			border: 1px solid #ddd;
+		}
+	</style>
+</block>
+<block name="main">
+    <div class="container">
+        <div class="row" style="margin-bottom: 10px;margin-top: 10px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-9">
+                <div class="btn-group btn-group-justified pull-right">
+                    <a class="btn btn-primary" role="button">1.我的购物车</a>
+                    <a class="btn btn-primary" role="button">2.填写核对订单</a>
+                    <a class="btn btn-success" role="button">3.成功提交订单</a>
+                </div>
+            </div>
+        </div>
+        <php>
+            $_current_user_id=cmf_get_current_user_id();
+
+            /*付款方式;1:先付款;2:后付款*/
+            $user_payment_type=1;
+            $user_payments=[];
+        </php>
+        <form class="form" action="{:url('order/Payment/getCode')}" method="post">
+            <table class="table table-with-head">
+                <thead>
+                <tr>
+                    <th>
+                        选择支付方式
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <foreach name="payments" item="vo">
+                    <if condition="$vo['code']=='pay_after_invoice' && $user_payment_type!=2">
+                        <else/>
+                        <php>array_push($user_payments,$vo['code']);</php>
+                        <tr>
+                            <td>
+                                <label>
+                                    <input type="radio" name="payment_id" value="{$vo.id}">
+                                    {$vo.name}
+                                </label>
+                                <notempty name="vo.tips">
+                                    <a title="{$vo.tips}" data-toggle="tooltip"><i class="fa fa-question-circle"></i></a>
+                                </notempty>
+                            </td>
+                        </tr>
+                    </if>
+                </foreach>
+                </tbody>
+            </table>
+            <php>
+                session('user_payments',$user_payments);
+            </php>
+            <div class="pull-right">
+                <input type="hidden" name="order_id" value="{$order_ids}"/>
+                <button class="btn btn-danger" type="submit">确认支付方式</button>
+            </div>
+        </form>
+
+    </div>
+</block>
+<block name="footer"></block>

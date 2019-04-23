@@ -1,0 +1,409 @@
+<include file="order@public/status"/>
+<style>
+    td, th {
+        padding: 8px;
+        font-size: 16px;
+    }
+
+    .table-cell {
+        display: block;
+    }
+
+    .table-bordered {
+        border-right: 1px solid #ddd;
+        border-bottom: 1px solid #ddd;;
+    }
+
+    .table-bordered td, .table-bordered th {
+        border-top: 1px solid #ddd;
+        border-left: 1px solid #ddd;
+    }
+
+    .table-bordered > tbody > tr > td, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > td, .table-bordered > tfoot > tr > th, .table-bordered > thead > tr > td, .table-bordered > thead > tr > th {
+        border: 1px solid #ddd;
+    }
+</style>
+<HTML2PDF:page backtop="15mm" backbottom="5mm" backleft="4mm" backright="4mm" style="font-family:droidsansfallback;">
+    <page_header style="font-family:droidsansfallback;">
+        <div style="text-align:center;">
+            上海三只猫网络科技有限公司
+            <!--<img src="./upload/chem/20170615/4de63502770a890f34c322b36d071286.jpg" style="height: 5mm;"/>-->
+        </div>
+    </page_header>
+    <page_footer>
+        Page Footer
+    </page_footer>
+
+    <table class="table " style="margin-bottom: 0;width: 100%;">
+        <tr>
+            <th width="90">
+                订单编号:
+            </th>
+            <td colspan="3">{$order.order_sn}</td>
+        </tr>
+        <tr>
+            <th width="90">
+                下单时间:
+            </th>
+            <td>{:date('Y-m-d H:i:s')}</td>
+            <th width="90">
+                发票抬头:
+            </th>
+            <td>
+                <notempty name="order.invoice_title">
+                    {$order.invoice_title}
+                    <else/>
+                    用户不需要发票
+                </notempty>
+            </td>
+        </tr>
+        <tr>
+            <th width="90">
+                订单状态:
+            </th>
+            <td colspan="3">
+                {$pay_status[$order['pay_status']]},{$shipping_status[$order['shipping_status']]},{$order_status[$order['order_status']]}
+            </td>
+        </tr>
+        <tr>
+            <th width="90">
+                物流:
+            </th>
+            <td colspan="3">{$order.shipment_name}</td>
+        </tr>
+        <tr>
+            <th width="90">
+                收件人:
+            </th>
+            <td>{$order.consignee}</td>
+            <th width="90">
+                手机号:
+            </th>
+            <td>{$order.mobile} {$order.mobile2}</td>
+        </tr>
+        <tr>
+            <th width="90">
+                收件地址:
+            </th>
+            <td colspan="3">
+                {$areas[$order['province']]}{$areas[$order['city']]|default=''}{$areas[$order['district']]|default=''}{$order.address}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <p style="white-space: normal;">
+                    6.1、质量、数重量验收标准：根据本合同约定的质量标准及数量验收。<br/>&nbsp; &nbsp;
+                    提出异议时限：需方收到货物后如发现货物的品种、型号、规格、质量、数量不符合本合同约定的，需方自货品物流单据签收之日起【5】
+                    日内向供方提出书面异议。需方自货品物流单据签收之日起【5】日内未提出书面异议的，视为供方交付的货物符合合同约定。
+                </p>
+            </td>
+        </tr>
+    </table>
+    <table class="table table-bordered" style="width: 100%;" cellspacing="0">
+        <tr>
+            <th colspan="4" style="text-align: center;font-size: 18px;">订购商品</th>
+        </tr>
+        <tbody>
+        <tr>
+            <th style="width: 25%;"><span class="table-cell">商品</span></th>
+            <th style="width: 25%;"><span class="table-cell">价格</span></th>
+            <th style="width: 25%;"><span class="table-cell">数量</span></th>
+            <th style="width: 25%;">
+                <div class="table-cell">金额</div>
+            </th>
+        </tr>
+        <foreach name="order_items" item="vo">
+            <tr>
+                <td style="width: 25%;">
+                    <div class="table-cell">{$vo.goods_name}</div>
+                </td>
+                <td style="width: 25%;">
+                    <div class="table-cell">{$vo.goods_price}</div>
+                </td>
+                <td style="width: 25%;">
+                    <div class="table-cell">{$vo.goods_quantity}</div>
+                </td>
+                <td style="width: 25%;">
+                    <div class="table-cell">{:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}</div>
+                </td>
+            </tr>
+        </foreach>
+        </tbody>
+    </table>
+    <div style="width:100%;">
+        <p>
+            供方:上海耐澄生物科技有限公司&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 需方:&nbsp;<br/>
+        </p>
+        <p>
+            根据《中华人民共和国合同法》和其它有关法律法规，供需双方经友好协商，本着自愿、诚实信用、平等互利的原则，
+            一致同意按照下列条款签订本合同。
+        </p>
+        <p>
+            产品名称、数量、单价、金额
+        </p>
+        <table cellspacing="0" cellpadding="0" class="t1">
+            <tbody>
+            <tr class="firstRow">
+                <td valign="middle" class="td1">
+                    <p>
+                        序号
+                    </p>
+                </td>
+                <td valign="middle" class="td2">
+                    <p>
+                        品名
+                    </p>
+                </td>
+                <td valign="middle" class="td3">
+                    <p>
+                        CAS
+                    </p>
+                </td>
+                <td valign="middle" class="td4">
+                    <p>
+                        货号
+                    </p>
+                </td>
+                <td valign="middle" class="td3">
+                    <p>
+                        包装规格
+                    </p>
+                </td>
+                <td valign="middle" class="td4">
+                    <p>
+                        数量
+                    </p>
+                </td>
+                <td valign="middle" class="td5">
+                    <p>
+                        单价
+                    </p>
+                </td>
+                <td valign="middle" class="td6">
+                    <p>
+                        合计价格
+                    </p>
+                </td>
+                <td valign="middle" class="td7">
+                    <p>
+                        货期
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td valign="middle" class="td8">
+                    <p>
+                        1
+                    </p>
+                </td>
+                <td valign="middle" class="td9">
+                    <p>
+                        尿素-15N
+                    </p>
+                </td>
+                <td valign="middle" class="td10">
+                    <p>
+                        2067-80-3
+                    </p>
+                </td>
+                <td valign="middle" class="td11">
+                    <p>
+                        H-LN011
+                    </p>
+                </td>
+                <td valign="middle" class="td10">
+                    <p>
+                        10g
+                    </p>
+                </td>
+                <td valign="middle" class="td11">
+                    <p>
+                        1
+                    </p>
+                </td>
+                <td valign="middle" class="td12">
+                    <p>
+                        ￥7800.00/瓶
+                    </p>
+                </td>
+                <td valign="middle" class="td13">
+                    <p>
+                        ￥7800.00
+                    </p>
+                </td>
+                <td valign="middle" class="td14">
+                    <p>
+                        现货
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="6" valign="middle" class="td15">
+                    <p>
+                        人民币合计
+                    </p>
+                </td>
+                <td colspan="3" valign="middle" class="td16">
+                    <p>
+                        ￥7800.00
+                    </p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <p>
+            二.质量要求与技术标准
+        </p>
+        <p>
+            依据各品牌产品所执行标准为准(国标、行标）。
+        </p>
+        <p>
+            三、交货条款
+        </p>
+        <p>
+            3.1交货方式：B
+        </p>
+        <p>
+            A 需方物流点自提&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; B 快递&nbsp;
+        </p>
+        <p>
+            3.2交货时间：
+        </p>
+        <p>
+            3-5天
+        </p>
+        <p>
+            四、结算条款
+        </p>
+        <p>
+            5.1、付款时限： A
+        </p>
+        <p>
+            A 款到发货（以付款水单为准）
+        </p>
+        <p>
+            B 货到10日内付款（以收货确认单日期为准）
+        </p>
+        <p>
+            C 月结票到 30 日内付款（以收到发票日期为准）
+        </p>
+        <p>
+            5.2、增值税发票的开具：根据国家关于增值税纳税义务发生时间的相关法律规定，供方应向需方开具增值税专用发票。
+        </p>
+        <p>
+            五、质量、数重量验收方法及异议处理
+        </p>
+        <p>
+            6.1、质量、数重量验收标准：根据本合同约定的质量标准及数量验收。<br/>&nbsp; &nbsp;
+            提出异议时限：需方收到货物后如发现货物的品种、型号、规格、质量、数量不符合本合同约定的，需方自货品物流单据签收之日起【5】
+            日内向供方提出书面异议。需方自货品物流单据签收之日起【5】日内未提出书面异议的，视为供方交付的货物符合合同约定。
+        </p>
+        <p>
+            6.2、质量异议的处理：若供方所交货物验收不合格的，双方协商解决方案；协商不成的，需方有权选择退货或换货，
+            需方应当将货物交付至提货点。
+        </p>
+        <p>
+            6.3、双方就质量担保责任有其他约定的，从约定。
+        </p>
+        <p>
+            六、不可抗力
+        </p>
+        <p>
+            任何一方都不得解除本合同项下的义务与责任，如果由于不可抗力或任何一方控制之外的因素导致本合同全部或部分不能履约，如：火灾、水灾、
+        </p>
+        <p>
+            罢工、停工、暴动或游行、疫情、战争和政府行为等。不能履约方应在该不可抗力事件导致的不可履约后5日内向另一方发出书面通知并于30日内
+        </p>
+        <p>
+            提交不可抗力有效证据，否则违约方在不可抗力的范围内不免责。
+        </p>
+        <p>
+            七、违约责任及争议解决
+        </p>
+        <p>
+            8.1、除发生不可抗力外，因可归责于供方的原因导致逾期交货或延迟提供提货条件的，供方应按合同总额2%/日向需方支付违约金；逾期超过十五
+            （15）日的，需方有权单方解除本合同，并要求供方承担赔偿责任。因需方指定的上游供应商延迟发货导致供方延迟交货的，供方不承担责任。
+        </p>
+        <p>
+            8.2、除发生不可抗力外，需方逾期付款的，应按合同总额2%/日向供方支付违约金；逾期超过十五（15）日的，供方有权单方解除本合同，并要求需方承担赔偿责任。
+        </p>
+        <p>
+            8.3、合同执行过程中发生的或与合同相关的所有争议双方应通过友好协商解决。如协商不成，该争议应提交合同签订地法院诉讼解决，并且因此发生的所有的费用
+            （该费用包括但不限于律师费用、诉讼费用、差旅费、通讯费及货物价格变化造成的直接损失）应由败诉方承担。
+        </p>
+        <p>
+            八、合同生效
+        </p>
+        <p>
+            需方收到供方签字盖章后的合同3 日内通过传真或邮件形式确认并回传后本合同生效，逾期本合同自动终止。如有未尽事宜需补充或修改的，
+            应以书面提出并经双方签字盖章后生效。复印件及传真件具有同等法律效力。
+        </p>
+        <p>
+            <br/>
+        </p>
+        <table cellspacing="0" cellpadding="0" class="t1">
+            <tbody>
+            <tr class="firstRow">
+                <td valign="middle" class="td17">
+                    <p>
+                        供方：上海耐澄生物科技有限公司
+                    </p>
+                    <p>
+                        (签章)
+                    </p>
+                    <p>
+                        地址：上海市徐汇区宜山路515号1号楼27B<br/>银行账号：31050181370000000820
+                    </p>
+                    <p>
+                        开户行:中国建设银行股份有限公司上海周浦支行
+                    </p>
+                    <p>
+                        税号：91310115MA1H7RMM68
+                    </p>
+                    <p>
+                        <br/>代表人：&nbsp;
+                    </p>
+                    <p>
+                        电话：021-80370399
+                    </p>
+                    <p>
+                        签订地点：上海徐汇
+                    </p>
+                </td>
+                <td valign="middle" class="td18">
+                    <p>
+                        需方：
+                    </p>
+                    <p>
+                        (签章)
+                    </p>
+                    <p>
+                        地址：
+                    </p>
+                    <p>
+                        银行账号：
+                    </p>
+                    <p>
+                        开户行:
+                    </p>
+                    <p>
+                        税号：
+                    </p>
+                    <p>
+                        <br/>代表人：&nbsp;
+                    </p>
+                    <p>
+                        电话
+                    </p>
+                    <p>
+                        签订日期： 2016 年 月&nbsp; 日
+                    </p>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p>
+        <br/>
+    </p>
+</HTML2PDF:page>

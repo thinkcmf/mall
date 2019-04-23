@@ -1,0 +1,142 @@
+<include file="public@header"/>
+<style>
+    .address-select-wrap {
+        width: 32%;
+        float: left;
+        margin: 0;
+    }
+
+    #address-city-select-wrap {
+        margin: 0 2%;
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="row">
+        <div class="col-md-12">
+            <form class="js-ajax-form" action="{:url('AdminAddress/editPost')}" method="post">
+                <div class="form-group">
+                    <label for="input-consignee">收件人</label>
+                    <input type="text" class="form-control" id="input-consignee" placeholder="收件人" name="consignee"
+                           value="{$consignee}">
+                </div>
+                <div class="form-group">
+                    <label for="input-alias">别名</label>
+                    <input type="text" class="form-control" id="input-alias" placeholder="地址别名，方便记忆，如:学校、公司、实验室"
+                           name="alias" value="{$alias}">
+                </div>
+                <div class="form-group">
+                    <label class="control-label">收件地址</label>
+                    <div class="js-address-select" data-url="{:url('user/AdminAddress/getSubAreas')}">
+                        <div class="address-select-wrap">
+                            <select class="form-control js-address-province-select" name="province" id="js-province">
+                                <option value="">请选择省市</option>
+                                <foreach name="provinces" item="vo">
+                                    <option value="{$vo.id}">{$vo.name}</option>
+                                </foreach>
+                            </select>
+                        </div>
+                        <div class="address-select-wrap" id="address-city-select-wrap">
+                            <empty name="city">
+                                <select class="form-control js-address-city-select" name="city" style="display: none;">
+                                    <option value="" class="js-address-empty-option">请选择市或区</option>
+                                </select>
+                                <else/>
+                                <select class="form-control js-address-city-select" name="city" id="js-city">
+                                    <option value="" class="js-address-empty-option">请选择市或区</option>
+                                    <foreach name="cities" item="vo">
+                                        <option value="{$vo.id}">{$vo.name}</option>
+                                    </foreach>
+                                </select>
+                            </empty>
+                        </div>
+                        <div class="address-select-wrap" id="address-district-select-wrap">
+                            <empty name="district">
+                                <select class="form-control js-address-district-select" name="district"
+                                        style="display: none;">
+                                    <option value="" class="js-address-empty-option">请选择区县</option>
+                                </select>
+                                <else/>
+                                <select class="form-control js-address-district-select" name="district"
+                                        id="js-district">
+                                    <option value="" class="js-address-empty-option">请选择区县</option>
+                                    <foreach name="districts" item="vo">
+                                        <option value="{$vo.id}">{$vo.name}</option>
+                                    </foreach>
+                                </select>
+                            </empty>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="input-address">详细地址</label>
+                    <input class="form-control" type="text" id="input-address" placeholder="详细地址" name="address"
+                           value="{$address}">
+                </div>
+                <div class="form-group">
+                    <label for="input-zip_code">邮编</label>
+                    <input class="form-control" type="text" id="input-zip_code" placeholder="邮编" name="zip_code"
+                           value="{$zip_code}">
+                </div>
+                <div class="form-group">
+                    <label for="input-mobile">手机</label>
+                    <input class="form-control" type="text" id="input-mobile" placeholder="手机" name="mobile"
+                           value="{$mobile}">
+                </div>
+                <div class="form-group">
+                    <label for="input-mobile2">备用联系方式</label>
+                    <input class="form-control" type="text" id="input-mobile2" placeholder="备用联系方式" name="mobile2"
+                           value="{$mobile2|default=''}">
+                </div>
+                <div class="form-actions" style="display: none;">
+                    <input type="hidden" value="{$id}" name="id">
+                    <input type="hidden" name="user_id" value="{$user_id}"/>
+                    <button class="btn btn-primary js-ajax-submit" type="submit" data-success="successCallback">提交
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    Wind.use('noty3',function(){
+
+    });
+    var submit = function () {
+        $('.js-ajax-submit').click();
+    }
+
+    function successCallback(data, statusText, xhr, $form) {
+
+        if (data.code == 1) {
+            new Noty({
+                text: data.msg,
+                type: 'success',
+                layout: 'center',
+                callbacks: {
+                    afterClose: function () {
+                        parent.location.reload();
+                    }
+                }
+            }).show();
+
+        } else {
+            new Noty({
+                text: data.message,
+                type: 'error',
+                layout: 'center'
+            }).show();
+        }
+        $(window).focus();
+    }
+
+    $('#js-province').val('{$province}');
+    $('#js-city').val('{$city}');
+    $('#js-district').val('{$district}');
+
+</script>
+</body>
+</html>

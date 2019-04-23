@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$site_info.site_name}</title>
+    <include file="public@head"/>
+    <style>
+        .order-tr {
+
+        }
+
+        .table tr.order-item-tr td {
+            border-top: none;
+        }
+
+        .table td, .table th {
+            vertical-align: middle !important;
+        }
+    </style>
+</head>
+<body class="body-white" id="top">
+<include file="public@nav"/>
+
+<div class="container tc-main">
+    <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+            <div class="modal in" tabindex="-1" style="display: block;position: relative;">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title">订单确认成功</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>订单确认成功！</p>
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+            </div><!-- /.modal -->
+        </div>
+    </div>
+
+    <include file="public@footer"/>
+
+</div>
+
+<include file="public@scripts"/>
+</body>
+</html>

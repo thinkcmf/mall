@@ -1,0 +1,44 @@
+
+<footer class="footer-primary">
+    <hook name="footer_start"/>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="links">
+                    <links>
+                        <a href="{$vo.url|default=''}" target="{$vo.target|default=''}">{$vo.name|default=''}</a>&nbsp;
+                    </links>
+
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-12">
+                <p class="text-center footer-copyright">
+                    Made by <a href="http://www.thinkcmf.com">ThinkCMF</a>,
+                    UI Based on <a href="http://getbootstrap.com" target="_blank">Bootstrap</a>. Icons from <a
+                        href="http://fortawesome.github.com/Font-Awesome/" target="_blank">Font Awesome</a><br>
+
+                    © 2017 ThinkCMF. All Rights Reserved.
+                    <a href="http://www.miitbeian.gov.cn/" target="_blank" style="color:#90959A;">沪ICP备13000804号-3</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+<style>
+    #backtotop {
+        position: fixed;
+        bottom: 50px;
+        right: 20px;
+        display: none;
+        cursor: pointer;
+        font-size: 50px;
+        z-index: 9999;
+    }
+
+    #backtotop:hover {
+        color: #333
+    }
+</style>
+<div id="backtotop"><i class="fa fa-arrow-circle-up"></i></div>

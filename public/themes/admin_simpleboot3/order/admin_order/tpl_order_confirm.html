@@ -1,0 +1,91 @@
+<include file="order@public/status"/>
+<div style="width: 800px;margin: 0 auto;">
+    <table class="table table-order-detail" style="margin: 0 auto;width: 100%;">
+        <tr>
+            <th width="90" style="text-align: left;">
+                订单ID:
+            </th>
+            <td>{$order.id}</td>
+            <th width="90" style="text-align: left;">
+                订单编号:
+            </th>
+            <td>{$order.order_sn}</td>
+        </tr>
+        <tr>
+            <th width="90" style="text-align: left;">
+                下单时间:
+            </th>
+            <td>{:date('Y-m-d H:i:s')}</td>
+            <th width="90" style="text-align: left;">
+                发票抬头:
+            </th>
+            <td>
+                <notempty name="order.invoice_title">
+                    {$order.invoice_title}
+                    <else/>
+                    用户不需要发票
+                </notempty>
+            </td>
+        </tr>
+        <tr>
+            <th width="90" style="text-align: left;">
+                订单状态:
+            </th>
+            <td colspan="3">
+                {$pay_status[$order['pay_status']]},{$shipping_status[$order['shipping_status']]},{$order_status[$order['order_status']]}
+            </td>
+        </tr>
+        <tr>
+            <th width="90" style="text-align: left;">
+                物流:
+            </th>
+            <td colspan="3">{$order.shipment_name}</td>
+        </tr>
+        <tr>
+            <th width="90" style="text-align: left;">
+                收件人:
+            </th>
+            <td>{$order.consignee}</td>
+            <th width="90" style="text-align: left;">
+                手机号:
+            </th>
+            <td>{$order.mobile} {$order.mobile2}</td>
+        </tr>
+        <tr>
+            <th width="90" style="text-align: left;">
+                收件地址:
+            </th>
+            <td colspan="3">
+                {$areas[$order['province']]}{$areas[$order['city']]|default=''}{$areas[$order['district']]|default=''}{$order.address}
+            </td>
+        </tr>
+    </table>
+    <table class="table table-bordered" style="margin: 0 auto;width: 100%;border: 1px solid #ddd;" cellspacing="0">
+        <tr>
+            <th colspan="5" style="padding:8px;text-align: center;">订购商品</th>
+        </tr>
+        <tr>
+            <th style="padding:8px;text-align: center;border-top: 1px solid #ddd;border-right: 1px solid #ddd;">商品</th>
+            <th style="padding:8px;text-align: center;border-top: 1px solid #ddd;border-right: 1px solid #ddd;">价格</th>
+            <th style="padding:8px;text-align: center;border-top: 1px solid #ddd;border-right: 1px solid #ddd;">数量</th>
+            <th style="padding:8px;text-align: center;border-top: 1px solid #ddd;">金额</th>
+        </tr>
+        <foreach name="order_items" item="vo">
+            <tr>
+                <td style="padding:8px;text-align: center;border-top: 1px solid #ddd;border-right: 1px solid #ddd;">
+                    {$vo.goods_name}
+                </td>
+                <td style="padding:8px;text-align: center;border-top: 1px solid #ddd;border-right: 1px solid #ddd;">
+                    {$vo.goods_price}
+                </td>
+                <td style="padding:8px;text-align: center;border-top: 1px solid #ddd;border-right: 1px solid #ddd;">
+                    {$vo.goods_quantity}
+                </td>
+                <td style="padding:8px;text-align: center;border-top: 1px solid #ddd;">
+                    {:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}
+                </td>
+            </tr>
+        </foreach>
+    </table>
+    订单确认：<a href="{$order_confirm_url}">{$order_confirm_url}</a>
+</div>

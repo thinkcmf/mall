@@ -1,0 +1,69 @@
+<include file="order@public/status"/>
+<include file="public@header"/>
+<style media="print">
+    #think_page_trace_open {
+        display: none;
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <table class="table" style="margin-bottom: 0;">
+        <tr>
+            <th colspan="5" style="text-align: center;border-top: none;">
+                <h2>面单</h2>
+            </th>
+        </tr>
+        <tr>
+            <th width="90">
+                订单编号:
+            </th>
+            <td colspan="3">{$order.order_sn}</td>
+        </tr>
+        <tr>
+            <th width="90">
+                出库时间:
+            </th>
+            <td colspan="3">{:date('Y-m-d H:i:s')}</td>
+        </tr>
+        <!--
+        <tr>
+            <th width="90">
+                送货方式:
+            </th>
+            <td colspan="3" class="form-inline">
+                {$order.shipment_name} {$order.shipment_code}
+                <form class="js-ajax-form hidden-print" method="post" action="{:url('AdminOrder/setTrackingNumber')}" style="display: inline-block;">
+                    <input class="form-control" type="text" placeholder="运单号" name="tracking_number" value="{$order.tracking_number}">
+                    <input type="hidden" name="id" value="{$order.id}">
+                    <button type="submit" class="btn btn-primary js-ajax-submit" data-msg="您确定用此运单号发货吗？">发货</button>
+                </form>
+            </td>
+        </tr>
+        -->
+        <tr>
+            <th width="90">
+                收件人:
+            </th>
+            <td>{$order.consignee}</td>
+            <th width="90">
+                手机号:
+            </th>
+            <td>{$order.mobile} {$order.mobile2}</td>
+        </tr>
+        <tr>
+            <th width="90">
+                收件地址:
+            </th>
+            <td colspan="3">
+                {$areas[$order['province']]}{$areas[$order['city']]|default=''}{$areas[$order['district']]|default=''}{$order.address}
+            </td>
+        </tr>
+    </table>
+    <div class="text-center hidden-print">
+        <a href="javascript:;" onclick="window.print();" class="btn btn-primary">打印</a>
+    </div>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

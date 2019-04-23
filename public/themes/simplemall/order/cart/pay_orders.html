@@ -1,0 +1,51 @@
+<!doctype html>
+<html class="no-js">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>填写核对订单</title>
+    <meta name="keywords" content=""/>
+    <meta name="description" content=""/>
+    <include file="public@head"/>
+    <style>
+        .table-with-head thead {
+            background: #eee;
+        }
+
+        .table-with-head {
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body class="body-white">
+<include file="public@nav"/>
+
+<div class="container">
+    <div class="row" style="margin-bottom: 10px;margin-top: 10px;">
+        <div class="col-md-3">
+        </div>
+        <div class="col-md-9">
+            <div class="btn-group btn-group-justified pull-right">
+                <a class="btn btn-primary" role="button">1.我的购物车</a>
+                <a class="btn btn-primary" role="button">2.填写核对订单</a>
+                <a class="btn btn-success" role="button">3.成功提交订单</a>
+            </div>
+        </div>
+    </div>
+    <table class="table table-with-head">
+        <tbody>
+        <foreach name="orders" item="vo">
+            <tr>
+                <td>
+                    订单号：{$order.order_sn}
+                </td>
+            </tr>
+        </foreach>
+        </tbody>
+    </table>
+
+</div>
+<include file="public@footer"/>
+<include file="public@scripts"/>
+</body>
+</html>

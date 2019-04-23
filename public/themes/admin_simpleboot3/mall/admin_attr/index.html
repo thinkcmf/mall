@@ -1,0 +1,50 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a>属性列表</a></li>
+        <li><a href="{:url('AdminAttr/add')}">添加属性</a></li>
+    </ul>
+    <form method="post" class="js-ajax-form margin-top-20">
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>名称</th>
+                <th>类型</th>
+                <th>输入类型</th>
+                <th>可搜索</th>
+                <th>备注</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <php>
+                $types=['1'=>'自然属性','2'=>'销售属性'];
+                $input_types=['1'=>'下拉列表','2'=>'单行文本','3'=>'多行文本'];
+            </php>
+            <volist name="attrs" id="vo">
+                <tr>
+                    <td>{$vo.id}</td>
+                    <td>{$vo.name}</td>
+                    <td>{$types[$vo.type]}</td>
+                    <td>{$input_types[$vo.input_type]}</td>
+                    <td>{$vo.searchable?'是':'否'}</td>
+                    <td>{$vo.remark}</td>
+                    <td>
+                        <a href="{:url('edit',['id'=>$vo['id']])}">编辑</a>
+                        <a href="{:url('delete',array('id'=>$vo['id']))}"
+                           class="js-ajax-dialog-btn"
+                           data-msg="确定要删除吗？">删除</a>
+                    </td>
+                </tr>
+            </volist>
+            </tbody>
+        </table>
+        <div class="pagination">{$page|default=''}</div>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

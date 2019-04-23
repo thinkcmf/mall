@@ -1,0 +1,135 @@
+<include file="public@header"/>
+<style>
+    .input-no-border {
+        border: none;
+        padding: 0;
+        font-size: 14px;
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AdminItem/index')}">商品列表</a></li>
+        <li class="active"><a href="{:url('AdminItem/add')}">添加商品</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('AdminItem/addPost')}">
+        <div class="form-group">
+            <label class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝分类
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" name="category_id" id="input-category_id">
+                    {$categories_tree}
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-title" class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝标题
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-title" name="title">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-sub_title" class="col-sm-2 control-label">宝贝卖点</label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-sub_title" name="sub_title">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-brand_id" class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝品牌
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" id="input-brand_id" name="brand_id">
+                    <foreach name="brands" item="vo">
+                        <option value="{$vo.id}">{$vo.name}</option>
+                    </foreach>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="js-thumbnail" class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝图片
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="hidden" name="thumbnail" id="js-thumbnail" value="">
+                <a href="javascript:uploadOneImage('图片上传','#js-thumbnail');">
+                    <img src="__TMPL__/public/assets/images/default-thumbnail.png" id="js-thumbnail-preview"
+                         width="135" style="cursor: hand"/>
+                </a>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="js-thumbnail" class="col-sm-2 control-label">价格及总库存</label>
+            <div class="col-md-6 col-sm-10">
+                <table class="table table-bordered">
+                    <tr>
+                        <th><span class="form-required">*</span>价格</th>
+                        <th><span class="form-required">*</span>原价</th>
+                        <th><span class="form-required">*</span>成本价</th>
+                        <th><span class="form-required">*</span>总数量（件）</th>
+                        <th>商家编码</th>
+                        <th>商品条形码</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="price">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="original_price">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="cost_price">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="quantity">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="item_sn">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="barcode">
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">
+                <span class="form-required">*</span>详情
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <script type="text/plain" id="content" name="content"></script>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-primary js-ajax-submit">{:lang('ADD')}</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script type="text/javascript">
+    //编辑器路径定义
+    var editorURL = GV.WEB_ROOT;
+</script>
+<script type="text/javascript" src="__STATIC__/js/ueditor/ueditor.config.js"></script>
+<script type="text/javascript" src="__STATIC__/js/ueditor/ueditor.all.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+
+        editorcontent = new baidu.editor.ui.Editor();
+        editorcontent.render('content');
+        try {
+            editorcontent.sync();
+        } catch (err) {
+        }
+
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<extend name="public@base"/>
+<block name="seo">
+    <title>购物车</title>
+    <meta name="keywords" content=""/>
+    <meta name="description" content=""/>
+    <style>
+        .goods-thumbnail {
+            width: 100px;
+            height: 100px;
+        }
+    </style>
+</block>
+<block name="main">
+    <php>$is_mobile=cmf_is_mobile();</php>
+    <div class="container">
+        <div class="row" style="margin-bottom: 10px;margin-top: 10px;">
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-9">
+                <div class="btn-group btn-group-justified pull-right">
+                    <a class="btn btn-success" role="button">1.我的购物车</a>
+                    <a class="btn btn-primary" role="button">2.填写核对订单</a>
+                    <a class="btn btn-primary" role="button">3.成功提交订单</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <notempty name="goods">
+                    <if condition="$is_mobile">
+                        <table class="table table-bordered table-centered">
+                            <thead>
+                            <tr>
+                                <th></th>
+                                <th>商品</th>
+                                <th>小计</th>
+                                <th width="110">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <foreach name="goods" item="vo">
+                                <tr>
+                                    <td>
+                                        <notempty name="vo.selected">
+                                            <input type="checkbox" checked="checked" class="goods-checkbox"
+                                                   data-id="{$vo.id}">
+                                            <else/>
+                                            <input type="checkbox" class="goods-checkbox" data-id="{$vo.id}">
+                                        </notempty>
+
+                                    </td>
+                                    <td>
+                                        {$vo.goods_name}<br>
+                                        ￥{$vo.goods_price}<br>
+                                        数量：1<br>
+                                        到期时间：<br>{:date('Y-m-d H:i:s',$vo['expire_time'])}
+                                    </td>
+                                    <td>{$vo.goods_price}</td>
+                                    <td>
+                                        <eq name="vo.deletable" value="1">
+                                            <a href="{:cmf_url('chem/cart/cancel',array('id'=>$vo['id']))}"
+                                               class="js-ajax-delete" data-msg="您确定删除吗？">删除</a>
+                                            <else/>
+                                            <span>删除</span>
+                                        </eq>
+
+                                    </td>
+                                </tr>
+                            </foreach>
+                            </tbody>
+                        </table>
+                        <else/>
+                        <table class="table table-bordered table-centered">
+                            <thead>
+                            <tr>
+                                <th></th>
+                                <th colspan="2">商品</th>
+                                <th>价格</th>
+                                <th>数量</th>
+                                <th>小计</th>
+                                <th width="110">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <foreach name="shops_goods" item="goods" key="shop_id">
+                                <tr>
+                                    <td colspan="7">
+                                        店铺:
+                                        <empty name="shop_id">
+                                            自营
+                                            <else/>
+                                            {$shops[$shop_id]['name']}
+                                        </empty>
+                                    </td>
+                                </tr>
+                                <foreach name="goods" item="vo">
+                                    <tr>
+                                        <td>
+                                            <notempty name="vo.selected">
+                                                <input type="checkbox" checked="checked" class="goods-checkbox"
+                                                       data-id="{$vo.id}">
+                                                <else/>
+                                                <input type="checkbox" class="goods-checkbox" data-id="{$vo.id}">
+                                            </notempty>
+                                        </td>
+                                        <td>
+                                            <notempty name="vo.goods_thumbnail">
+                                                <switch name="vo.table_name">
+                                                    <case value="chem_product">
+                                                        <img src="http://chem.aboutlab.cn/chemium/api/getCompoundPng/cas/{$vo.goods_thumbnail}"
+                                                             class="goods-thumbnail" alt=""
+                                                             onerror="javascript:this.src='__TMPL__/public/assets/images/compound_default.png'">
+                                                        <a href="{:cmf_url('chem/Product/index',['id'=>$vo.goods_id])}">{$vo.goods_name}</a>
+                                                    </case>
+                                                    <case value="mall_item">
+                                                        <img src="{:cmf_get_image_url($vo.goods_thumbnail)}"
+                                                             class="goods-thumbnail" alt=""
+                                                             onerror="javascript:this.src='__TMPL__/public/assets/images/compound_default.png'">
+                                                        <a href="{:cmf_url('mall/Item/index',['id'=>$vo.goods_id])}">{$vo.goods_name}</a>
+                                                    </case>
+                                                    <default>
+                                                        <img src="{:cmf_get_image_url($vo.goods_thumbnail)}"
+                                                             class="goods-thumbnail" alt=""
+                                                             onerror="javascript:this.src='__TMPL__/public/assets/images/compound_default.png'">
+                                                    </default>
+                                                </switch>
+                                            </notempty>
+                                        </td>
+                                        <td>
+                                            {:str_replace(";\\n",'<br>',$vo.goods_spec)}
+                                        </td>
+                                        <td>{$vo.goods_price}</td>
+                                        <td>
+                                            <input value="{$vo.goods_quantity}" type="number"
+                                                   class="form-control input-sm input-goods-quantity"
+                                                   style="width:60px;"
+                                                   data-id="{$vo.id}"
+                                                   min="1">
+                                        </td>
+                                        <td><span class="input-goods-amount-{$vo.id}">{:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}</span>
+                                        </td>
+                                        <td>
+                                            <eq name="vo.deletable" value="1">
+                                                <a href="{:cmf_url('order/Cart/cancel',array('id'=>$vo['id']))}"
+                                                   class="js-ajax-delete" data-msg="您确定删除吗？">删除</a>
+                                                <else/>
+                                                <span>删除</span>
+                                            </eq>
+
+                                        </td>
+                                    </tr>
+                                </foreach>
+                            </foreach>
+                            </tbody>
+                        </table>
+                    </if>
+                    <table class="table table-bordered">
+                        <tbody>
+                        <tr>
+                            <!-- <td>
+                                <input type="checkbox" name="select_all" id="select_all" onchange="check_all();" value="1"> <label for="">全选</label> <a href="javascript:void(0);" onclick="del_cart_more();">删除选中商品</a>
+                            </td> -->
+                            <td align="right">总计金额：</td>
+                            <td width="110" align="right">￥<span
+                                    class="total-amount-text">{:number_format($total_amount,2)}</span></td>
+                        </tr>
+                        <tr>
+                            <!-- <td>&nbsp;</td> -->
+                            <td align="right">合计（不含运费）：</td>
+                            <td width="110" align="right"><em>￥<span class="total-amount-text">{:number_format($total_amount,2)}</span></em>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="pull-right">
+                        <a class="btn btn-primary" href="__ROOT__/">继续挑选</a>
+                        <a class="btn btn-danger" href="{:url('order/Cart/confirm')}"
+                           id="go-to-cart-confirm-btn">去结算</a>
+                    </div>
+                    <else/>
+                    <div class="text-center" style="height: 333px;">
+                        <a href="__ROOT__/">
+                            <img src="__TMPL__/public/assets/images/null_cart2.jpg" style="max-width: 100%;"/>
+                        </a>
+                    </div>
+                </notempty>
+            </div>
+        </div>
+    </div>
+</block>
+<block name="footer"></block>
+<block name="script">
+    <script>
+        $(function () {
+            $('.input-goods-quantity').on('change', function () {
+
+                var $this = $(this);
+                var id = $this.data('id');
+                var quantity = $this.val();
+                if ($this.data('loading')) {
+                    return;
+                }
+                $this.data('loading', true);
+
+                $.ajax({
+                    url: "{:url('order/Cart/changeQuantity')}",
+                    type: 'POST',
+                    dataType: 'JSON',
+                    data: {id: id, quantity: quantity},
+                    success: function (data) {
+                        if (data.code == 1) {
+                            $('.input-goods-amount-' + id).text(data.data.goods_amount);
+                            $('.total-amount-text').text(data.data.total_amount);
+                        }
+
+                        if (data.code == 0) {
+                            if ($this.is(':checked')) {
+                                $this.attr('checked', false);
+                            } else {
+                                $this.attr('checked', 'checked');
+                            }
+                        }
+                    },
+                    error: function () {
+                    },
+                    complete: function () {
+                        $this.data('loading', false);
+                    }
+                });
+
+            });
+            $('.goods-checkbox').on('change', function () {
+                var $this = $(this);
+                var id = $this.data('id');
+                var selected = 0;
+                if ($this.is(':checked')) {
+                    selected = 1;
+                } else {
+                    selected = 0;
+                }
+                if ($this.data('loading')) {
+                    return;
+                }
+                $this.data('loading', true);
+
+                $.ajax({
+                    url: "{:url('order/Cart/selectStatus')}",
+                    type: 'POST',
+                    dataType: 'JSON',
+                    data: {id: id, selected: selected},
+                    success: function (data) {
+                        if (data.code == 1) {
+                            $('.total-amount-text').text(data.data.total_amount);
+                        }
+
+                        if (data.code == 0) {
+                            if ($this.is(':checked')) {
+                                $this.attr('checked', false);
+                            } else {
+                                $this.attr('checked', 'checked');
+                            }
+                        }
+                    },
+                    error: function () {
+                        if ($this.is(':checked')) {
+                            $this.attr('checked', false);
+                        } else {
+                            $this.attr('checked', 'checked');
+                        }
+                    },
+                    complete: function () {
+                        $this.data('loading', false);
+                    }
+                });
+            });
+        });
+
+        Wind.use('noty', function () {
+            $('#go-to-cart-confirm-btn').on('click', function () {
+                var checked_length = $('.goods-checkbox:checked').length;
+                if (checked_length == 0) {
+                    noty({
+                        text: '您还没有选中任何商品！',
+                        modal: true,
+                        type: 'error',
+                        layout: 'center'
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
+</block>
+<block name="footer"></block>

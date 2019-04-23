@@ -1,0 +1,47 @@
+<include file="public@header"/>
+</head>
+<body>
+
+<div class="product-category">
+    <div id="selectDiv" class="selectCat">
+        <div class="sort_selector">
+            <div class="sort_title">
+                <span>您常用的商品分类：</span>
+                <div class="text" id="commSelect">
+                    <div style="padding-left: 10px;">请选择</div>
+                    <div class="select_list" id="commListArea"></div>
+                </div>
+                <i class="icon-angle-down"></i>
+            </div>
+        </div>
+        <div id="categoryDivContainer" class="categoryContainer">
+            <div id="selectCategoryDiv1" class="selectCategoryDiv">
+                <div class="category-search">
+                    <i class="icon-search-tabao"></i>
+                    <input type="text" name="search_category" placeholder="输入名称" />
+                </div>
+                <div class="categorySet">
+                    {foreach name="cateGoryList" item="category"}
+                    <div class="categoryItem " id="{$category.category_id}" onclick="ClickHasSubCategory(this)">
+                        <span style="width: 170px;">{$category.category_name}</span> <span>&gt;</span>
+                    </div>
+                    {/foreach}
+                </div>
+            </div>
+        </div>
+        <div class="cate-path">
+            <div class="hasSelectedCategoryDiv">
+                <span class="hasSelectedCategoryDivText">您当前选择的是：</span>
+            </div>
+        </div>
+    </div>
+    <div class="div-btn">
+        <a class="btn btn-info disabled" href="javascript:nextPage();" id="nextPage">已选好类目，进入下一步</a>
+    </div>
+</div>
+
+
+
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

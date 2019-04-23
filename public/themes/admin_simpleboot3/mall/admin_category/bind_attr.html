@@ -1,0 +1,72 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a>分类绑定商品属性列表</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('bindAttr')}">
+        <div class="form-group">
+            <label for="input-name" class="col-sm-2 control-label"><span class="form-required"></span>商品属性</label>
+            <div class="col-md-6 col-sm-10">
+                <select name="attr" class="form-control" id="">
+                    <volist name="attr" id="attr_vo">
+                    <option value="{$attr_vo.id}">
+                        {$attr_vo.name}
+                        <notempty name="$attr_vo.remark">
+                            ({$attr_vo.remark})
+                        </notempty>
+                    </option>
+                </volist>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <input type="hidden" name="id" value="{$id}" >
+                <button type="submit" class="btn btn-primary js-ajax-submit">绑定</button>
+            </div>
+        </div>
+    </form>
+    <form method="post" class="js-ajax-form">
+        <div class="table-actions">
+            <button class="btn btn-primary btn-sm js-ajax-submit" type="submit">{:lang('SORT')}</button>
+        </div>
+        <php>
+            $types=['1'=>'自然属性','2'=>'销售属性'];
+        </php>
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th>排序</th>
+                <th>ID</th>
+                <th>商品属性</th>
+                <th>类型</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <volist name="list" id="vo">
+                <tr>
+                	<td><input name="list_orders[{$vo.id}]" class="input-order" type="text"
+                        value="{$vo.list_order}"></td>
+                    <td>{$vo.id}</td>
+                    <td>{$vo.attr.name}</td>
+                    <td>{$types[$vo.attr.type]}</td>
+                    <td>
+                        <a href="{:url('bindAttrDel',array('id'=>$vo['id']))}"
+                            class="js-ajax-dialog-btn"
+                            data-msg="确定要删除吗？">删除</a>
+                    </td>
+                </tr>
+            </volist>
+            </tbody>
+        </table>
+        <div class="table-actions">
+            <button class="btn btn-primary btn-sm js-ajax-submit" type="submit">{:lang('SORT')}</button>
+        </div>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

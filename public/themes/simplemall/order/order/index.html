@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{$site_info.site_name}</title>
+    <include file="public@head"/>
+    <style>
+        .order-tr {
+            background: #eee;
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+        }
+
+        .table tr.order-item-tr {
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+        }
+
+        .table tr.order-item-tr td {
+            border-top: none;
+        }
+
+        .table td, .table th {
+            vertical-align: middle !important;
+        }
+
+        .table .order-item-tr td {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .goods-thumbnail {
+            width: 100px;
+            height: 100px;
+        }
+
+        .label-grey {
+            color: grey;
+        }
+    </style>
+</head>
+<body class="body-white" id="top">
+<include file="public@nav"/>
+
+<div class="container tc-main">
+    <div class="row">
+        <div class="col-md-3">
+            <include file="public@usernav"/>
+        </div>
+        <div class="col-md-9">
+            <div class="tabs">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#one" data-toggle="tab"><i class="fa fa-list"></i> 我的订单</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="one">
+                        <br>
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>商品</th>
+                                <th>价格</th>
+                                <th>数量</th>
+                                <th>金额</th>
+                                <th width="90">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <foreach name="orders" item="order">
+                                <tr>
+                                    <td colspan="5" style="border-right: none;border-left: none;"></td>
+                                </tr>
+                                <tr class="order-tr">
+                                    <td colspan="5">
+                                        订单号：{$order.order_sn}
+                                        <span class="pull-right" style="color:grey;">{:date('Y-m-d H:i:s',$order['create_time'])}</span>
+                                    </td>
+                                </tr>
+                                <foreach name="order_items[$order['id']]" item="vo">
+                                    <tr class="order-item-tr">
+                                        <td>
+                                            <notempty name="vo.goods_thumbnail">
+                                                <switch name="vo.table_name">
+                                                    <case value="chem_product">
+                                                        <img src="http://chem.aboutlab.cn/chemium/api/getCompoundPng/cas/{$vo.goods_thumbnail}"
+                                                             class="goods-thumbnail" alt=""
+                                                             onerror="javascript:this.src='__TMPL__/public/assets/images/compound_default.png'">
+                                                    </case>
+                                                    <default>
+                                                        <img src="{:cmf_get_image_url($vo.goods_thumbnail)}"
+                                                             class="goods-thumbnail" alt=""
+                                                             onerror="javascript:this.src='__TMPL__/public/assets/images/compound_default.png'">
+                                                    </default>
+                                                </switch>
+                                            </notempty>
+
+
+                                            <div style="display: inline-block;vertical-align: middle;">
+                                                <switch name="vo.table_name">
+                                                    <case value="chem_product">
+                                                        <a href="{:cmf_url('chem/Item/index',['id'=>$vo.goods_sku_id])}"
+                                                           target="_blank">{$vo.goods_name}</a>
+                                                    </case>
+                                                    <case value="mall_item">
+                                                        <a href="{:cmf_url('mall/Item/index',['id'=>$vo.goods_id])}"
+                                                           target="_blank">{$vo.goods_name}</a>
+                                                    </case>
+                                                    <default>
+                                                        {$vo.goods_name}
+                                                    </default>
+                                                </switch>
+                                                <br>
+                                                {:str_replace(";\\n",'<br>',$vo.goods_spec)}
+                                            </div>
+                                        </td>
+                                        <td>{$vo.goods_price}</td>
+                                        <td>{$vo.goods_quantity}</td>
+                                        <td>{:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}</td>
+
+                                        <empty name="key">
+                                            <td rowspan="{:count($order_items[$order['id']])}"
+                                                style="border-left:1px solid #ddd;">
+                                                <if condition="$order['order_status']!=2">
+                                                    <switch name="order.pay_status">
+                                                        <case value="10">
+                                                            <span class="label1 label-grey">等待支付</span> <a
+                                                                href="{:url('order/Payment/getcode',['payment_code'=>$order.payment_code,'order_id'=>$order.id])}">支付信息</a><br>
+                                                            <span class="label1 label-grey">
+                                                            <switch name="order.shipping_status">
+                                                                <case value="2">
+                                                                    已签收
+                                                                </case>
+                                                                <case value="1">
+                                                                    已发货
+                                                                </case>
+                                                                <default>
+                                                                    待发货
+                                                                </default>
+                                                            </switch>
+                                                            </span>
+                                                        </case>
+                                                        <case value="1">
+                                                            <span class="label1 label-grey">已支付</span><br>
+                                                            <span class="label1 label-grey">
+                                                            <switch name="order.shipping_status">
+                                                                <case value="2">
+                                                                    已签收
+                                                                </case>
+                                                                <case value="1">
+                                                                    已发货
+                                                                </case>
+                                                                <default>
+                                                                    待发货
+                                                                </default>
+                                                            </switch>
+                                                            </span>
+                                                        </case>
+                                                        <case value="0">
+                                                            <if condition="$order['expire_time'] lt time()">
+                                                                <span class="label1 label-grey">已过期</span>
+                                                                <else/>
+                                                                <notempty name="order.payment_code">
+                                                                    <a class="label1 label-default1"
+                                                                       href="{:url('order/Payment/getcode',['payment_code'=>$order.payment_code,'order_id'=>$order.id])}"
+                                                                    >
+                                                                        立刻付款
+                                                                    </a>
+                                                                    <else/>
+                                                                    <a class="label1 label-default1"
+                                                                       href="{:url('order/Cart/pay',array('order_id'=>$order['id']))}">
+                                                                        立刻付款
+                                                                    </a>
+                                                                </notempty>
+                                                                <br>
+                                                                <a class="js-ajax-dialog-btn"
+                                                                   href="{:url('order/Order/cancel',array('id'=>$order['id']))}"
+                                                                   data-msg="您确定要取消此订单吗？">取消订单</a>
+                                                            </if>
+                                                        </case>
+                                                    </switch>
+                                                </if>
+                                                <eq name="order.order_status" value="2">
+                                                    <span class="label1 label-grey">已取消</span>
+                                                </eq>
+                                            </td>
+                                        </empty>
+                                    </tr>
+                                </foreach>
+                            </foreach>
+                            </tbody>
+                        </table>
+                        <ul class="pagination">{$page}</ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+<include file="public@scripts"/>
+</body>
+</html>

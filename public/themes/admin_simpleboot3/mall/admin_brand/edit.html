@@ -1,0 +1,72 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AdminBrand/index')}">品牌列表</a></li>
+        <li><a href="{:url('AdminBrand/add')}">添加品牌</a></li>
+        <li class="active"><a href="javascript:void (0);">编辑品牌</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('AdminBrand/editPost')}">
+        <div class="form-group">
+            <label for="input-name" class="col-sm-2 control-label">
+                <span class="form-required">*</span>品牌名称
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="hidden" class="form-control" id="input-id" name="id" value="{$brand.id|default=''}">
+                <input type="text" class="form-control" id="input-name" name="name" value="{$brand.name|default=''}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-alias" class="col-sm-2 control-label">
+                <span class="form-required">*</span>品牌别名
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-alias" name="alias" placeholder="" value="{$brand.alias|default=''}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="js-logo" class="col-sm-2 control-label">
+                <span class="form-required">*</span>品牌Logo
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="hidden" name="logo" id="js-logo" value="{$brand.logo}">
+                <a href="javascript:uploadOneImage('图片上传','#js-logo');">
+                    <empty name="brand.logo">
+                        <img src="__TMPL__/public/assets/images/default-thumbnail.png" id="js-logo-preview"
+                             width="135" style="cursor: hand"/>
+                        <else/>
+                        <img src="{:cmf_get_image_url($brand.logo)}" id="js-logo-preview"
+                             width="135" style="cursor: hand"/>
+                    </empty>
+                </a>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-link" class="col-sm-2 control-label">
+                网址
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-link" name="url" value="{$brand.url|default=''}" }>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-text" class="col-sm-2 control-label">
+                简介
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <textarea class="form-control" id="input-text" name="description">{$brand.description|default=''}</textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-primary js-ajax-submit">保存</button>
+                <a class="btn btn-default" href="javascript:history.back(-1);">{:lang('BACK')}</a>
+            </div>
+        </div>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,648 @@
+<include file="public@header"/>
+<style>
+    .input-no-border {
+        border: none;
+        padding: 0;
+        font-size: 14px;
+        background: transparent;
+    }
+
+    .checkbox-label-attr {
+        width: 200px;
+        margin-left: 0 !important;
+        margin-right: 10px;
+    }
+
+    .spec-row {
+        display: none;
+    }
+
+    .checkbox-label-attr-color {
+        padding-top: 0 !important;
+    }
+
+    .checkbox-label-attr-color .checkbox-label-color-attr-option {
+        top: 50%;
+        margin-top: -6px;
+    }
+
+    .checkbox-label-attr-color a {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .checkbox-label-attr-color .attr-name {
+        display: inline-block;
+        vertical-align: middle;
+    }
+</style>
+<script type="text/html" id="color-label-tpl">
+    <label class="checkbox-inline checkbox-label-attr checkbox-label-attr-color">
+        <input type="checkbox"
+               data-attr-id="1"
+               data-attr-index=""
+               class="checkbox-label-color-attr-option checkbox-label-attr-option"
+               data-name=""
+               data-attr-value-id=""
+               value=""
+        >
+        <input type="hidden"
+               class="checkbox-label-color-attr-id-input"
+        />
+        <span class="attr-name">
+            <input placeholder="请填写颜色"
+                   class="form-control checkbox-label-color-attr-value-input"
+                   style="width: 110px;font-size: 12px;padding: 2px;"/>
+        </span>
+        <input type="hidden"
+               value=""
+               class="checkbox-label-color-attr-thumbnail-input"
+        >
+        <a href="javascript:uploadOneImage('图片上传','#checkbox-attr-1-1-input');"
+           class="checkbox-label-color-attr-thumbnail-upload">
+            <img src="__TMPL__/public/assets/images/default-thumbnail.png"
+                 width="34" style="cursor: pointer"
+                 class="checkbox-label-color-attr-thumbnail-preview"/>
+        </a>
+    </label>
+</script>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AdminItem/index')}">商品列表</a></li>
+        <li><a href="{:url('AdminItem/add')}">添加商品</a></li>
+        <li class="active"><a>编辑商品</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('AdminItem/editPost')}">
+        <div class="form-group">
+            <label for="input-category_id" class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝分类
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="hidden" class="form-control" value="{$category.id}" name="category_id"
+                       id="input-category_id">
+                <p class="form-control-static">{$category.name}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-title" class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝标题
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-title" name="title" value="{$item.title}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-sub_title" class="col-sm-2 control-label">宝贝卖点</label>
+            <div class="col-md-6 col-sm-10">
+                <input type="text" class="form-control" id="input-sub_title" name="sub_title" value="{$item.sub_title}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-brand_id" class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝品牌
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <select class="form-control" id="input-brand_id" name="brand_id">
+                    <foreach name="brands" item="vo">
+                        <option value="{$vo.id}" {$vo.id==$item.brand_id?'selected':''}>{$vo.name}</option>
+                    </foreach>
+                </select>
+            </div>
+        </div>
+        <notempty name="category.attrs">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">宝贝属性</label>
+                <div class="col-md-6 col-sm-10">
+                    <div class="form-horizontal" style="background: #f9f9f9;padding-top: 15px;">
+                        <foreach name="category.attrs" item="attr">
+                            <php>$attr_name_prefix=$attr['attr']['searchable']?'searchable':'normal';</php>
+                            <div class="col-md-6">
+                                <div class="form-group ">
+                                    <label class="col-sm-4 control-label">{$attr.attr.name}</label>
+                                    <div class="col-md-8 col-sm-8">
+                                        <div>
+                                            <switch name="attr.attr.input_type">
+                                                <case value="1">
+                                                    <select class="form-control"
+                                                            name="attrs[{$attr_name_prefix}][{$attr.attr_id}]">
+                                                        <foreach name="attr.attr.options_arr" item="attr_option">
+                                                            <php>
+                                                                $attr_option_selected=(!empty($item['more']['attrs']['attr_'.$attr['attr_id']]['attr_value_id'])
+                                                                &&
+                                                                $item['more']['attrs']['attr_'.$attr['attr_id']]['attr_value_id']==$attr_option['attr_value_id'])?'selected':'';
+                                                            </php>
+                                                            <option value="{$attr_option.attr_value_id}"
+                                                                    {$attr_option_selected}>
+                                                                {$attr_option.value}
+                                                            </option>
+                                                        </foreach>
+                                                    </select>
+                                                </case>
+                                                <case value="2">
+                                                    <input class="form-control" name="attrs[text][{$attr.attr_id}]"
+                                                           value="{$item['more']['attrs']['attr_'.$attr['attr_id']]['value']|default=''}">
+                                                </case>
+                                                <case value="3">
+                                                <textarea class="form-control"
+                                                          name="attrs[text][{$attr.attr_id}]">{$item['more']['attrs']['attr_'.$attr['attr_id']]['value']|default=''}</textarea>
+                                                </case>
+                                            </switch>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </foreach>
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+            </div>
+        </notempty>
+        <div class="form-group">
+            <label for="js-thumbnail" class="col-sm-2 control-label">
+                <span class="form-required">*</span>宝贝图片
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <input type="hidden" name="thumbnail" id="js-thumbnail" value="{$item.thumbnail}">
+                <a href="javascript:uploadOneImage('图片上传','#js-thumbnail');">
+                    <empty name="item.thumbnail">
+                        <img src="__TMPL__/public/assets/images/default-thumbnail.png" id="js-thumbnail-preview"
+                             width="135" style="cursor: hand"/>
+                        <else/>
+                        <img src="{:cmf_get_image_url($item.thumbnail)}" id="js-thumbnail-preview"
+                             width="135" style="cursor: hand"/>
+                    </empty>
+                </a>
+            </div>
+        </div>
+        <notempty name="category.spec_attrs">
+
+
+        <div class="form-group">
+            <label class="col-sm-2 control-label">宝贝规格</label>
+            <div class="col-md-8 col-sm-10">
+                <div class="form-horizontal" style="background: #f9f9f9;padding: 15px 15px 0 15px;">
+                    <foreach name="category.spec_attrs" item="attr">
+                        <eq name="attr.attr_id" value="1">
+                            <div class="col-md-12">
+                                <div class="form-group form-group-attr" data-name="{$attr.name}">
+                                    <label class="">
+                                        <empty name="item.more.color_attr_name">
+                                            <input name="more[color_attr_name]" value="{$attr.name}"
+                                                   class="form-control">
+                                            <else/>
+                                            <input name="more[color_attr_name]" value="{$item.more.color_attr_name}"
+                                                   class="form-control">
+                                        </empty>
+
+                                    </label>
+                                    <div>
+                                        <notempty name="item.more.colors">
+                                            <foreach name="item.more.colors" item="color" key="color_id">
+                                                <label class="checkbox-inline checkbox-label-attr checkbox-label-attr-color">
+                                                    <input type="checkbox"
+                                                           data-attr-id="1"
+                                                           class="checkbox-label-color-attr-option checkbox-label-attr-option"
+                                                           data-name="{$color.value}"
+                                                           data-name-key="{:base64_encode('红色')}"
+                                                           data-attr-value-id="{$color.attr_value_id}"
+                                                           value=""
+                                                           id="checkbox-attr-1-{$color.attr_value_id}"
+                                                    >
+                                                    <input type="hidden"
+                                                           class="checkbox-label-color-attr-id-input"
+                                                           value="{$color.attr_value_id}"
+                                                           name="more[colors][color_{$color.attr_value_id}][attr_value_id]"
+                                                    />
+                                                    <span class="attr-name">
+                                                        <input placeholder="请填写颜色"
+                                                               class="form-control checkbox-label-color-attr-value-input"
+                                                               style="width: 110px;font-size: 12px;padding: 2px;"
+                                                               value="{$color.value}"
+                                                               name="more[colors][color_{$color.attr_value_id}][value]"
+                                                        />
+                                                    </span>
+                                                    <input type="hidden"
+                                                           value="{$color.thumbnail}"
+                                                           name="more[colors][color_{$color.attr_value_id}][thumbnail]"
+                                                           class="checkbox-label-color-attr-thumbnail-input"
+                                                           id="checkbox-attr-1-{$color.attr_value_id}-thumbnail"
+                                                    >
+                                                    <a href="javascript:uploadOneImage('图片上传','#checkbox-attr-1-{$color.attr_value_id}-thumbnail');">
+                                                        <empty name="color.thumbnail">
+                                                            <img src="__TMPL__/public/assets/images/default-thumbnail.png"
+                                                                 id="checkbox-attr-1-{$color.attr_value_id}-thumbnail-preview"
+                                                                 width="34" style="cursor: pointer"/>
+                                                            <else/>
+                                                            <img src="{:cmf_get_image_url($color.thumbnail)}"
+                                                                 id="checkbox-attr-1-{$color.attr_value_id}-thumbnail-preview"
+                                                                 width="34" style="cursor: pointer"/>
+                                                        </empty>
+                                                    </a>
+                                                </label>
+                                            </foreach>
+                                        </notempty>
+
+                                        <label class="checkbox-inline checkbox-label-attr checkbox-label-attr-color">
+                                            <input type="checkbox"
+                                                   data-attr-id="1"
+                                                   data-attr-index="1"
+                                                   class="checkbox-label-color-attr-option checkbox-label-attr-option"
+                                                   data-name=""
+                                                   data-name-key="{:base64_encode('红色')}"
+                                                   data-attr-value-id=""
+                                                   value=""
+                                            >
+                                            <input type="hidden"
+                                                   class="checkbox-label-color-attr-id-input"
+                                            />
+                                            <span class="attr-name">
+                                                <input placeholder="请填写颜色"
+                                                       class="form-control checkbox-label-color-attr-value-input"
+                                                       style="width: 110px;font-size: 12px;padding: 2px;"/>
+                                            </span>
+                                            <input type="hidden"
+                                                   value=""
+                                                   class="checkbox-label-color-attr-thumbnail-input"
+                                            >
+                                            <a href="javascript:uploadOneImage('图片上传','#checkbox-attr-1-1-input');"
+                                               class="checkbox-label-color-attr-thumbnail-upload">
+                                                <img src="__TMPL__/public/assets/images/default-thumbnail.png"
+                                                     id="checkbox-attr-1-1-input-preview"
+                                                     width="34" style="cursor: pointer"
+                                                     class="checkbox-label-color-attr-thumbnail-preview"/>
+                                            </a>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </eq>
+                        <neq name="attr.attr_id" value="1">
+                            <div class="col-md-12">
+                                <div class="form-group form-group-attr" data-name="{$attr.attr.name}">
+                                    <label class="">{$attr.attr.name}</label>
+                                    <div>
+                                        <foreach name="attr.attr.options_arr" item="attr_option">
+                                            <switch name="attr.attr_id">
+                                                <case value="1">
+
+                                                </case>
+                                                <default>
+                                                    <label class="checkbox-inline checkbox-label-attr">
+                                                        <input type="checkbox"
+                                                               data-attr-id="{$attr.attr.id}"
+                                                               data-attr-index="{$attr.attr_index}"
+                                                               class="checkbox-label-attr-option"
+                                                               data-name="{$attr_option.value}"
+                                                               data-name-key="{:base64_encode($attr_option.value)}"
+                                                               data-attr-value-id="{$attr_option.attr_value_id}"
+                                                               value=""
+                                                               id="checkbox-attr-{$attr.attr.id}-{$attr_option.attr_value_id}"
+                                                        >
+                                                        {$attr_option.value}
+                                                    </label>
+                                                </default>
+                                            </switch>
+                                        </foreach>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </neq>
+                    </foreach>
+                    <div class="col-md-12 spec-row">
+                        <div class="form-group">
+                            <label class="">宝贝销售规格</label>
+                            <div>
+                                <table class="table table-bordered">
+                                    <thead>
+                                    <tr class="spec-table-thead-tr">
+                                        <th>
+                                            <span class="form-required">*</span>价格(元)
+                                        </th>
+                                        <th>
+                                            <span class="form-required">*</span>数量(件)
+                                        </th>
+                                        <th>
+                                            商家编码
+                                        </th>
+                                        <th>
+                                            商品条形码
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                    <tbody class="spec-table-tbody">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
+        </div>
+        </notempty>
+        <div class="form-group">
+            <label for="js-thumbnail" class="col-sm-2 control-label">价格及总库存</label>
+            <div class="col-md-6 col-sm-10">
+                <table class="table table-bordered">
+                    <tr>
+                        <th><span class="form-required">*</span>价格</th>
+                        <th><span class="form-required">*</span>原价</th>
+                        <th><span class="form-required">*</span>总数量（件）</th>
+                        <th>商家编码</th>
+                        <th>商品条形码</th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="price" value="{$item.price}">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="original_price"
+                                   value="{$item.original_price}">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="quantity"
+                                   value="{$item.quantity|default=0}">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="item_sn" value="{$item.item_sn}">
+                        </td>
+                        <td>
+                            <input class="form-control input-no-border input-sm" name="barcode" value="{$item.barcode}">
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2 control-label">
+                <span class="form-required">*</span>描述
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <script type="text/plain" id="content" name="content">{$item.content}</script>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <input type="hidden" name="id" value="{$item.id}"/>
+                <button type="submit" class="btn btn-primary js-ajax-submit">{:lang('SAVE')}</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script type="text/javascript">
+    //编辑器路径定义
+    var editorURL = GV.WEB_ROOT;
+</script>
+<script type="text/javascript" src="__STATIC__/js/ueditor/ueditor.config.js"></script>
+<script type="text/javascript" src="__STATIC__/js/ueditor/ueditor.all.min.js"></script>
+<php>
+    $spec_input_values = [];
+    foreach ($skus as $specKey => $sku) {
+    $spec_input_values["specs[$specKey][price]"] = $sku['price'];
+    $spec_input_values["specs[$specKey][quantity]"] = $sku['quantity'];
+    $spec_input_values["specs[$specKey][sn]"] = $sku['sn'];
+    $spec_input_values["specs[$specKey][barcode]"] = $sku['barcode'];
+    }
+</php>
+<script type="text/javascript">
+    var specInputValues = JSON.parse('{:json_encode($spec_input_values)}');
+    var skuKeys         = JSON.parse('{:json_encode(array_keys($skus))}');
+    var colorAttrValues = JSON.parse('{:json_encode($color_attr_values)}');
+    var itemColorNames  = JSON.parse('{:json_encode($item_color_names)}');
+    $(function () {
+
+        editorcontent = new baidu.editor.ui.Editor();
+        editorcontent.render('content');
+        try {
+            editorcontent.sync();
+        } catch (err) {
+        }
+
+        var $formGroupAttrs = $('.form-group-attr');
+        var $specRow        = $('.spec-row');
+
+        $('.spec-table-tbody').on('change', '.spec-input', function () {
+            var $this            = $(this);
+            var key              = $this.attr('name');
+            specInputValues[key] = $this.val();
+        });
+
+        $.each(skuKeys, function (i, specKey) {
+            console.log(specKey);
+            $.each(specKey.split(';'), function (i, key) {
+                console.log(key);
+                console.log($('#checkbox-attr-' + key.replace(':', '-')).length);
+                $('#checkbox-attr-' + key.replace(':', '-')).prop('checked', true);
+            });
+        });
+
+        specGenerate();
+
+
+        $(".checkbox-label-attr-option").not('.checkbox-label-color-attr-option').change(function (e) {
+            var $this = $(this);
+            e.stopPropagation();
+
+            specGenerate();
+        });
+
+        $('body').on('change', ".checkbox-label-color-attr-option", function (e) {
+            var $this = $(this);
+            e.stopPropagation();
+            var name         = $this.data('name');
+            var $parentLabel = $this.parents('.checkbox-label-attr');
+            if (!name) {
+                $('.checkbox-label-color-attr-value-input', $parentLabel).focus();
+                $this.prop('checked', false);
+                return false;
+            }
+
+
+            if (!$this.data('attr-value-id')) {
+                var attrValueId = '';
+                var name        = $this.data('name');
+                if (itemColorNames[name]) {
+                    attrValueId = itemColorNames[name];
+                } else if (colorAttrValues[name]) {
+                    attrValueId = colorAttrValues[name];
+                } else {
+                    attrValueId = 'custom' + new Date().getTime();
+                }
+
+                changeColorAttr($parentLabel, attrValueId);
+
+            }
+
+            var $parentFormGroup = $this.parents('.form-group-attr');
+
+            if ($this.data('name')) {
+
+                specGenerate();
+            }
+
+            if (!$this.is(':checked') && $parentFormGroup.find('.checkbox-label-attr').length > 1) {
+                if (!$('.checkbox-label-color-attr-value-input', $parentLabel).val()) {
+                    $this.parents('.checkbox-label-attr').remove();
+                }
+
+            }
+
+            var $lastLabel = $parentFormGroup.find('.checkbox-label-attr:last');
+            if ($lastLabel.find('.checkbox-label-color-attr-option').is(':checked')) {
+                $lastLabel.after($('#color-label-tpl').html());
+            }
+
+        });
+
+        $('body').on('change', '.checkbox-label-color-attr-value-input', function () {
+            var $this = $(this);
+            var name  = $this.val();
+            if (name) {
+                var $parentLabel = $this.parents('.checkbox-label-attr');
+                var $checkBox    = $parentLabel.find('.checkbox-label-color-attr-option');
+                $checkBox.data('name', name);
+                if (itemColorNames[name]) {
+                    changeColorAttr($parentLabel, itemColorNames[name]);
+                } else if (colorAttrValues[name]) {
+                    changeColorAttr($parentLabel, colorAttrValues[name]);
+                } else {
+                    changeColorAttr($parentLabel, 'custom' + new Date().getTime());
+                }
+
+                specGenerate();
+            }
+        });
+
+        function changeColorAttr($parentLabel, attrValueId) {
+            var $checkbox = $('.checkbox-label-color-attr-option', $parentLabel);
+            $checkbox.data('attr-value-id', attrValueId);
+            $('.checkbox-label-color-attr-value-input', $parentLabel)
+                .attr('name', 'more[colors][color_' + attrValueId + '][value]');
+            $('.checkbox-label-color-attr-id-input', $parentLabel)
+                .attr('name', 'more[colors][color_' + attrValueId + '][attr_value_id]').val(attrValueId);
+            $('.checkbox-label-color-attr-thumbnail-input', $parentLabel)
+                .attr('name', 'more[colors][color_' + attrValueId + '][thumbnail]')
+                .attr('id', 'checkbox-attr-1-' + attrValueId + '-thumbnail');
+            $('.checkbox-label-color-attr-thumbnail-upload', $parentLabel)
+                .attr('href', 'javascript:uploadOneImage(\'图片上传\',\'#checkbox-attr-1-' + attrValueId + '-thumbnail\');');
+            $('.checkbox-label-color-attr-thumbnail-preview', $parentLabel)
+                .attr('id', 'checkbox-attr-1-' + attrValueId + '-thumbnail-preview');
+        }
+
+        function specGenerate() {
+            var hasNoChoiceFormGroup = false;
+
+            $formGroupAttrs.each(function () {
+                if ($(this).find('.checkbox-label-attr-option:checked').length == 0) {
+                    hasNoChoiceFormGroup = true;
+                    return false;
+                }
+            });
+
+            $('.spec-table-thead-tr .spec-head-th').remove();
+            $('.spec-table-tbody').html("");
+            $specRow.hide();
+            if (hasNoChoiceFormGroup) return;
+            var headTr         = "";
+            var groupCheckAttr = [];
+            var totalSpecCount = 1;
+            $formGroupAttrs.each(function (i, item) {
+                var $this = $(this);
+
+                var name = $this.data('name');
+
+                headTr += '<th class="spec-head-th"><span class="form-required">*</span>' + name + "</th>";
+                var $checkedCheckboxes        = $this.find('.checkbox-label-attr-option:checked');
+                var checkedAttrCheckboxLength = $checkedCheckboxes.length;
+                totalSpecCount *= checkedAttrCheckboxLength;
+                groupCheckAttr.push({
+                    checkedLength: checkedAttrCheckboxLength,
+                    formGroup: $this
+                });
+            });
+
+            $('.spec-table-thead-tr').prepend(headTr);
+
+            $.each(groupCheckAttr, function (i, item) {
+                if (i == 0) {
+                    item['itemCount'] = totalSpecCount / groupCheckAttr[i].checkedLength;
+                } else {
+                    item['itemCount'] = groupCheckAttr[i - 1].itemCount / groupCheckAttr[i].checkedLength;
+                }
+
+                groupCheckAttr[i] = item;
+            });
+
+            var attrRows             = [];
+            var groupCheckAttrLength = groupCheckAttr.length;
+
+            for (var i = 0; i < totalSpecCount; i++) {
+                var html       = "";
+                var rowNameKey = [];
+                $.each(groupCheckAttr, function (ii, item) {
+                    var checkboxIndex, $checkbox;
+
+                    if (i % groupCheckAttr[ii].itemCount === 0 && ii + 1 != groupCheckAttrLength) {
+                        checkboxIndex = (i / groupCheckAttr[ii].itemCount) % groupCheckAttr[ii].checkedLength;
+                        $checkbox     = $('.checkbox-label-attr-option:checked:eq(' + checkboxIndex + ')', groupCheckAttr[ii].formGroup);
+                        html += '<td rowspan="' + groupCheckAttr[ii].itemCount + '">' +
+                            $checkbox.data('name') +
+                            '</td>';
+                    } else {
+                        checkboxIndex = Math.floor(i / groupCheckAttr[ii].itemCount) % groupCheckAttr[ii].checkedLength;
+                        $checkbox     = $('.checkbox-label-attr-option:checked:eq(' + checkboxIndex + ')', groupCheckAttr[ii].formGroup);
+                    }
+
+                    if (ii + 1 == groupCheckAttrLength) {
+                        checkboxIndex = i % groupCheckAttr[ii].checkedLength;
+                        $checkbox     = $('.checkbox-label-attr-option:checked:eq(' + checkboxIndex + ')', groupCheckAttr[ii].formGroup);
+
+                        html += '<td>' +
+                            $checkbox.data('name') +
+                            '</td>';
+                    }
+                    rowNameKey.push($checkbox.data('attr-id') + ':' + $checkbox.data('attr-value-id'));
+                });
+
+                rowNameKey = rowNameKey.join(';');
+
+                var priceName     = 'specs[' + rowNameKey + '][price]';
+                var priceValue    = specInputValues[priceName] ? specInputValues[priceName] : '';
+                var quantityName  = 'specs[' + rowNameKey + '][quantity]';
+                var quantityValue = specInputValues[quantityName] ? specInputValues[quantityName] : '';
+                var snName        = 'specs[' + rowNameKey + '][sn]';
+                var snValue       = specInputValues[snName] ? specInputValues[snName] : '';
+                var barcodeName   = 'specs[' + rowNameKey + '][barcode]';
+                var barcodeValue  = specInputValues[barcodeName] ? specInputValues[barcodeName] : '';
+
+
+                html += '<td><input class="form-control spec-input input-no-border input-sm" type="number" name="' + priceName + '" value="' + priceValue + '">' + '</td>' +
+                    '<td><input class="form-control spec-input input-no-border input-sm" type="number" name="' + quantityName + '" value="' + quantityValue + '">' + '</td>' +
+                    '<td><input class="form-control spec-input input-no-border input-sm" name="' + snName + '" value="' + snValue + '">' + '</td>' +
+                    '<td><input class="form-control spec-input input-no-border input-sm" name="' + barcodeName + '" value="' + barcodeValue + '">' + '</td>';
+
+
+                attrRows.push(html);
+            }
+
+            var specTrs = "";
+
+            $.each(attrRows, function (i, html) {
+                specTrs += '<tr>' + html + '</tr>';
+            });
+
+            $('.spec-table-tbody').html(specTrs);
+
+            $specRow.show();
+        }
+
+    });
+</script>
+</body>
+</html>

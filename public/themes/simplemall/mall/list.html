@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{$site_info.site_name|default=''}</title>
+    <meta name="keywords" content="{$site_info.site_seo_keywords|default=''}"/>
+    <meta name="description" content="{$site_info.site_seo_description|default=''}">
+    <include file="public@head"/>
+    <style>
+        .item-image a, .item-image img {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+
+        .tc-gridbox .header {
+            position: relative;
+        }
+
+        .tc-gridbox img {
+            position: absolute;
+            top: 0;
+            height: 100%;
+        }
+
+        /*.tc-gridbox-container {
+            width: 20%;
+        }*/
+
+        .tc-gridbox-container a {
+            text-decoration: none;
+        }
+
+        .tc-gridbox .price-detail {
+            color: #d4282d;
+            line-height: 24px;
+            font-size: 18px;
+        }
+
+        .tc-gridbox .item-name{
+            line-height: 24px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px 0 0 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tc-gridbox .body{
+            margin-bottom: 0;
+        }
+
+    </style>
+</head>
+<body class="body-white">
+<include file="public@nav"/>
+<div class="container masonary-container  tc-main">
+    <mall:items page="10" categoryIds="$category.id">
+        <div class="tc-gridbox-container text-center">
+            <a href="{:cmf_url('mall/Item/index',array('id'=>$vo['id']))}">
+                <div class="tc-gridbox">
+                    <div class="header">
+                        <div class="item-image">
+
+                        </div>
+                        <notempty name="vo.thumbnail">
+                            <img src="{:cmf_get_image_url($vo.thumbnail,'width400')}"
+                                 class="img-responsive" alt="">
+                        </notempty>
+                    </div>
+                    <div class="body">
+                        <h4 class="item-name">
+                            {$vo.title}
+                        </h4>
+                        <div class="price-detail">￥{$vo.price}</div>
+
+                    </div>
+                </div>
+            </a>
+        </div>
+    </mall:items>
+    <ul class="pagination">
+    </ul>
+</div>
+<include file="public@footer"/>
+
+<!-- JavaScript -->
+<include file="public@scripts"/>
+<script src="__TMPL__/public/assets/js/imagesloaded.pkgd.min.js"></script>
+<script src="__TMPL__/public/assets/js/masonry.pkgd.min.js"></script>
+<script>
+</script>
+</body>
+</html>

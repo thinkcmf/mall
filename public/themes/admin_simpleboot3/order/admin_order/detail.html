@@ -1,0 +1,249 @@
+<include file="order@public/status"/>
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+    <table class="table" style="margin-bottom: 0;">
+        <tr>
+            <th width="110">
+                订单ID:
+            </th>
+            <td>{$order.id}</td>
+            <th width="90">
+                订单编号:
+            </th>
+            <td>{$order.order_sn}</td>
+        </tr>
+        <tr>
+            <th>
+                下单时间:
+            </th>
+            <td>{:date('Y-m-d H:i:s')}</td>
+            <th>
+                发票抬头:
+            </th>
+            <td>
+                <notempty name="order.invoice_title">
+                    {$order.invoice_title}
+                    <eq name="order.print_invoice_type" value="1">
+                        (已设置手动开发票)
+                    </eq>
+                    <!--
+                    <if condition="$order.invoice_status eq 0">
+                        <a class="btn btn-sm btn-primary js-ajax-dialog-btn" data-msg="您确定发票已打印了吗？"
+                           data-href="{:url('order/AdminOrder/invoicePrinted',array('id'=>$order.id))}">确认发票已打印</a>
+                        <else/>
+                        已打印
+                    </if>
+                    -->
+                    <a class="btn btn-sm btn-primary js-ajax-dialog-btn" data-msg="您确定需要手动开发票吗？"
+                       data-href="{:url('order/AdminOrder/needManualInvoice',array('id'=>$order.id))}">需要手动开发票？</a>
+                    <else/>
+                    用户不需要发票
+                </notempty>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                 用户确认状态:
+            </th>
+            <td colspan="3">
+                {$user_confirmed[$order['user_confirmed']]}
+                <a href="{:url('AdminOrder/sendConfirmEmail')}?order_id={$order.id}" class="js-ajax-dialog-btn btn btn-sm btn-success"
+                   data-msg="您确定发送确认邮件吗？" data-toggle="tooltip" title="发送确认邮件"><i class="fa fa-envelope-o"></i>&nbsp;邮件确认</a>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                订单状态:
+            </th>
+            <td colspan="3">
+                {$pay_status[$order['pay_status']]},{$shipping_status[$order['shipping_status']]},{$order_status[$order['order_status']]}
+                <neq name="order.pay_status" value="1">
+                    <a class="btn btn-sm btn-success js-ajax-dialog-btn" data-msg="您确定用户已经付款了吗？"
+                       data-href="{:url('order/AdminOrder/paid',array('id'=>$order.id))}">确认支付成功</a>
+                </neq>
+                <!--
+                <if condition="$order.order_status neq 0">
+                    <a class="btn btn-sm btn-danger js-ajax-dialog-btn" data-msg="您确定设置此订单为已完成吗？"
+                       data-href="{:url('order/AdminOrder/complete',array('id'=>$order.id))}">确认订单已完成</a>
+                </if>
+                -->
+            </td>
+        </tr>
+        <tr>
+            <th>
+                物流:
+            </th>
+            <td colspan="3">{$order.shipment_name}</td>
+        </tr>
+        <tr>
+            <th>
+                收件人:
+            </th>
+            <td>{$order.consignee}</td>
+            <th>
+                手机号:
+            </th>
+            <td>{$order.mobile} {$order.mobile2}</td>
+        </tr>
+        <tr>
+            <th>
+                收件地址:
+            </th>
+            <td colspan="3">
+                {$areas[$order['province']]}{$areas[$order['city']]|default=''}{$areas[$order['district']]|default=''}{$order.address}
+            </td>
+        </tr>
+        <tr>
+            <th>
+                用户备注:
+            </th>
+            <td colspan="3">
+                {$order.user_note}
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">
+                管理员备注:
+            </th>
+            <td colspan="3">
+                <div id="js-admin-note-wrap" style="white-space: pre;height: auto;min-height: 70px;" class="form-control">{$order.admin_note}</div>
+                <textarea class="form-control" id="js-admin-note" style="display: none;">{$order.admin_note}</textarea>
+            </td>
+        </tr>
+    </table>
+    <table class="table table-bordered">
+        <tr>
+            <th colspan="5" style="text-align: center;">订购商品</th>
+        </tr>
+        <tr>
+            <th>商品</th>
+            <th>价格</th>
+            <th>折扣价</th>
+            <th>数量</th>
+            <th>金额</th>
+        </tr>
+        <foreach name="order_items" item="vo">
+            <tr>
+                <td>{$vo.goods_name}</td>
+                <td>{$vo.goods_price}</td>
+                <td>
+                    <eq name="order.user_confirmed" value="1">
+                        {$vo.goods_price}
+                        <else/>
+                        <input class="form-control input-sm text-center input-goods-price"
+                               value="{$vo.goods_price}"
+                               data-id="{$vo.id}"
+                               style="width: 80px;">
+                    </eq>
+                </td>
+                <td>{$vo.goods_quantity}</td>
+                <td>
+                    <span class="input-goods-amount-{$vo.id}">
+                        {:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}
+                    </span>
+                </td>
+            </tr>
+        </foreach>
+        <tr>
+            <td colspan="3"></td>
+            <td align="right">合计：</td>
+            <td width="110"><em>￥<b class="total-amount-text">{:number_format($total_amount,2)}</b></em></td>
+        </tr>
+    </table>
+    <!--
+    <div class="text-center">
+        <a href="javascript:;" onclick="openSplitOrderDialog(this);" class="btn btn-primary">分拆订单</a>
+    </div>
+    -->
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    $(function () {
+        $('.input-goods-price').on('change', function () {
+
+            var $this   = $(this);
+            var id      = $this.data('id');
+            var orderId = $this.data('order-id');
+            var price   = $this.val();
+            if ($this.data('loading')) {
+                return;
+            }
+            $this.data('loading', true);
+
+            $.ajax({
+                url: "{:url('order/AdminOrder/changePrice')}",
+                type: 'POST',
+                dataType: 'JSON',
+                data: {order_item_id: id, price: price, order_id: orderId},
+                success: function (data) {
+                    if (data.code == 1) {
+                        $('.input-goods-amount-' + id).text(data.data.goods_amount);
+                        $('.total-amount-text').text(data.data.total_amount);
+                    }
+
+                    if (data.code == 0) {
+                    }
+                },
+                error: function () {
+                },
+                complete: function () {
+                    $this.data('loading', false);
+                }
+            });
+
+        });
+
+        $('#js-admin-note-wrap').click(function () {
+            var $this=$(this);
+            var height=$this.height();
+            $this.hide();
+            $('#js-admin-note').height(height).show().focus();
+        });
+
+        $('#js-admin-note').change(function () {
+            var $this=$(this);
+            var adminNote = $this.val();
+            $this.hide();
+            $('#js-admin-note-wrap').text(adminNote).show();
+            $.ajax({
+                url: "{:url('order/adminOrder/adminNote')}",
+                type: "post",
+                dataType: 'json',
+                data: {id: '{$order.id}', admin_note: adminNote},
+                success: function (data) {
+                    if (data.status == 0) {
+                        alert(data.info);
+                    }
+                },
+                error: function () {
+
+                },
+                complete: function () {
+
+                }
+
+            });
+        });
+    });
+
+    function openSplitOrderDialog(obj) {
+        var $obj  = $(obj);
+        var id    = $obj.data('id');
+        var title = $obj.data('title');
+        parent.openIframeLayer("{:url('AdminOrder/splitOrder')}?id={$order.id}", '分拆订单', {
+            area: ['95%', '90%'],
+//            yes: function (index, layero) {
+//                console.log(layero);
+//                var iframeWin = parent.window[layero.find('iframe')[0]['name']];
+//                parent.layer.close(index); //如果设定了yes回调，需进行手工关闭
+//            },
+            end: function () {
+                location.reload(true);
+            }
+        });
+    }
+</script>
+</body>
+</html>

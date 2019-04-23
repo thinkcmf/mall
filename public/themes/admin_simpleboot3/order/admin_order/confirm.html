@@ -1,0 +1,185 @@
+<include file="public@header"/>
+</head>
+<body>
+
+<div class="wrap">
+    <div>
+        <form class="form js-ajax-form" action="{:url('order/AdminOrder/submit')}" method="post">
+
+                <h5><b>收货人信息<a href="javascript:;" id="open-useraddress-dialog">[使用新地址]</a></b></h5>
+
+            <table class="table">
+                <tbody>
+                <foreach name="user_addresses" item="vo">
+                    <tr>
+                        <td>
+                            <notempty name="vo.is_default">
+                                <input type="radio" checked="checked" name="user_address_id" value="{$vo.id}">
+                                <else/>
+                                <input type="radio" name="user_address_id" value="{$vo.id}">
+                            </notempty>
+                        </td>
+                        <td>{$vo.alias}</td>
+                        <td>收货人:{$vo.consignee}</td>
+                        <td>
+                            {$areas[$vo['province']]}{$areas[$vo['city']]|default=''}{$areas[$vo['district']]|default=''}
+                            {$vo.address}
+                        </td>
+                        <td>电话：{$vo.mobile} {$vo.mobile2}</td>
+                        <td>
+                            <notempty name="vo.is_default">
+                                默认地址
+                                <else/>
+                                <a class="js-ajax-dialog-btn"
+                                   href="{:url('AdminAddress/setDefault',array('id'=>$vo['id'],'user_id'=>$user_id))}"
+                                   data-msg="您确定将这个地址设为默认地址吗？">默认地址</a>
+                            </notempty>
+                            <a class="js-open-edit-dialog-btn"
+                               href="{:url('AdminAddress/editDialog',array('id'=>$vo['id'],'user_id'=>$user_id))}">编辑</a>
+                            <a class="js-ajax-delete" data-msg="您确认删除吗？"
+                               href="{:url('AdminAddress/delete',array('id'=>$vo['id'],'user_id'=>$user_id))}">删除</a>
+                        </td>
+                    </tr>
+                </foreach>
+                </tbody>
+            </table>
+            <hr>
+            <h5><b>
+                发票信息
+            </b></h5>
+            <div class="col-md-12" style="margin-bottom: 10px;">
+                <input type="hidden" name="invoice_id" id="js-invoice-id" value="{$invoice_info.id|default=''}"/>
+                <empty name="invoice_info">
+                    <span class="js-invoice-title">不开发票</span>
+                    <else/>
+                    <span class="js-invoice-title">
+                        <eq name="invoice_info.type" value="2">
+                            普通发票（纸质） {$invoice_info.title}
+                        </eq>
+                        <eq name="invoice_info.type" value="3">
+                            增值税专用发票（纸质） {$invoice_info.title}
+                        </eq>
+                    </span>
+                </empty>
+                <a href="javascript:;" id="js-edit-invoice-dialog">修改</a>
+            </div>
+            <div class="clearfix"></div>
+        <hr>
+            <div>
+                <h5><b>
+                    物流信息
+                </b></h5>
+                 <input type="radio" checked="checked" name="shipment_id" value="1">
+                                第三方物流
+
+            </div>
+        <hr>
+            <h5><b>
+                商品清单
+            </b></h5>
+            <table class="table table-bordered table-centered" style="margin-bottom: 5px;">
+                <thead>
+                <tr>
+                    <th>货号</th>
+                    <th>商品</th>
+                    <th>包装规格</th>
+                    <th>纯度</th>
+                    <th>价格</th>
+                    <th>数量</th>
+                    <th>小计</th>
+                </tr>
+                </thead>
+                <tbody>
+                <foreach name="goods" item="vo">
+                    <tr>
+                        <td>{货号}</td>
+                        <td>{$vo.goods_name}</td>
+                        <td>{$vo.goods_spec}</td>
+                        <td>{纯度}</td>
+                        <td>{$vo.goods_price}</td>
+                        <td>{$vo.goods_quantity}</td>
+                        <td>{:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}</td>
+                    </tr>
+                </foreach>
+                <!-- <tr>
+                    <td colspan="2"></td>
+                    <td align="right">运费：</td>
+                    <td width="110">￥0.00</td>
+                </tr> -->
+                <tr>
+                    <td colspan="5"></td>
+                    <td align="right">合计：</td>
+                    <td width="110"><em>￥<b class="total-amount-text">{:number_format($total_amount,2)}</b></em></td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="text-right">
+                <em></em>
+            </div>
+            <div class="text-center">
+                <input type="hidden" name="user_id" value="{$user_id}">
+                <input type="hidden" name="order_draft_id" value="{$order_draft_id}">
+                <a class="btn btn-primary" href="{:url('AdminOrder/add')}?id={$order_draft_id}">上一步</a>
+                <button class="btn btn-danger js-ajax-submit" data-wait="3000">提交订单</button>
+            </div>
+            <div class="clearfix"></div>
+        </form>
+    </div>
+
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    Wind.css('artDialog');
+    Wind.use("artDialog", "iframeTools", function () {
+        $('#open-useraddress-dialog').on('click', function () {
+            openIframeLayer("{:url('AdminAddress/addDialog')}?user_id={$user_id}", '使用新地址', {
+                area: ['700px', '90%'],
+                btn: ['确定', '取消'],
+                yes: function (index, layero) {
+                    console.log(layero);
+                    var iframeWin = window[layero.find('iframe')[0]['name']];
+                    iframeWin.submit();
+                    //layer.close(index); //如果设定了yes回调，需进行手工关闭
+                }
+            });
+            return false;
+        });
+
+        $('.js-open-edit-dialog-btn').on('click', function () {
+            openIframeLayer($(this).attr('href'), '使用新地址', {
+                area: ['700px', '90%'],
+                btn: ['确定', '取消'],
+                yes: function (index, layero) {
+                    console.log(layero);
+                    var iframeWin = window[layero.find('iframe')[0]['name']];
+                    iframeWin.submit();
+                    //layer.close(index); //如果设定了yes回调，需进行手工关闭
+                }
+            });
+            return false;
+        });
+
+        $('#js-edit-invoice-dialog').on('click', function () {
+            openIframeLayer("{:url('user/AdminInvoice/editDialog')}?user_id={$user_id}", '修改发票信息', {
+                area: ['700px', '90%'],
+                btn: ['确定', '取消'],
+                yes: function (index, layero) {
+                    console.log(layero);
+                    var iframeWin = window[layero.find('iframe')[0]['name']];
+                    iframeWin.submit(function () {
+                        alert('dd');
+                    });
+                    //layer.close(index); //如果设定了yes回调，需进行手工关闭
+                }
+            });
+            return false;
+        });
+    });
+
+    function getNewAddress(data) {
+
+        reloadPage(window);
+    }
+</script>
+</body>
+</html>

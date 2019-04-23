@@ -1,0 +1,119 @@
+<include file="order@public/status"/>
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap js-check-wrap">
+    <form method="post" class="js-ajax-form">
+        <table class="table table-hover table-bordered table-list">
+            <thead>
+            <tr>
+                <th>订单号</th>
+                <th>客户</th>
+                <th>单位</th>
+                <!-- <th>收件人</th>
+                <th>物流名称</th> -->
+                <!--<th>支付方式</th>-->
+                <th>下单时间</th>
+                <!--<th>过期时间</th>-->
+                <th>订单总价</th>
+                <th>应收款</th>
+                <th>来源</th>
+                <th>{:lang('STATUS')}</th>
+                <th align="center">{:lang('ACTIONS')}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="orders" item="vo">
+                <tr>
+                    <td>
+                        <a href="javascript:;" onclick="openDetailDialog(this);" data-id="{$vo.id}"
+                           data-toggle="tooltip" title="订单详情">
+                            {$vo.order_sn}
+                        </a>
+                        <notempty name="vo.parent_id">
+                            <!--<span class="label label-warning">子订单</span>-->
+                        </notempty>
+                    </td>
+                    <td>
+                        {$customers[$vo['user_id']]['name']|default=''} <br>
+                        {$customers[$vo['user_id']]['mobile']|default=''} <br>
+                        {$customers[$vo['user_id']]['email']|default=''}
+                    </td>
+                    <td>
+                        {$customers[$vo['user_id']]['company']|default=''}
+                    </td>
+                    <!-- <td>{$vo.consignee}</td>
+                    <td>{$vo.shipment_name}</td> -->
+                    <!--<td>{$vo.payment_name}</td>-->
+                    <td>{:date('Y-m-d H:i',$vo['create_time'])}</td>
+                    <!--
+                    <td>
+                        <empty name="vo.expire_time">
+
+                            <else/>
+                            {:date('Y-m-d H:i',$vo['expire_time'])}
+                        </empty>
+                    </td>
+                    -->
+                    <td>￥{$vo.total_amount}</td>
+                    <td>￥{$vo.order_amount}</td>
+                    <td>
+                        <empty name="vo.source">
+                            官网
+                            <else/>
+                            {$vo.source}
+                        </empty>
+                    </td>
+                    <td>
+                        {$user_confirmed[$vo['user_confirmed']]}<br>
+                        {$pay_status[$vo['pay_status']]}<br>
+                        {$shipping_status[$vo['shipping_status']]}<br>
+                        {$order_status[$vo['order_status']]}
+                    </td>
+                    <td>
+                        <a href="{:url('AdminInvoice/deleteInvoiceOrder')}?order_id={$vo.id}" class="js-ajax-dialog-btn"
+                           data-msg="您确定为订单取消开票吗？" data-toggle="tooltip" title="取消开票">&nbsp;取消开票</a><br>
+                    </td>
+                </tr>
+            </foreach>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th>订单号</th>
+                <th>客户</th>
+                <th>单位</th>
+                <!-- <th>收件人</th>
+                <th>物流名称</th> -->
+                <!--<th>支付方式</th>-->
+                <th>下单时间</th>
+                <!--<th>过期时间</th>-->
+                <th>订单总价</th>
+                <th>应收款</th>
+                <th>来源</th>
+                <th>{:lang('STATUS')}</th>
+                <th align="center">{:lang('ACTIONS')}</th>
+            </tr>
+            </tfoot>
+        </table>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    function openDetailDialog(obj) {
+        var $obj  = $(obj);
+        var id    = $obj.data('id');
+        var title = $obj.data('title');
+        parent.openIframeLayer("{:url('AdminOrder/detail')}?id=" + id, '订单详情', {
+            area: ['95%', '90%'],
+            btn: ['确定', '取消'],
+            yes: function (index, layero) {
+                console.log(layero);
+                var iframeWin = parent.window[layero.find('iframe')[0]['name']];
+                //iframeWin.confirm();
+                parent.layer.close(index); //如果设定了yes回调，需进行手工关闭
+            }
+        });
+    }
+</script>
+</body>
+</html>

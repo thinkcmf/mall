@@ -1,0 +1,62 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li class="active"><a>分类绑定商品品牌列表</a></li>
+    </ul>
+    <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('bindBrand')}">
+        <div class="form-group">
+            <label for="input-name" class="col-sm-2 control-label"><span class="form-required"></span>商品品牌</label>
+            <div class="col-md-6 col-sm-10">
+                <select name="brand" class="form-control" id="">
+                    <volist name="brand" id="brand_vo">
+                    <option value="{$brand_vo.id}">{$brand_vo.name}</option>
+                </volist>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <input type="hidden" name="id" value="{$id}" >
+                <button type="submit" class="btn btn-primary js-ajax-submit">绑定</button>
+            </div>
+        </div>
+    </form>
+    <form method="post" class="js-ajax-form">
+        <div class="table-actions">
+            <button class="btn btn-primary btn-sm js-ajax-submit" type="submit">{:lang('SORT')}</button>
+        </div>
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th>排序</th>
+                <th>ID</th>
+                <th>商品品牌</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <volist name="list" id="vo">
+                <tr>
+                	<td><input name="list_orders[{$vo.id}]" class="input-order" type="text"
+                        value="{$vo.list_order}"></td>
+                    <td>{$vo.id}</td>
+                    <td>{$vo.brand.name}</td>
+                    <td>
+                        <a href="{:url('bindBrandDel',array('id'=>$vo['id']))}"
+                            class="js-ajax-dialog-btn"
+                            data-msg="确定要删除吗？">删除</a>
+                    </td>
+                </tr>
+            </volist>
+            </tbody>
+        </table>
+        <div class="table-actions">
+            <button class="btn btn-primary btn-sm js-ajax-submit" type="submit">{:lang('SORT')}</button>
+        </div>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

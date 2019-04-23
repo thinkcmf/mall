@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <block name="seo">
+        <title>首页 {$site_info.site_name|default=''}</title>
+        <meta name="keywords" content="{$site_info.site_seo_keywords|default=''}"/>
+        <meta name="description" content="{$site_info.site_seo_description|default=''}">
+    </block>
+    <include file="public@head"/>
+    <block name="head"></block>
+    <hook name="before_head_end"/>
+</head>
+<body class="body-white">
+<block name="header">
+    <include file="public@nav"/>
+</block>
+
+<block name="main"></block>
+
+<block name="footer">
+    <include file="public@footer"/>
+</block>
+<!-- /container -->
+<include file="public@scripts"/>
+<block name="script"></block>
+<hook name="before_body_end"/>
+</body>
+</html>

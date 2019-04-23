@@ -1,0 +1,74 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap js-check-wrap">
+    <form method="post" class="js-ajax-form">
+        <div class="table-actions">
+            <a class="btn btn-primary btn-sm" href="{:url('AdminInvoice/downloadInvoicesXml')}?ids={$ids}&download=1" target="_blank">
+                下载 XML
+            </a>
+        </div>
+        <php>$status=array("1"=>lang('DISPLAY'),"0"=>lang('HIDDEN'));</php>
+        <table class="table table-hover table-bordered table-list">
+            <thead>
+            <tr>
+                <th width="50">ID</th>
+                <th>发票号</th>
+                <th>开票类型</th>
+                <th>单位名称</th>
+                <th>开票信息</th>
+                <th>申请开票时间</th>
+                <th width="120">{:lang('ACTIONS')}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="invoices" item="vo">
+                <tr>
+                    <td>{$vo.id}</td>
+                    <td>
+                        {$vo.invoice_no|default='未开发票'}
+                    </td>
+                    <td>
+                        <eq name="vo.type" value="2">
+                            普通发票
+                        </eq>
+                        <eq name="vo.type" value="3">
+                            增值税专用发票
+                        </eq>
+                    </td>
+                    <td>{$vo.title}</td>
+                    <td>
+                        纳税人识别号:{$vo.taxpayer_id}<br>
+                        开户行:{$vo.bank_name}<br>
+                        银行账号:{$vo.bank_account}<br>
+                        <notempty name="vo.phone">
+                            电话:{$vo.phone}<br>
+                        </notempty>
+                        <notempty name="vo.address">
+                            地址:{$vo.address}
+                        </notempty>
+                    </td>
+                    <td>{:date('Y-m-d H:i:s',$vo.create_time)}</td>
+                    <td>
+                        <a href="javascript:parent.openIframeLayer('{:url('order/AdminInvoice/detail',['id'=>$vo['id']])}','发票详情',{});">详情</a>
+                    </td>
+                </tr>
+            </foreach>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th width="50">ID</th>
+                <th>发票号</th>
+                <th>开票类型</th>
+                <th>单位名称</th>
+                <th>开票信息</th>
+                <th>申请开票时间</th>
+                <th width="120">{:lang('ACTIONS')}</th>
+            </tr>
+            </tfoot>
+        </table>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

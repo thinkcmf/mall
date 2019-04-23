@@ -1,0 +1,448 @@
+<include file="public@header"/>
+<style>
+    .dragula-container {
+        display: inline;
+        font-size: 0;
+    }
+
+    .js-attr-value {
+        position: relative;
+        margin: 3px 10px 3px 0;
+        vertical-align: top;
+    }
+
+    .js-attr-value-del {
+        position: absolute;
+        right: -7px;
+        top: -7px;
+        border-radius: 50%;
+        background: red;
+        line-height: 14px;
+        width: 14px;
+        text-align: center;
+        display: none;
+    }
+
+    .js-attr-value:hover .js-attr-value-del {
+        display: block;
+    }
+
+    .js-attr-value-input, .js-attr-value-edit-input {
+        width: 80px;
+        display: inline-block;
+        margin: 3px 10px 3px 0;
+    }
+
+    .js-attr-value-edit-input {
+    }
+
+    .js-attr-name-input {
+        width: 150px;
+    }
+
+    .attr-adding .dragula-container,
+    .attr-adding .js-ajax-delete,
+    .attr-adding .js-thumbnail-checkbox,
+    .attr-adding .js-attr-value-input{
+        display: none;
+    }
+</style>
+<script type="text/html" id="attr-tpl">
+    <tr class="attr-adding">
+        <!--
+        <td>
+            <input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]"
+                   value="">
+        </td>
+        -->
+        <td>
+            <input class="input input-order" type='text' size='3' value='10000'>
+        </td>
+        <!--<td></td>-->
+        <td>
+            <input class="form-control input-sm js-attr-name-input" placeholder="输入属性名"/>
+        </td>
+        <td>
+            <div class="dragula-container">
+            </div>
+            <input class="form-control input-sm js-attr-value-input" placeholder="输入可选值"/>
+        </td>
+        <!--<td class="text-center">-->
+        <!--<input type="checkbox" class="js-thumbnail-checkbox"/>-->
+        <!--</td>-->
+        <td>
+            <a class="btn btn-xs btn-danger js-ajax-delete" href="{:url('AdminAttr/delete')}?id={id}">
+                {:lang('DELETE')}
+            </a>
+        </td>
+    </tr>
+</script>
+<script type="text/html" id="attr-value-tpl">
+    <a class="js-attr-value btn btn-sm btn-success">
+        <span class="js-attr-value-del"><i class="fa fa-close"></i></span>
+        <span class="js-attr-value-text">{value}</span>
+    </a>
+</script>
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AdminModel/index')}">所有模型</a></li>
+        <li><a href="{:url('AdminModel/add')}">添加模型</a></li>
+        <li class="active"><a>{$model.name}模型管理</a></li>
+    </ul>
+    <form method="post" class="js-ajax-form margin-top-20 js-attrs-form" action="{:url('AdminAttr/listOrder')}">
+        <div class="table-actions">
+            <button class="btn btn-sm btn-primary js-ajax-submit" type="submit">{:lang('SORT')}</button>
+        </div>
+        <php>$status=array("1"=>'启用',"0"=>'禁用');</php>
+        <table class="table table-hover table-bordered table-list">
+            <thead>
+            <tr>
+                <!--
+                <th width="16"><label><input type="checkbox" class="js-check-all" data-direction="x"
+                                             data-checklist="js-check-x"></label></th>
+                                             -->
+                <th width="50">{:lang('SORT')}</th>
+                <!--<th width="50">ID</th>-->
+                <th width="160">名称</th>
+                <th>可选值</th>
+                <!--<th class="text-center" width="60">缩略图</th>-->
+                <!--<th width="50">{:lang('STATUS')}</th>-->
+                <th width="120">{:lang('ACTIONS')}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="attrs" item="vo">
+                <tr data-attr_id="{$vo.id}">
+                    <!--
+                    <td>
+                        <input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]"
+                               value="{$vo.id}">
+                    </td>
+                    -->
+                    <td>
+                        <input name='list_orders[{$vo.id}]' class="input input-order mr5" type='text' size='3'
+                               value='{$vo.list_order}'>
+                    </td>
+                    <!--<td>{$vo.id}</td>-->
+                    <td>
+                        <input class="form-control input-sm js-attr-name-input" value="{$vo.name}"/>
+                    </td>
+                    <td>
+                        <div class="dragula-container">
+                            <notempty name="vo.values">
+                                <foreach name="vo.values" item="attr_value">
+                                    <a class="js-attr-value btn btn-sm btn-success"
+                                       data-attr_value_id="{$attr_value.id}">
+                                        <span class="js-attr-value-del"><i class="fa fa-close"></i></span>
+                                        <span class="js-attr-value-text">{$attr_value.value}</span>
+                                    </a>
+                                </foreach>
+                            </notempty>
+                        </div>
+                        <input class="form-control input-sm js-attr-value-input" placeholder="输入可选值"/>
+                    </td>
+                    <!--
+                    <td align="center">
+                        <input type="checkbox" class="js-thumbnail-checkbox"/>
+                    </td>
+
+                    <td>
+                        <empty name="vo.status">
+                            <span class="label label-default">
+                                {$status[$vo['status']]}
+                            </span>
+                            <else/>
+                            <span class="label label-success">
+                                {$status[$vo['status']]}
+                            </span>
+                        </empty>
+                    </td>
+                    -->
+                    <td>
+                        <a class="btn btn-xs btn-danger js-ajax-delete"
+                           href="{:url('AdminAttr/delete',array('id'=>$vo['id']))}">
+                            {:lang('DELETE')}
+                        </a>
+                    </td>
+                </tr>
+            </foreach>
+            <tfoot>
+            <tr>
+                <td colspan="8" class="text-center">
+                    <a href="javascript:;" class="js-add-attr-btn">+ 添加</a>
+                </td>
+            </tr>
+            </tfoot>
+            </tbody>
+        </table>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+
+    Wind.css('dragula');
+    Wind.use('noty');
+    var modelId = "{$model.id}";
+    var drakes;
+    var attrTpl = $('#attr-tpl').html();
+    var attrValueTpl = $('#attr-value-tpl').html();
+    $('.js-add-attr-btn').click(function () {
+        var $newRow = $(attrTpl);
+        $('.js-attrs-form>.table>tbody').append(attrTpl);
+        $('.js-attrs-form>.table>tbody>tr:last-child').find('.dragula-container').each(function () {
+            drakes.containers.push(this);
+        });
+
+    });
+
+    $('.js-attrs-form').on('keydown', '.js-attr-value-input,js-attr-value-edit-input', function (e) {
+        if (e.which === 13) {
+            return false;
+        }
+
+
+    });
+
+    $('.js-attrs-form').on('change', '.js-attr-value-input', function () {
+        var $this = $(this);
+        var value = $this.val();
+        var $attrValueBtn = $(attrValueTpl.replace(/\{value\}/g, value));
+        var $parent = $this.parents('td');
+        var hasValue = false;
+        $parent.find('.js-attr-value-text').each(function () {
+            if ($(this).text() == value) {
+                hasValue = true;
+                return false;
+            }
+        });
+
+        if (!hasValue) {
+            var $parentTr = $this.parents('tr');
+            var url = "{:url('AdminAttr/addValuePost')}";
+            var attrId = $parentTr.data('attr_id');
+
+            $.ajax({
+                url: url,
+                type: 'post',
+                dataType: 'JSON',
+                data: {value: $this.val(), attr_id: attrId},
+                success: function (data) {
+                    if (data.code) {
+                        $attrValueBtn.data('attr_value_id', data.data.id);
+                        $parent.find('.dragula-container').append($attrValueBtn);
+                        $this.val('');
+                    } else {
+                        noty({
+                            text: data.msg,
+                            type: 'error',
+                            layout: 'topCenter',
+                            modal: true,
+                            timeout: 800,
+                            callback: {
+                                afterClose: function () {
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+
+        } else {
+            $this.focus();
+        }
+    });
+
+    $('.js-attrs-form').on('click', '.js-attr-value-del', function () {
+
+        var $attrValue = $(this).parents('.js-attr-value');
+        var url = "{:url('AdminAttr/deleteValue')}";
+        var attrValueId = $attrValue.data('attr_value_id');
+        $.ajax({
+            url: url,
+            type: 'post',
+            dataType: 'JSON',
+            data: {id: attrValueId},
+            success: function (data) {
+                if (data.code) {
+                    $attrValue.remove();
+                } else {
+                    noty({
+                        text: data.msg,
+                        type: 'error',
+                        layout: 'topCenter',
+                        modal: true,
+                        timeout: 800,
+                        callback: {
+                            afterClose: function () {
+                            }
+                        }
+                    })
+                }
+            }
+        });
+        return false;
+    });
+
+    $('.js-attrs-form').on('change', '.js-attr-name-input', function () {
+        var $this = $(this);
+        var $parentTr = $this.parents('tr');
+        var attrId = $parentTr.data('attr_id');
+        var url = attrId ? "{:url('AdminAttr/editPost')}" : "{:url('AdminAttr/addPost')}";
+        $.ajax({
+            url: url,
+            type: 'post',
+            dataType: 'JSON',
+            data: {name: $this.val(), model_id: modelId, id: attrId},
+            success: function (data) {
+                if (data.code) {
+                    $parentTr.data('attr_id', data.data.id);
+                    var $delete = $parentTr.find('.js-ajax-delete');
+                    $parentTr.find('.input-order').attr('name', 'list_orders[' + data.data.id + ']');
+                    $delete.attr('href', $delete.attr('href').replace("{id}", data.data.id));
+                    if (!attrId) {
+                        $parentTr.removeClass('attr-adding');
+                    }
+
+                    noty({
+                        text: data.msg,
+                        type: 'success',
+                        layout: 'topCenter',
+                        timeout: 800,
+                        callback: {
+                            afterClose: function () {
+                            }
+                        }
+                    })
+                } else {
+                    noty({
+                        text: data.msg,
+                        type: 'error',
+                        layout: 'topCenter',
+                        modal: true,
+                        // animation: {
+                        //     open: 'animated bounceInDown', // Animate.css class names
+                        //     close: 'animated bounceOutUp', // Animate.css class names
+                        // },
+                        timeout: 800,
+                        callback: {
+                            afterClose: function () {
+                            }
+                        }
+                    })
+                }
+            }
+        })
+    });
+
+    $('.js-attrs-form').on('click', '.js-attr-value', function () {
+        var $this = $(this);
+        var $parentTr = $this.parents('tr');
+        var attrId = $parentTr.data('attr_id');
+        var attrValueId = $this.data('attr_value_id');
+        var $valueText = $this.find('.js-attr-value-text');
+        var $editInput = $('<input class="form-control input-sm js-attr-value-edit-input" placeholder="输入可选值"/>');
+        $editInput.width($this.outerWidth());
+        $editInput.val($valueText.text());
+        $editInput.on('blur keyup', function (e) {
+            if (e.type == 'blur' || (e.type == 'keyup' && e.which === 13)) {
+                var $_this = $(this);
+                $_this.fadeOut(100, function () {
+                    $this.show();
+                    $_this.remove();
+                });
+            }
+
+        });
+
+        $editInput.on('change', function () {
+            var url = "{:url('AdminAttr/editValuePost')}";
+
+            $.ajax({
+                url: url,
+                type: 'post',
+                dataType: 'JSON',
+                data: {value: $editInput.val(), id: attrValueId, attr_id: attrId},
+                success: function (data) {
+                    if (data.code) {
+                        $valueText.text($editInput.val());
+                    } else {
+                        noty({
+                            text: data.msg,
+                            type: 'error',
+                            layout: 'topCenter',
+                            modal: true,
+                            timeout: 800,
+                            callback: {
+                                afterClose: function () {
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+        });
+
+
+        $this.fadeOut(100, function () {
+            $this.after($editInput);
+            $editInput.focus();
+        });
+    });
+
+
+    Wind.use('dragula', function () {
+        var dragulaContainers = [];
+        $('.dragula-container').each(function () {
+            dragulaContainers.push(this);
+        });
+
+
+        drakes = dragula(dragulaContainers, {
+            moves: function (el, source, handle, sibling) {
+                return $(el).is('.js-attr-value');
+            },
+            accepts: function (el, target, source, sibling) {
+                return $(target).is($(source));
+            }
+        });
+        drakes.on('drop', function (el, target, source, sibling) {
+            var valuesListOrder = {};
+            $(el).parents('.dragula-container').find('.js-attr-value').each(function (i, item) {
+                var valueId = $(this).data('attr_value_id');
+                valuesListOrder[valueId] = i;
+            });
+
+            $.ajax({
+                url: "{:url('AdminAttr/valueListOrder')}",
+                type: 'post',
+                dataType: 'JSON',
+                data: {list_orders: valuesListOrder},
+                success: function (data) {
+                    if (data.code) {
+                    } else {
+                        noty({
+                            text: data.msg,
+                            type: 'error',
+                            layout: 'topCenter',
+                            modal: true,
+                            timeout: 800,
+                            callback: {
+                                afterClose: function () {
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+
+        });
+
+
+    });
+
+
+</script>
+</body>
+</html>

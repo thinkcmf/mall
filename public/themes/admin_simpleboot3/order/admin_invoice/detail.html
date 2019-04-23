@@ -1,0 +1,191 @@
+<include file="order@public/status"/>
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+    <table class="table" style="margin-bottom: 0;">
+        <!--
+        <tr>
+            <th width="110">
+                订单编号:
+            </th>
+            <td>{$order.order_sn}</td>
+            <th width="90">
+            </th>
+            <td></td>
+        </tr>
+        -->
+        <tr>
+            <th>
+                发票号:
+            </th>
+            <td colspan="3">
+                <input class="form-control input-invoice_no" type="text"
+                       placeholder="{$invoice.invoice_no|default='未开发票'}"
+                       style="width: 300px;display: inline-block;" data-id="{$invoice.id}"/>
+            </td>
+        </tr>
+
+        <tr>
+            <th>
+                开票类型:
+            </th>
+            <td colspan="3">
+                <switch name="order.more.invoice.type">
+                    <case value="2">普通发票</case>
+                    <case value="3">增值税专用发票</case>
+                </switch>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                开票金额:
+            </th>
+            <td colspan="3">
+                <em>￥<b class="total-amount-text">{:number_format($total_amount,2)}</b></em>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                纳税人识别号:
+            </th>
+            <td colspan="3">{$order.more.invoice.taxpayer_id|default=''}</td>
+        </tr>
+        <tr>
+            <th>
+                单位电话:
+            </th>
+            <td colspan="3">{$order.more.invoice.phone|default=''}</td>
+        </tr>
+        <tr>
+            <th>
+                单位地址:
+            </th>
+            <td colspan="3">{$order.more.invoice.address|default=''}</td>
+        </tr>
+        <tr>
+            <th>
+                开户行:
+            </th>
+            <td colspan="3">{$order.more.invoice.bank_name|default=''}</td>
+        </tr>
+        <tr>
+            <th>
+                银行账号:
+            </th>
+            <td colspan="3">{$order.more.invoice.bank_account|default=''}</td>
+        </tr>
+        <!--
+        <tr>
+            <th>
+                下单时间:
+            </th>
+            <td>{:date('Y-m-d H:i:s')}</td>
+            <th>
+                发票抬头:
+            </th>
+            <td>
+                <notempty name="order.invoice_title">
+                    {$order.invoice_title}
+                    <else/>
+                    用户不需要发票
+                </notempty>
+            </td>
+        </tr>
+        <tr>
+            <th>
+                订单状态:
+            </th>
+            <td colspan="3">
+                {$pay_status[$order['pay_status']]},{$shipping_status[$order['shipping_status']]},{$order_status[$order['order_status']]}
+            </td>
+        </tr>
+        <tr>
+            <th>
+                物流:
+            </th>
+            <td colspan="3">{$order.shipment_name}</td>
+        </tr>
+        <tr>
+            <th>
+                收件人:
+            </th>
+            <td>{$order.consignee}</td>
+            <th>
+                手机号:
+            </th>
+            <td>{$order.mobile} {$order.mobile2}</td>
+        </tr>
+        -->
+        <tr>
+            <th>
+                用户备注:
+            </th>
+            <td colspan="3">
+                {$order.user_note}
+            </td>
+        </tr>
+        <tr>
+            <th style="vertical-align: top;">
+                管理员备注:
+            </th>
+            <td colspan="3">
+                <div id="js-admin-note-wrap" style="white-space: pre;height: auto;min-height: 70px;">{$order.admin_note}</div>
+            </td>
+        </tr>
+    </table>
+    <table class="table table-bordered">
+        <tr>
+            <th colspan="5" style="text-align: center;">订购商品</th>
+        </tr>
+        <tr>
+            <th>商品</th>
+            <th>价格</th>
+            <th>折扣价</th>
+            <th>数量</th>
+            <th>金额</th>
+        </tr>
+        <foreach name="order_items" item="vo">
+            <tr>
+                <td>{$vo.goods_name}</td>
+                <td>{$vo.original_price}</td>
+                <td>
+                    {$vo.goods_price}
+                </td>
+                <td>{$vo.goods_quantity}</td>
+                <td>
+                    <span class="input-goods-amount-{$vo.id}">
+                        {:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}
+                    </span>
+                </td>
+            </tr>
+        </foreach>
+        <tr>
+            <td colspan="3"></td>
+            <td align="right">开票金额：</td>
+            <td width="110"><em>￥<b class="total-amount-text">{:number_format($total_amount,2)}</b></em></td>
+        </tr>
+    </table>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    $('.input-invoice_no').change(function () {
+        var $this     = $(this);
+        var id        = $this.data('id');
+        var invoiceNo = $this.val();
+        $.ajax({
+            url: "{:url('AdminInvoice/setInvoiceNo')}",
+            type: "POST",
+            dataType: 'json',
+            data: {id: id, invoice_no: invoiceNo},
+            success: function (data) {
+
+
+            },
+            error: function () {
+
+            }
+        })
+    });
+</script>
+</html>

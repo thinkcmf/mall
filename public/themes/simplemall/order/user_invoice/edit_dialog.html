@@ -1,0 +1,200 @@
+<extend name="public@base"/>
+<block name="seo"></block>
+<block name="css"></block>
+<block name="header">
+    <style>
+        .address-select-wrap {
+            width: 32%;
+            float: left;
+            margin: 0;
+        }
+
+        #address-city-select-wrap {
+            margin: 0 2%;
+        }
+
+        body{
+            padding-top: 0;
+        }
+    </style>
+</block>
+<block name="main">
+    <div class="container tc-main">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="bs-example bs-example-tabs" data-example-id="togglable-tabs">
+                    <ul id="myTabs" class="nav nav-tabs" role="tablist">
+                        <php>$type2_active = (empty($type) || $type==2) ?'active in':'';</php>
+                        <li class="{$type2_active}">
+                            <a href="#home" role="tab" data-toggle="tab">普通发票</a>
+                        </li>
+                        <php>$type3_active = (!empty($type) && $type==3) ?'active in':'';</php>
+                        <li class="{$type3_active}">
+                            <a href="#profile" role="tab" data-toggle="tab">增值税专用发票</a>
+                        </li>
+                    </ul>
+                    <div id="myTabContent" class="tab-content">
+                        <div role="tabpanel" class="tab-pane fade {$type2_active}" id="home" aria-labelledby="home-tab">
+                            <form class="js-ajax-form" action="{:url('UserInvoice/editPost')}" method="post">
+                                <div class="form-group">
+                                    <label for="input-title">单位名称</label>
+                                    <input type="text" class="form-control" id="input-title" placeholder="单位名称" name="title"
+                                           value="{$title|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-taxpayer_id">统一社会信用代码</label>
+                                    <input type="text" class="form-control" id="input-taxpayer_id" placeholder="统一社会信用代码"
+                                           name="taxpayer_id" value="{$taxpayer_id|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-consignee">收票人信息 <a class="open-useraddress-dialog">添加</a></label>
+                                    <select class="form-control input-consignee" id="input-consignee" name="consignee">
+                                        <option value="">请选择收票地址</option>
+                                        <foreach name="user_addresses" item="vo">
+                                            <option value="{$vo.id}">
+                                                别名:{$vo.alias}
+                                                收货人:{$vo.consignee}
+                                                地址:{$areas[$vo['province']]}{$areas[$vo['city']]|default=''}{$areas[$vo['district']]|default=''}{$vo.address}
+                                                电话:{$vo.mobile} {$vo.mobile2}
+                                            </option>
+                                        </foreach>
+                                    </select>
+                                </div>
+                                <div class="form-actions" style="display: none;">
+                                    <input type="hidden" name="type" value="2">
+                                    <button class="btn btn-primary js-ajax-submit" type="submit"
+                                            data-success="successCallback">提交
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <div role="tabpanel" class="tab-pane {$type3_active} fade" id="profile"
+                             aria-labelledby="profile-tab">
+                            <form class="js-ajax-form" action="{:url('UserInvoice/editPost')}" method="post">
+                                <div class="form-group">
+                                    <label for="input-title3">单位名称</label>
+                                    <input type="text" class="form-control" id="input-title3" placeholder="单位名称"
+                                           name="title"
+                                           value="{$title|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-taxpayer_id3">统一社会信用代码</label>
+                                    <input type="text" class="form-control" id="input-taxpayer_id3" placeholder="统一社会信用代码"
+                                           name="taxpayer_id" value="{$taxpayer_id|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-address">注册地址</label>
+                                    <input class="form-control" type="text" id="input-address" placeholder="注册地址"
+                                           name="address"
+                                           value="{$address|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-phone">注册电话</label>
+                                    <input class="form-control" type="text" id="input-phone" placeholder="注册电话" name="phone"
+                                           value="{$phone|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-bank_name">开户银行</label>
+                                    <input class="form-control" type="text" id="input-bank_name" placeholder="开户银行"
+                                           name="bank_name"
+                                           value="{$bank_name|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-bank_account">银行账户</label>
+                                    <input class="form-control" type="text" id="input-bank_account" placeholder="银行账户"
+                                           name="bank_account"
+                                           value="{$bank_account|default=''}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input-consignee">收票人信息 <a class="open-useraddress-dialog">添加</a></label>
+                                    <select class="form-control input-consignee" id="input-consignee" name="consignee">
+                                        <option value="">请选择收票地址</option>
+                                        <foreach name="user_addresses" item="vo">
+                                            <option value="{$vo.id}">
+                                                别名:{$vo.alias}
+                                                收货人:{$vo.consignee}
+                                                地址:{$areas[$vo['province']]}{$areas[$vo['city']]|default=''}{$areas[$vo['district']]|default=''}{$vo.address}
+                                                电话:{$vo.mobile} {$vo.mobile2}
+                                            </option>
+                                        </foreach>
+                                    </select>
+                                </div>
+                                <div class="form-actions" style="display: none;">
+                                    <input type="hidden" name="type" value="3">
+                                    <button class="btn btn-primary js-ajax-submit" type="submit"
+                                            data-success="successCallback">提交
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</block>
+<block name="footer"></block>
+<block name="script">
+    <script>
+        var submit = function () {
+            $('.tab-pane.active .js-ajax-submit').click();
+        };
+
+        $('.open-useraddress-dialog').on('click', function () {
+            parent.openIframeLayer("{:url('order/UserAddress/addDialog')}", '使用新地址', {
+                area: ['700px', '90%'],
+                btn: ['确定', '取消'],
+                yes: function (index, layero) {
+                    console.log(layero);
+                    var iframeWin = parent.window[layero.find('iframe')[0]['name']];
+                    iframeWin.submit(function () {
+                        parent.layer.close(index);
+                        location.reload(true);
+                    });
+                    //layer.close(index); //如果设定了yes回调，需进行手工关闭
+                }
+            });
+            return false;
+        });
+
+        $('.input-consignee').val("{$consignee_info.id|default=''}");
+
+        function successCallback(data, statusText, xhr, $form) {
+
+            if (data.code == 1) {
+                noty({
+                    text: data.msg,
+                    type: 'success',
+                    layout: 'center',
+                    callback: {
+                        afterClose: function () {
+                            var index   = parent.layer.getFrameIndex(window.name); //获取窗口索引
+                            var $parent = $(parent.document);
+                            switch (data.data.type) {
+                                case '2':
+                                    $('.js-invoice-title', $parent).text('普通发票（纸质） ' + data.data.title);
+                                    $('#js-invoice-id', $parent).val(data.data.invoice_id);
+                                    break;
+                                case '3':
+                                    $('.js-invoice-title', $parent).text('增值税专用发票（纸质） ' + data.data.title);
+                                    $('#js-invoice-id', $parent).val(data.data.invoice_id);
+                                    break;
+                            }
+
+                            parent.layer.close(index);
+                            //parent.location.reload();
+                        }
+                    }
+                });
+
+            } else {
+                noty({
+                    text: data.message,
+                    type: 'error',
+                    layout: 'center'
+                });
+            }
+        }
+
+    </script>
+</block>

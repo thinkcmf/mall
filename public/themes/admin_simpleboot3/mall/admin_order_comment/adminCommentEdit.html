@@ -1,0 +1,41 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap js-check-wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AdminOrderComment/index')}">评价管理</a></li>
+        <li class="active"><a href="{:url('AdminCategory/add')}">评价修改</a></li>
+    </ul>
+    <div class="row margin-top-20">
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-6">
+            <form class="js-ajax-form" action="{:url('AdminOrderComment/adminCommentEditPost')}" method="post">
+                <input type="hidden" name="id" value="{$current.id}">
+                <div class="tab-content">
+                    <div class="tab-pane active" id="A">
+                        <div class="form-group">
+                            <label for="input-description"><span class="form-required"></span>用户评价信息</label>
+                            <div>
+                                <textarea class="form-control"  id="input-description">{$parent.content}</textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="input-content"><span class="form-required"></span>管理员回复</label>
+                            <div>
+                                <textarea class="form-control" name="content" id="input-content">{$current.content}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary js-ajax-submit">{:lang('ADD')}</button>
+                    <a class="btn btn-default" href="{:url('AdminCategory/index')}">{:lang('BACK')}</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="__STATIC__/js/admin.js"></script>
+</body>
+</html>

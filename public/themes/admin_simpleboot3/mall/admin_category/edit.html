@@ -1,0 +1,71 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap">
+	<ul class="nav nav-tabs">
+		<li><a href="{:url('index')}">商品分类列表</a></li>
+		<li><a href="{:url('add')}">添加商品分类</a></li>
+		<li class="active"><a>编辑商品分类</a></li>
+	</ul>
+	<form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('AdminCategory/editPost')}">
+		<div class="form-group">
+			<label for="input-name" class="col-sm-2 control-label"><span class="form-required">*</span>上级</label>
+			<div class="col-md-6 col-sm-10">
+				<select class="form-control" name="parent_id" id="input-parent">
+					<option value="0">作为一级分类</option>
+					{$categories_tree}
+				</select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="input-name" class="col-sm-2 control-label"><span class="form-required">*</span>商品模型</label>
+			<div class="col-md-6 col-sm-10">
+				<select class="form-control" name="model_id" id="input-model-id">
+					<option value="0">请选择商品模型</option>
+					<foreach name="mall_models" item="vo">
+						<option value="{$vo.id}">{$vo.name}</option>
+					</foreach>
+				</select>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="input-name" class="col-sm-2 control-label"><span class="form-required">*</span>商品分类名称</label>
+			<div class="col-md-6 col-sm-10">
+				<input type="text" class="form-control" id="input-name" name="name" value="{$category.name}">
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="js-thumbnail" class="col-sm-2 control-label"><span class=""></span>缩略图</label>
+			<div class="col-md-6 col-sm-10">
+				<input type="hidden" name="thumbnail" id="js-thumbnail" value="{$category.thumbnail}">
+				<a href="javascript:uploadOneImage('图片上传','#js-thumbnail');">
+					<empty name="category.thumbnail">
+						<img src="__TMPL__/public/assets/images/default-thumbnail.png" id="js-thumbnail-preview"
+						     width="135" style="cursor: hand"/>
+						<else/>
+						<img src="{:cmf_get_image_url($category.thumbnail)}" id="js-thumbnail-preview"
+						     width="135" style="cursor: hand"/>
+					</empty>
+				</a>
+			</div>
+		</div>
+		<div class="form-group">
+			<label for="input-name" class="col-sm-2 control-label"><span class="form-required">*</span>描述</label>
+			<div class="col-md-6 col-sm-10">
+				<textarea type="text" class="form-control" id="input-description" name="description">{$category.description}</textarea>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-offset-2 col-sm-10">
+				<input type="hidden" name="id" value="{$category['id']}">
+				<button type="submit" class="btn btn-primary js-ajax-submit">{:lang('SAVE')}</button>
+			</div>
+		</div>
+	</form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+$('#input-model-id').val("{$category.model_id}");
+</script>
+</body>
+</html>

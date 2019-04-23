@@ -1,0 +1,116 @@
+<extend name="public@base"/>
+<block name="seo">
+	<title>填写核对订单</title>
+	<meta name="keywords" content=""/>
+	<meta name="description" content=""/>
+</block>
+<block name="css">
+	<style>
+		.table-with-head thead {
+			background: #eee;
+		}
+
+		.table-with-head {
+			border: 1px solid #ddd;
+		}
+
+		blockquote {
+			margin-bottom: 0;
+		}
+	</style>
+</block>
+<block name="main">
+	<div class="container">
+		<div class="row" style="margin-bottom: 10px;margin-top: 10px;">
+			<div class="col-md-3">
+			</div>
+			<div class="col-md-9">
+				<div class="btn-group btn-group-justified pull-right">
+					<a class="btn btn-primary" role="button">1.我的购物车</a>
+					<a class="btn btn-primary" role="button">2.填写核对订单</a>
+					<a class="btn btn-success" role="button">3.成功提交订单</a>
+				</div>
+			</div>
+		</div>
+		<table class="table table-with-head">
+			<thead>
+			<tr>
+				<th>
+					订单已完成
+				</th>
+			</tr>
+			</thead>
+			<tbody>
+			<foreach name="orders" item="order">
+				<php>
+					$payment_description="";
+					if(empty($order['shop_id'])){
+					$payment_description=$payment['description'];
+					}
+				</php>
+				<tr>
+					<td>
+						订单号：{$order.order_sn}&nbsp;金额：<span style="color: #d7282d;">￥{$order.order_amount}</span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<eq name="payment.code" value="pay_after_invoice">
+							<form class="form js-ajax-form">
+								<notempty name="payment_description">
+									<div style="white-space:pre-line;">{$payment_description}</div>
+									<else/>
+									<div>
+										请付款至：{$shop_payments[$order['shop_id']]['config']['account_name']|default='店铺未设置'}<br>
+										银行账号：{$shop_payments[$order['shop_id']]['config']['bank_account']|default='店铺未设置'}<br>
+										开户行：{$shop_payments[$order['shop_id']]['config']['bank_name']|default='店铺未设置'}
+									</div>
+								</notempty>
+
+								<h4>
+									请在收到发票，及时转账，转账时备注以下信息
+								</h4>
+								<div class="well">
+									付款识别码:<span style="color: red">AL{$order.id}</span>
+								</div>
+								<div class="clearfix"></div>
+								<div class="pull-right">
+									<a href="{:cmf_url('order/Order/index')}" class="btn btn-primary">查看我的订单</a>
+								</div>
+							</form>
+							<else/>
+							<form class="form js-ajax-form">
+								<notempty name="payment_description">
+									<div style="white-space:pre-line;">{$payment_description}</div>
+									<else/>
+									<div>
+										请付款至：{$shop_payments[$order['shop_id']]['config']['account_name']|default='店铺未设置'}<br>
+										银行账号：{$shop_payments[$order['shop_id']]['config']['bank_account']|default='店铺未设置'}<br>
+										开户行：{$shop_payments[$order['shop_id']]['config']['bank_name']|default='店铺未设置'}
+									</div>
+								</notempty>
+								<h4>
+									请在转账时备注以下信息
+								</h4>
+								<div class="well">
+									付款识别码:<span style="color: red">{$order.id}</span>
+								</div>
+								<em>注：如果您在打款后6小时内未收到我们的回复，请及时联系我们的服务人员！</em>
+								<div class="clearfix"></div>
+								<div class="pull-right">
+									<a href="{:cmf_url('order/Order/index')}" class="btn btn-primary">查看我的订单</a>
+								</div>
+							</form>
+						</eq>
+
+					</td>
+				</tr>
+			</foreach>
+			</tbody>
+		</table>
+
+
+	</div>
+</block>
+
+<block name="footer"></block>

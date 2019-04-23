@@ -1,0 +1,80 @@
+<include file="public@header"/>
+<!--<link href="__TMPL__/public/assets/select2/css/select2.min.css" rel="stylesheet">-->
+<link href="__TMPL__/public/assets/bootstrap3-editable/css/bootstrap-editable.css" rel="stylesheet">
+<!--<link href="__TMPL__/public/assets/select2/css/select2-bootstrap.min.css" rel="stylesheet">-->
+</head>
+<body>
+<div class="wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AdminModel/index')}">所有模型</a></li>
+        <li><a href="{:url('AdminModel/add')}">添加模型</a></li>
+        <li class="active"><a>{$model.name}模型管理</a></li>
+    </ul>
+    <form method="post" class="js-ajax-form margin-top-20" action="{:url('Link/listOrder')}">
+        <php>$status=array("1"=>lang('DISPLAY'),"0"=>lang('HIDDEN'));</php>
+        <table class="table table-hover table-bordered table-list">
+            <thead>
+            <tr>
+                <th width="16"><label><input type="checkbox" class="js-check-all" data-direction="x"
+                                             data-checklist="js-check-x"></label></th>
+                <th width="50">{:lang('SORT')}</th>
+                <th width="50">ID</th>
+                <th>名称</th>
+                <th>可选值</th>
+                <th width="50">{:lang('STATUS')}</th>
+                <th width="120">{:lang('ACTIONS')}</th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="attrs" item="vo">
+                <tr>
+                    <td>
+                        <input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]"
+                               value="{$vo.id}">
+                    </td>
+                    <td>
+                        <input name='list_orders[{$vo.id}]' class="input input-order mr5" type='text' size='3'
+                               value='{$vo.list_order}'>
+                    </td>
+                    <td>{$vo.id}</td>
+                    <td><a
+                           data-toggle="editable" data-type="text" data-pk="1"
+                           data-url="/post"
+                           data-title="Enter username">superuser</a>
+                    </td>
+                    <td>{$vo.options}</td>
+                    <td>
+                        <empty name="vo.status">
+                            <span class="label label-default">
+                                {$status[$vo['status']]}
+                            </span>
+                            <else/>
+                            <span class="label label-success">
+                                {$status[$vo['status']]}
+                            </span>
+                        </empty>
+                    </td>
+                    <td>
+                        <a class="btn btn-xs btn-primary" href="{:url('link/edit',array('id'=>$vo['id']))}">{:lang('EDIT')}</a>
+                        <a class="btn btn-xs btn-danger" href="{:url('link/delete',array('id'=>$vo['id']))}"
+                           class="js-ajax-delete">
+                            {:lang('DELETE')}
+                        </a>
+                    </td>
+                </tr>
+            </foreach>
+            </tbody>
+        </table>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<!--<script src="__TMPL__/public/assets/select2/js/select2.full.min.js"></script>-->
+<script src="__TMPL__/public/assets/bootstrap3-editable/js/bootstrap-editable.js"></script>
+<script>
+    $.fn.editable.defaults.mode = 'popup';
+    $(function () {
+        $("a[data-toggle='editable']").editable();
+    });
+</script>
+</body>
+</html>
