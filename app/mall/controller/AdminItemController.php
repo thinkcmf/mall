@@ -433,37 +433,6 @@ class AdminItemController extends AdminBaseController
         $this->success('更换成功！');
     }
 
-//category_id:6
-//title:高鸽气液相微量进样针
-//sub_title:
-//brand_id:4
-//thumbnail:mall/20171221/18484f60bb3267d5a600f03ef7786748.jpg
-//more[colors][color_custom1520991745037][attr_value_id]:
-//more[colors][color_custom1520991745037][value]:dd
-//more[colors][color_custom1520991745037][thumbnail]:
-//specs[1:custom1520991745037;12:38;13:32][price]:
-//specs[1:custom1520991745037;12:38;13:32][quantity]:
-//specs[1:custom1520991745037;12:38;13:32][sn]:
-//specs[1:custom1520991745037;12:38;13:32][barcode]:
-//specs[1:custom1520991745037;12:38;13:33][price]:
-//specs[1:custom1520991745037;12:38;13:33][quantity]:
-//specs[1:custom1520991745037;12:38;13:33][sn]:
-//specs[1:custom1520991745037;12:38;13:33][barcode]:
-//specs[1:custom1520991745037;12:40;13:32][price]:
-//specs[1:custom1520991745037;12:40;13:32][quantity]:
-//specs[1:custom1520991745037;12:40;13:32][sn]:
-//specs[1:custom1520991745037;12:40;13:32][barcode]:
-//specs[1:custom1520991745037;12:40;13:33][price]:
-//specs[1:custom1520991745037;12:40;13:33][quantity]:
-//specs[1:custom1520991745037;12:40;13:33][sn]:
-//specs[1:custom1520991745037;12:40;13:33][barcode]:
-//price:65.00
-//quantity:100
-//item_sn:
-//barcode:
-//id:7
-//content
-
     /**
      * 编辑商品提交保存
      * @adminMenu(
