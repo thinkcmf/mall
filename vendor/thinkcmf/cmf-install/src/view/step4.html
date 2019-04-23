@@ -56,9 +56,9 @@
         });
 
         var $installMsgPanel = $('#install-msg-panel');
-        var $log = $("#log");
-        var execSuccessTpl = $('#exec-success-msg-tpl').html();
-        var execFailTpl = $('#exec-fail-msg-tpl').html();
+        var $log             = $("#log");
+        var execSuccessTpl   = $('#exec-success-msg-tpl').html();
+        var execFailTpl      = $('#exec-fail-msg-tpl').html();
         var sqlExecResult;
 
         function install(sqlIndex) {
@@ -75,8 +75,8 @@
 
                         if (!(data.data && data.data.done)) {
                             var tpl = execSuccessTpl;
-                            tpl = tpl.replace(/\{message\}/g, line + '.' + data.msg);
-                            tpl = tpl.replace(/\{sql\}/g, data.data.sql);
+                            tpl     = tpl.replace(/\{message\}/g, line + '.' + data.msg);
+                            tpl     = tpl.replace(/\{sql\}/g, data.data.sql);
                             $installMsgPanel.append(tpl);
 
                         } else {
@@ -87,7 +87,7 @@
                             if (data.data.error) {
                                 noty({
                                     text: "安装过程,共" + data.data.error + "个SQL执行错误,可能您在此数据库下已经安装过 CMF,请查看问题后重新安装,或者<br>"
-                                        + '<a target="_blank" href="https://github.com/thinkcmf/thinkcmf/issues">反馈问题</a>',
+                                    + '<a target="_blank" href="https://github.com/thinkcmf/thinkcmf/issues">反馈问题</a>',
                                     type: 'confirm',
                                     layout: "center",
                                     timeout: false,
@@ -121,9 +121,9 @@
                     } else if (data.code == 0) {
 
                         var tpl = execFailTpl;
-                        tpl = tpl.replace(/\{message\}/g, line + '.' + data.msg);
-                        tpl = tpl.replace(/\{sql\}/g, data.data.sql);
-                        tpl = tpl.replace(/\{exception\}/g, data.data.exception);
+                        tpl     = tpl.replace(/\{message\}/g, line + '.' + data.msg);
+                        tpl     = tpl.replace(/\{sql\}/g, data.data.sql);
+                        tpl     = tpl.replace(/\{exception\}/g, data.data.exception);
                         $installMsgPanel.append(tpl);
                     }
 
