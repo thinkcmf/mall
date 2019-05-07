@@ -10,6 +10,7 @@
 // +----------------------------------------------------------------------
 namespace app\order\Controller;
 
+use app\order\model\OrderModel;
 use cmf\controller\UserBaseController;
 use Dompdf\FontMetrics;
 use think\Db;
@@ -20,8 +21,9 @@ class OrderController extends UserBaseController
 
     public function index()
     {
-        $userId = cmf_get_current_user_id();
-        $orders = Db::name('order')->where('user_id', $userId)
+        $userId     = cmf_get_current_user_id();
+        $orderModel = new OrderModel();
+        $orders     = $orderModel->where('user_id', $userId)
             ->order('create_time DESC')
             ->paginate();
 

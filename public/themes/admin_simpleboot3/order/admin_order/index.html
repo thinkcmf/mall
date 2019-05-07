@@ -34,6 +34,7 @@
                     </label>
                 </th>
                 <th>订单号</th>
+                <th>用户</th>
                 <!--<th>客户</th>-->
                 <!--<th>单位</th>-->
                 <!-- <th>收件人</th>
@@ -63,6 +64,21 @@
                         </a>
                         <notempty name="vo.parent_id">
                             <!--<span class="label label-warning">子订单</span>-->
+                        </notempty>
+                    </td>
+                    <td>
+                        用户ID:{$vo.user_id}
+                        <notempty name="vo.user.user_nickname">
+                            <br>昵称:{$vo.user.user_nickname}
+                        </notempty>
+                        <notempty name="vo.user.mobile">
+                            <br>手机:{$vo.user.user_login}
+                        </notempty>
+                        <notempty name="vo.user.user_email">
+                            <br>邮箱:{$vo.user.user_email}
+                        </notempty>
+                        <notempty name="vo.user.mobile">
+                            <br>手机:{$vo.user.mobile}
                         </notempty>
                     </td>
                     <!--
@@ -124,6 +140,7 @@
                     </label>
                 </th>
                 <th>订单号</th>
+                <th>用户</th>
                 <!--<th>客户</th>-->
                 <!--<th>单位</th>-->
                 <!-- <th>收件人</th>

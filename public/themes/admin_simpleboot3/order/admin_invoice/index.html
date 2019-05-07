@@ -5,7 +5,17 @@
     <ul class="nav nav-tabs">
         <li class="active"><a href="{:url('AdminInvoice/index')}">所有发票</a></li>
     </ul>
-    <form method="post" class="js-ajax-form margin-top-20" action="{:url('Link/listOrder')}">
+    <form class="well form-inline margin-top-20" method="get" action="{:url('AdminInvoice/index')}">
+        发票号:
+        <input type="text" class="form-control" name="invoice_no" style="width: 200px;"
+               value="{:input('param.invoice_no','')}" placeholder="发票号...">
+        发票抬头:
+        <input type="text" class="form-control" name="title" style="width: 200px;"
+               value="{:input('param.title','')}" placeholder="发票抬头...">
+        <input type="submit" class="btn btn-primary" value="搜索"/>
+        <a class="btn btn-danger" href="{:url('AdminInvoice/index')}">清空</a>
+    </form>
+    <form method="post" class="js-ajax-form margin-top-10" action="{:url('Link/listOrder')}">
         <php>$status=array("1"=>lang('DISPLAY'),"0"=>lang('HIDDEN'));</php>
         <table class="table table-hover table-bordered table-list">
             <thead>
@@ -17,11 +27,11 @@
                     </label>
                 </th>
                 <th width="50">ID</th>
-                <th>发票号</th>
-                <th>开票类型</th>
+                <th width="20%">发票号</th>
+                <th>发票类型</th>
                 <th>单位名称</th>
-                <th>开票信息</th>
-                <th>申请开票时间</th>
+                <th>订单信息</th>
+                <th>申请时间</th>
                 <th width="120">{:lang('ACTIONS')}</th>
             </tr>
             </thead>
@@ -44,22 +54,20 @@
                             普通发票
                         </eq>
                         <eq name="vo.type" value="3">
-                            增值税专用发票
+                            专用发票
                         </eq>
                     </td>
                     <td>{$vo.title}</td>
                     <td>
-                        纳税人识别号:{$vo.taxpayer_id}<br>
-                        开户行:{$vo.bank_name}<br>
-                        银行账号:{$vo.bank_account}<br>
-                        <notempty name="vo.phone">
-                            电话:{$vo.phone}<br>
-                        </notempty>
-                        <notempty name="vo.address">
-                            地址:{$vo.address}
-                        </notempty>
+                        <php>$invoice_amount=0;</php>
+                        <foreach name="vo.orders" item="order">
+                            <php>$invoice_amount+=$order['order_amount'];</php>
+                            <div>{$order.order_sn} &nbsp;<b>￥{$order.order_amount}</b></div>
+                        </foreach>
+                        <div><b>总金额:</b>￥{$invoice_amount}</div>
                     </td>
-                    <td>{:date('Y-m-d H:i:s',$vo.create_time)}</td>
+
+                    <td>{:date('Y-m-d',$vo.create_time)}<br>{:date('H:i:s',$vo.create_time)}</td>
                     <td>
                         <a href="javascript:parent.openIframeLayer('{:url('order/AdminInvoice/detail',['id'=>$vo['id']])}','发票详情',{});">详情</a>
                     </td>
@@ -78,8 +86,8 @@
                 <th>发票号</th>
                 <th>开票类型</th>
                 <th>单位名称</th>
-                <th>开票信息</th>
-                <th>申请开票时间</th>
+                <th>订单信息</th>
+                <th>申请时间</th>
                 <th width="120">{:lang('ACTIONS')}</th>
             </tr>
             </tfoot>

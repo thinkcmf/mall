@@ -10,11 +10,13 @@
 // +----------------------------------------------------------------------
 namespace app\order\controller;
 
+use app\order\model\OrderModel;
 use cmf\controller\AdminBaseController;
 use Dompdf\FontMetrics;
 use think\Db;
 use Dompdf\Dompdf;
 use think\db\Query;
+use think\Hook;
 
 /**
  * Class AdminOrderController
@@ -85,6 +87,7 @@ class AdminOrderController extends AdminBaseController
     {
         $where = function (Query $query) {
             $query->where('a.pay_status', 0)
+->where('a.order_status', 'neq',2)
                 ->where('expire_time', ['gt', time()], ['eq', 0], 'OR');
         };
         return $this->_list('notPaid', $where, 'not_paid');
@@ -155,8 +158,8 @@ class AdminOrderController extends AdminBaseController
 
         $data = $this->request->param();
 
-
-        $orders = Db::name('order')
+        $orderModel = new OrderModel();
+        $orders     = $orderModel
             ->alias('a')
             ->field('a.*,b.user_login,b.user_nickname,b.avatar,b.user_email,b.mobile AS user_mobile')
             ->join('__USER__ b', 'a.user_id=b.id')
@@ -532,12 +535,75 @@ class AdminOrderController extends AdminBaseController
             $this->error('物流不存在！');
         }
 
-        Db::name('order')->where('id', $id)->update([
-            'tracking_number' => $trackingNumber,
-            'shipping_status' => 1, //已发货
-            'shipment_code'   => $shipmentCode,
-            'shipment_name'   => $shipmentName
-        ]);
+        $order = Db::name('order')->where('id', $id)->find();
+
+        if (empty($order)) {
+            $this->error('订单不存在！');
+        }
+
+        if ($order['is_supplier_deliver'] || $order['shipping_status'] == 1) {
+            Db::name('order')->where('id', $id)->update([
+                'tracking_number' => $trackingNumber,
+                'shipping_status' => 1, //已发货
+                'shipment_code'   => $shipmentCode,
+                'shipment_name'   => $shipmentName,
+                'deliver_time'    => time()
+            ]);
+        } else {
+            $items = Db::name('order_item')->where('order_id', $id)->select();
+
+            if (!$items->isEmpty()) {
+                $allPass = true;
+                Db::startTrans();
+
+                foreach ($items as $item) {
+                    $params = ['order_item' => $item, 'order_sn' => $order['order_sn'], 'user_id' => $order['user_id']];
+
+                    $tableNameArr = explode('_', $item['table_name']);
+
+                    $app = $tableNameArr[0];
+
+                    $class = 'app\\' . $app . '\\behavior\\OrderDeliverCallback' . cmf_parse_name($item['table_name'], 1) . "Behavior";
+
+                    if (class_exists($class)) {
+                        try {
+                            Hook::exec($class, 'run', $params);
+                        } catch (\Exception $e) {
+                            $allPass = false;
+                            Db::rollback();
+                            file_put_contents('OrderDeliverCallback.log', $e->getMessage() . "\n\n\n", 8);
+                        }
+                    } else {
+                        $this->error('no');
+                        file_put_contents('OrderDeliverCallback.log', $class . '不存在' . "\n\n\n", 8);
+                    }
+                }
+
+
+                if ($allPass) {
+                    try {
+                        Db::name('order')->where('id', $id)->update([
+                            'tracking_number' => $trackingNumber,
+                            'shipping_status' => 1, //已发货
+                            'shipment_code'   => $shipmentCode,
+                            'shipment_name'   => $shipmentName,
+                            'deliver_time'    => time()
+                        ]);
+                        Db::commit();
+                    } catch (\Exception $E) {
+                        Db::rollback();
+                        $this->error('发货失败！' . $E->getMessage());
+                    }
+
+                } else {
+                    $this->error('发货失败！');
+                }
+
+            } else {
+
+            }
+        }
+
 
         $this->success('保存成功！');
 

@@ -23,6 +23,24 @@ class MallItemModel extends Model
     ];
 
     /**
+     * 关联分类表
+     * @return \think\model\relation\BelongsTo
+     */
+    public function category()
+    {
+        return $this->belongsTo('MallCategoryModel', 'category_id');
+    }
+
+    /**
+     * 关联模型表
+     * @return \think\model\relation\BelongsTo
+     */
+    public function  model()
+    {
+        return $this->belongsTo('MallModelModel', 'model_id');
+    }
+
+    /**
      * content 自动转化
      * @param $value
      * @return string

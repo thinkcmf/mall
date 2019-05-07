@@ -46,13 +46,14 @@ class ApiService
      */
     public static function items($param)
     {
-        $where      = [
+        $where       = [
             'status' => 1,
         ];
-        $paramWhere = empty($param['where']) ? '' : $param['where'];
-        $limit      = empty($param['limit']) ? 10 : $param['limit'];
-        $order      = empty($param['order']) ? 'id ASC' : $param['order'];
-        $page       = isset($param['page']) ? $param['page'] : false;
+        $paramWhere  = empty($param['where']) ? '' : $param['where'];
+        $limit       = empty($param['limit']) ? 10 : $param['limit'];
+        $order       = empty($param['order']) ? 'id ASC' : $param['order'];
+        $page        = isset($param['page']) ? $param['page'] : false;
+        $categoryIds = empty($param['category_ids']) ? '' : $param['category_ids'];
 
         $return        = [];
         $MallItemModel = new MallItemModel();
@@ -60,6 +61,11 @@ class ApiService
         $items = $MallItemModel
             ->where($where)
             ->where($paramWhere)
+            ->where(function (Query $query) use ($categoryIds) {
+                if (!empty($categoryIds)) {
+                    $query->where('category_id', 'in', $categoryIds);
+                }
+            })
             ->order($order);
 
         if (empty($page)) {
@@ -170,7 +176,6 @@ class ApiService
                 $result[$item['parent_id']]['children'][] = $item;
             }
         }
-//        print_r($result);exit;
         return $result;
     }
 }

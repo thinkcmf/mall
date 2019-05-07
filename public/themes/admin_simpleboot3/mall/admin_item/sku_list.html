@@ -69,7 +69,7 @@
             <input class="form-control input-no-border input-sm" name="barcode" value="">
         </td>
         <td>
-            <a class="btn btn-sm btn-primary">上架</a>
+            <a class="btn btn-sm btn-primary js-spec-row-status">上架</a>
             <a class="btn btn-sm btn-primary js-spec-row-insert">插入</a>
             <a class="btn btn-sm btn-primary js-spec-row-down">下移</a>
             <a class="btn btn-sm btn-success js-spec-row-save">保存</a>
@@ -83,7 +83,7 @@
     <form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('AdminItem/changeModel')}">
         <div class="form-group">
             <label for="js-select-model" class="col-sm-1 control-label">
-                商品模型
+                <span class="form-required">*</span>商品模型
             </label>
             <div class="col-md-6 col-sm-6">
                 <select class="form-control" id="js-select-model" name="model_id">
@@ -325,6 +325,7 @@
                 data: data,
                 success: function (data) {
                     if (data.code) {
+                        $parentTr.data('sku_id',data.data.id);
                         noty({
                             text: data.msg,
                             type: 'success',

@@ -18,7 +18,6 @@ class AdminUserAddressValidate extends Validate
         'consignee' => 'require',
         'province'  => 'require',
         'address'   => 'require',
-        'zip_code'  => 'require',
         'mobile'    => 'require',
     ];
     protected $message = [

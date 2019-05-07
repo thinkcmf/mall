@@ -3,19 +3,19 @@
 <body>
 <div class="wrap js-check-wrap">
     <ul class="nav nav-tabs">
-        <li><a href="{:url('AdminInvoice/waitPrint')}">待开普通发票</a></li>
-        <li class="active"><a href="{:url('AdminInvoice/waitPrintValueAdded')}">待开增值税发票</a></li>
+        <li><a href="{:url('AdminInvoice/waitPrint')}">待开普票</a></li>
+        <li class="active"><a href="{:url('AdminInvoice/waitPrintValueAdded')}">待开专票</a></li>
     </ul>
     <div  class="margin-top-20">
         <div class="table-actions">
             <button class="btn btn-primary btn-sm js-download-invoices-xml-btn" type="button" data-action=""
-                    data-subcheck="true" data-msg="你确定批量打印开票吗？">批量打印开票
+                    data-subcheck="true" data-msg="你确定批量开票吗？">批量开票
             </button>
             <form class="form-inline js-ajax-form" method="post" action="{:url('AdminInvoice/uploadInvoicesXml')}"
                   id="upload-invoice-xml-file-form" style="display: inline-block;">
                 <input type="hidden" id="upload-invoice-xml-file-input" name="file" class="form-control" style="width: 300px;"/>
-                <a href="javascript:openUploadDialog('上传已打印发票',_uploadInvoiceXmlFileCallback,{},false,'file')"
-                   class="btn btn-primary btn-sm">上传已打印发票</a>
+                <a href="javascript:openUploadDialog('上传已开发票',_uploadInvoiceXmlFileCallback,{},false,'file')"
+                   class="btn btn-primary btn-sm">上传已开发票</a>
                 <button type="submit" class="js-ajax-submit" id="upload-invoice-xml-file-submit" style="display: none;"></button>
             </form>
         </div>
@@ -29,11 +29,11 @@
                     </label>
                 </th>
                 <th width="50">ID</th>
-                <th>发票号</th>
+                <th width="20%">发票号</th>
                 <th>开票类型</th>
                 <th>单位名称</th>
-                <th>开票信息</th>
-                <th>申请开票时间</th>
+                <th>订单信息</th>
+                <th>申请时间</th>
                 <th width="120">{:lang('ACTIONS')}</th>
             </tr>
             </thead>
@@ -55,22 +55,20 @@
                             普通发票
                         </eq>
                         <eq name="vo.type" value="3">
-                            增值税专用发票
+                            专用发票
                         </eq>
                     </td>
                     <td>{$vo.title}</td>
+
                     <td>
-                        纳税人识别号:{$vo.taxpayer_id}<br>
-                        开户行:{$vo.bank_name}<br>
-                        银行账号:{$vo.bank_account}<br>
-                        <notempty name="vo.phone">
-                            电话:{$vo.phone}<br>
-                        </notempty>
-                        <notempty name="vo.address">
-                            地址:{$vo.address}
-                        </notempty>
+                        <php>$invoice_amount=0;</php>
+                        <foreach name="vo.orders" item="order">
+                            <php>$invoice_amount+=$order['order_amount'];</php>
+                            <div>{$order.order_sn} <b>￥{$order.order_amount}</b></div>
+                        </foreach>
+                        <div>总额:￥{$invoice_amount}</div>
                     </td>
-                    <td>{:date('Y-m-d H:i:s',$vo.create_time)}</td>
+                    <td>{:date('Y-m-d',$vo.create_time)}<br>{:date('H:i:s',$vo.create_time)}</td>
                     <td>
                         <a href="javascript:parent.openIframeLayer('{:url('order/AdminInvoice/detail',['id'=>$vo['id']])}','发票详情',{});">详情</a>
                         <a href="javascript:parent.openIframeLayer('{:url('order/AdminInvoice/notPrintedInvoiceOrders',['id'=>$vo['id']])}','关联订单',{});">关联订单</a>
@@ -89,8 +87,8 @@
                 <th>发票号</th>
                 <th>开票类型</th>
                 <th>单位名称</th>
-                <th>开票信息</th>
-                <th>申请开票时间</th>
+                <th>订单信息</th>
+                <th>申请时间</th>
                 <th width="120">{:lang('ACTIONS')}</th>
             </tr>
             </tfoot>

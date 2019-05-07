@@ -23,8 +23,8 @@ class AdminAttrController extends AdminBaseController
      * @adminMenu(
      *     'name'   => '属性管理',
      *     'parent' => 'mall/AdminIndex/default',
-     *     'display'=> true,
-     *     'hasView'=> true,
+     *     'display'=> false,
+     *     'hasView'=> false,
      *     'order'  => 10000,
      *     'icon'   => '',
      *     'remark' => '属性管理',

@@ -1,4 +1,3 @@
-<include file="order@public/status"/>
 <include file="public@header"/>
 </head>
 <body>
@@ -23,6 +22,12 @@
             </tr>
             </thead>
             <tbody>
+            <php>
+                $user_confirmed=array("0"=>'未确认',"1"=>'已确认','2'=>'确认邮件未发');
+                $order_status=array("0"=>'已完成',"1"=>'未完成','2'=>'已取消');
+                $shipping_status=array("0"=>'未发货',"1"=>'已发货','2'=>'已签收',10=>'待发货');
+                $pay_status=array("0"=>'未支付',"1"=>'已支付');
+            </php>
             <foreach name="orders" item="vo">
                 <tr>
                     <td>

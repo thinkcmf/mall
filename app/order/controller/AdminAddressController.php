@@ -10,7 +10,7 @@
 // +----------------------------------------------------------------------
 namespace app\order\controller;
 
-use app\user\model\OrderUserAddressModel;
+use app\order\model\OrderUserAddressModel;
 use cmf\controller\AdminBaseController;
 use think\Db;
 

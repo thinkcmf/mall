@@ -45,6 +45,7 @@
                 </th>
                 <th>排序</th>
                 <th>商品名称</th>
+                <th>分类</th>
                 <th>价格(元)</th>
                 <th>上下架</th>
                 <th>操作</th>
@@ -68,6 +69,10 @@
                             {$vo.title}
                         </a>
                     </td>
+                    <td>
+                        <a href="{:cmf_url('mall/List/index',['id'=>$vo.category_id])}" target="_blank">{$vo.category.name}</a>
+                        ({$vo.model.name})
+                    </td>
                     <td>￥{$vo.price}</td>
                     <td>{$status[$vo.status]}</td>
                     <td>
@@ -85,6 +90,7 @@
                 </th>
                 <th>排序</th>
                 <th>商品名称</th>
+                <th>分类</th>
                 <th>价格(元)</th>
                 <th>上下架</th>
                 <th>操作</th>

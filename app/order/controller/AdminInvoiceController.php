@@ -10,6 +10,7 @@
 // +----------------------------------------------------------------------
 namespace app\order\controller;
 
+use app\order\model\OrderInvoiceModel;
 use app\user\model\OrderUserAddressModel;
 use cmf\controller\AdminBaseController;
 use think\Db;
@@ -29,10 +30,26 @@ class AdminInvoiceController extends AdminBaseController
      *     'remark' => '所有开发票',
      *     'param'  => ''
      * )
+     * @return mixed
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
      */
     public function index()
     {
-        $invoices = Db::name('order_invoice')->order('create_time DESC')->select();
+        $data         = $this->request->param();
+        $invoiceModel = new OrderInvoiceModel();
+        $invoices     = $invoiceModel
+            ->order('create_time DESC')
+            ->where(function ($query) use ($data) {
+                if (!empty($data['invoice_no'])) {
+                    $query->where('invoice_no', 'like', "{$data['invoice_no']}%");
+                }
+
+                if (!empty($data['title'])) {
+                    $query->where('title', 'like', "{$data['title']}%");
+                }
+            })->select();
         $this->assign('invoices', $invoices);
         return $this->fetch();
     }
@@ -52,7 +69,8 @@ class AdminInvoiceController extends AdminBaseController
      */
     public function waitPrint()
     {
-        $invoices = Db::name('order_invoice')->where(['invoice_no' => '', 'type' => 2])->order('create_time DESC')->select();
+        $invoiceModel = new OrderInvoiceModel();
+        $invoices     = $invoiceModel->where(['invoice_no' => '', 'type' => 2])->order('create_time DESC')->select();
         $this->assign('invoices', $invoices);
         return $this->fetch('wait_print');
     }
@@ -72,7 +90,8 @@ class AdminInvoiceController extends AdminBaseController
      */
     public function waitPrintValueAdded()
     {
-        $invoices = Db::name('order_invoice')->where(['invoice_no' => '', 'type' => 3])->order('create_time DESC')->select();
+        $invoiceModel = new OrderInvoiceModel();
+        $invoices     = $invoiceModel->where(['invoice_no' => '', 'type' => 3])->order('create_time DESC')->select();
         $this->assign('invoices', $invoices);
         return $this->fetch('wait_print_value_added');
     }
@@ -93,9 +112,42 @@ class AdminInvoiceController extends AdminBaseController
 
         $findInvoice = Db::name('order_invoice')->where('id', $id)->find();
 
-        if ($findInvoice == 0) {
+        if (empty($findInvoice)) {
             $this->error('发票不存在！');
         }
+
+        $findInvoice['consignee_info'] = json_decode($findInvoice['consignee_info'], true);
+
+        $areaIds = [];
+
+        if (!empty($findInvoice['consignee_info']['province'])) {
+            array_push($areaIds, $findInvoice['consignee_info']['province']);
+        } else {
+            $findInvoice['consignee_info']['province'] = 0;
+        }
+
+        if (!empty($findInvoice['consignee_info']['city'])) {
+            array_push($areaIds, $findInvoice['consignee_info']['city']);
+        } else {
+            $findInvoice['consignee_info']['city'] = 0;
+        }
+
+        if (!empty($findInvoice['consignee_info']['district'])) {
+            array_push($areaIds, $findInvoice['consignee_info']['district']);
+        } else {
+            $findInvoice['consignee_info']['district'] = 0;
+        }
+
+        if (!empty($findInvoice['consignee_info']['town'])) {
+            array_push($areaIds, $findInvoice['consignee_info']['town']);
+        } else {
+            $findInvoice['consignee_info']['town'] = 0;
+        }
+
+        $areas = Db::name('area')->where(['id' => ['in', $areaIds]])->column('id,name', 'id');
+
+        $this->assign('areas', $areas);
+
 
         $orderIds      = Db::name('order_invoice_order')->where('invoice_id', $id)->column('order_id');
         $totalAmount   = Db::name('order')->where('id', 'in', $orderIds)->sum('order_amount');
@@ -107,6 +159,10 @@ class AdminInvoiceController extends AdminBaseController
         $this->assign('invoice', $findInvoice);
         $this->assign('total_amount', $totalAmount);
         $this->assign('order_items', $orderItems);
+
+        $shipments = Db::name('order_shipment')->where(['status' => 1])->select();
+
+        $this->assign('shipments', $shipments);
 
         return $this->fetch();
     }
@@ -312,6 +368,41 @@ class AdminInvoiceController extends AdminBaseController
         Db::name('order_invoice_order')->where('order_id', $orderId)->delete();
 
         $this->success('订单开票取消成功！');
+
+    }
+
+    public function setTrackingNumber()
+    {
+        $trackingNumber = $this->request->param('tracking_number');
+        $shipmentCode   = $this->request->param('shipment_code');
+        $id             = $this->request->param('id', 0, 'intval');
+
+        if (empty($trackingNumber)) {
+            $this->error('运单号不能为空！');
+        }
+
+        $shipmentName = Db::name('order_shipment')->where('code', $shipmentCode)->value('name');
+
+        if (empty($shipmentName)) {
+            $this->error('物流不存在！');
+        }
+
+        $invoice = Db::name('order_invoice')->where('id', $id)->find();
+
+        if (empty($invoice)) {
+            $this->error('订单不存在！');
+        }
+
+        Db::name('order_invoice')->where('id', $id)->update([
+            'tracking_number' => $trackingNumber,
+            'shipping_status' => 1, //已发货
+            'shipment_code'   => $shipmentCode,
+            'shipment_name'   => $shipmentName,
+            'deliver_time'    => time()
+        ]);
+
+
+        $this->success('操作成功！');
 
     }
 

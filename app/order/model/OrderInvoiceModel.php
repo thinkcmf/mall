@@ -2,35 +2,24 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
-// | Author: 老猫 <catmant@thinkcmf.com>
+// | Author: 老猫 <thinkcmf@126.com>
 // +----------------------------------------------------------------------
 namespace app\order\model;
 
 use think\Model;
 
-class OrderModel extends Model
+class OrderInvoiceModel extends Model
 {
-
     protected $type = [
-        'more' => 'array',
+        'consignee_info' => 'array',
     ];
 
-    /**
-     * 关联 user表
-     * @return \think\model\relation\BelongsTo
-     */
-    public function user()
+    public function orders()
     {
-        return $this->belongsTo('app\user\model\UserModel', 'user_id')->setEagerlyType(1);
+        return $this->belongsToMany('OrderModel', 'order_invoice_order', 'order_id', 'invoice_id');
     }
-    
-    public function items()
-    {
-        return $this->hasMany('OrderItemModel', 'order_id')->order('goods_price desc');
-    }
-
 }

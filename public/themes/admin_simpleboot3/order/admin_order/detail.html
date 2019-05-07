@@ -1,7 +1,12 @@
-<include file="order@public/status"/>
 <include file="public@header"/>
 </head>
 <body>
+<php>
+    $user_confirmed=array("0"=>'未确认',"1"=>'已确认','2'=>'邮件未发');
+    $order_statuses=array("0"=>'已完成',"1"=>'未完成','2'=>'已取消');
+    $shipping_statuses=array("0"=>'未发货',"1"=>'已发货','2'=>'已签收',10=>'待发货');
+    $pay_statuses=array("0"=>'未支付',"1"=>'已支付');
+</php>
 <div class="wrap">
     <table class="table" style="margin-bottom: 0;">
         <tr>
@@ -39,30 +44,50 @@
                     <a class="btn btn-sm btn-primary js-ajax-dialog-btn" data-msg="您确定需要手动开发票吗？"
                        data-href="{:url('order/AdminOrder/needManualInvoice',array('id'=>$order.id))}">需要手动开发票？</a>
                     <else/>
-                    用户不需要发票
+                    不开发票
                 </notempty>
             </td>
         </tr>
+
         <tr>
-            <th>
-                 用户确认状态:
+            <th width="90" style="text-align: left;">
+                收货人:
             </th>
-            <td colspan="3">
-                {$user_confirmed[$order['user_confirmed']]}
-                <a href="{:url('AdminOrder/sendConfirmEmail')}?order_id={$order.id}" class="js-ajax-dialog-btn btn btn-sm btn-success"
-                   data-msg="您确定发送确认邮件吗？" data-toggle="tooltip" title="发送确认邮件"><i class="fa fa-envelope-o"></i>&nbsp;邮件确认</a>
+            <td >
+                {$order.consignee}, {$order.mobile} {$order.mobile2},
+
+                {$areas[$order['province']]}{$areas[$order['city']]|default=''}{$areas[$order['district']]|default=''}{$order.address}
             </td>
+            <th>
+                货物物流:
+            </th>
+            <td>{$order.shipment_name}</td>
+        </tr>
+        <tr>
+            <th width="90" style="text-align: left;">
+                收票人:
+            </th>
+            <td >
+                <notempty name="$order.more.invoice.consignee_info.consignee">
+                    {$order.more.invoice.consignee_info.consignee|default=''},
+                    {$order.more.invoice.consignee_info.mobile|default=''}
+                    {$order.more.invoice.consignee_info.mobile2|default=''},
+                    {$areas[$order['more']['invoice']['consignee_info']['province']]|default=''}{$areas[$order['more']['invoice']['consignee_info']['city']]|default=''}{$areas[$order['more']['invoice']['consignee_info']['district']]|default=''}{$areas[$order['more']['invoice']['consignee_info']['town']]|default=''}
+                    {$order['more']['invoice']['consignee_info']['address']|default=''}
+                </notempty>
+            </td>
+            <th>
+                发票物流:
+            </th>
+            <td>{$order.shipment_name}</td>
         </tr>
         <tr>
             <th>
                 订单状态:
             </th>
-            <td colspan="3">
-                {$pay_status[$order['pay_status']]},{$shipping_status[$order['shipping_status']]},{$order_status[$order['order_status']]}
-                <neq name="order.pay_status" value="1">
-                    <a class="btn btn-sm btn-success js-ajax-dialog-btn" data-msg="您确定用户已经付款了吗？"
-                       data-href="{:url('order/AdminOrder/paid',array('id'=>$order.id))}">确认支付成功</a>
-                </neq>
+            <td>
+                {$pay_statuses[$order['pay_status']]},{$shipping_statuses[$order['shipping_status']]},{$order_statuses[$order['order_status']]}
+
                 <!--
                 <if condition="$order.order_status neq 0">
                     <a class="btn btn-sm btn-danger js-ajax-dialog-btn" data-msg="您确定设置此订单为已完成吗？"
@@ -70,75 +95,132 @@
                 </if>
                 -->
             </td>
-        </tr>
-        <tr>
-            <th>
-                物流:
-            </th>
-            <td colspan="3">{$order.shipment_name}</td>
-        </tr>
-        <tr>
-            <th>
-                收件人:
-            </th>
-            <td>{$order.consignee}</td>
-            <th>
-                手机号:
-            </th>
-            <td>{$order.mobile} {$order.mobile2}</td>
-        </tr>
-        <tr>
-            <th>
-                收件地址:
-            </th>
-            <td colspan="3">
-                {$areas[$order['province']]}{$areas[$order['city']]|default=''}{$areas[$order['district']]|default=''}{$order.address}
-            </td>
-        </tr>
-        <tr>
             <th>
                 用户备注:
             </th>
-            <td colspan="3">
+            <td>
                 {$order.user_note}
             </td>
+
         </tr>
         <tr>
+            <th>
+                订单确认:
+            </th>
+            <td>
+                <if condition="($order['user_confirmed'] == 0) OR ($order['user_confirmed'] == 2) ">
+                    <span style="color: red">{$user_confirmed[$order['user_confirmed']]}</span>
+                <else>{$user_confirmed[$order['user_confirmed']]}</else>
+                </if>
+
+            </td>
             <th style="vertical-align: top;">
                 管理员备注:
             </th>
-            <td colspan="3">
-                <div id="js-admin-note-wrap" style="white-space: pre;height: auto;min-height: 70px;" class="form-control">{$order.admin_note}</div>
-                <textarea class="form-control" id="js-admin-note" style="display: none;">{$order.admin_note}</textarea>
+            <td>
+                <div id="js-admin-note-wrap" style="white-space: pre;height: auto;"
+                     class="form-control">{$order.admin_note}
+                </div>
+                <input class="form-control" id="js-admin-note" style="display: none;" value="{$order.admin_note}">
+            </td>
+        </tr>
+        <tr>
+            <td colspan="4">
+                <a href="{:url('AdminOrder/sendConfirmEmail')}?order_id={$order.id}"
+                   class="js-ajax-dialog-btn btn btn-sm btn-success"
+                   data-msg="您确定发送确认邮件吗？" data-toggle="tooltip" title="发送确认邮件">邮件确认
+                </a>
+                <a href="{:url('AdminOrder/confirmOrder')}?id={$order.id}"
+                   class="js-ajax-dialog-btn btn btn-sm btn-info"
+                   data-msg="您确定确认此订单吗？" data-toggle="tooltip" title="确认订单">确认订单
+                </a>
+                <eq name="order.pay_status" value="0">
+                    <!--<a class="btn btn-sm btn-danger js-ajax-dialog-btn" data-msg="您确定用户已经付款了吗？"-->
+                       <!--data-href="{:url('order/AdminOrder/paid',array('id'=>$order.id))}">支付确认</a>-->
+                </eq>
+                <a href="javascript:;" onclick="openSplitOrderDialog(this);" class="btn btn-warning btn-sm">分拆订单</a>
             </td>
         </tr>
     </table>
     <table class="table table-bordered">
         <tr>
-            <th colspan="5" style="text-align: center;">订购商品</th>
+            <eq name="order.user_confirmed" value="1">
+                <th colspan="6" style="text-align: center;">订购商品</th>
+                <else/>
+                <th colspan="7" style="text-align: center;">订购商品</th>
+            </eq>
+
         </tr>
         <tr>
             <th>商品</th>
+            <th>规格</th>
             <th>价格</th>
-            <th>折扣价</th>
-            <th>数量</th>
+            <th width="100">优惠价</th>
+            <neq name="order.user_confirmed" value="1">
+                <th width="100">折扣%</th>
+            </neq>
+            <th>数量/已锁定</th>
             <th>金额</th>
         </tr>
+        <php>
+            $user_id=$order['user_id'];
+            $customer=db('crm_customer')->where('user_id',$user_id)->find();
+            $company_id=empty($customer['company_id'])?0:$customer['company_id'];
+        </php>
         <foreach name="order_items" item="vo">
+            <php>
+                $more=json_decode($vo['more'],true);
+            </php>
             <tr>
-                <td>{$vo.goods_name}</td>
-                <td>{$vo.goods_price}</td>
+                <td>
+                    {:str_replace(";\\n",'<br>',$vo.goods_name)}<br>
+                    <switch name="vo.table_name">
+                        <case value="chem_product">
+                            {$more.goods_spec.product_no|default=''}
+                        </case>
+                    </switch>
+                </td>
+                <td>
+                    {:str_replace(";\\n",'<br>',$vo.goods_spec)}
+                </td>
+                <td>{$vo.original_price}</td>
                 <td>
                     <eq name="order.user_confirmed" value="1">
                         {$vo.goods_price}
                         <else/>
                         <input class="form-control input-sm text-center input-goods-price"
                                value="{$vo.goods_price}"
+                               data-original_price="{$vo.original_price}"
                                data-id="{$vo.id}"
-                               style="width: 80px;">
+                               style="width: 80px;display: inline-block;">
                     </eq>
                 </td>
-                <td>{$vo.goods_quantity}</td>
+                <neq name="order.user_confirmed" value="1">
+
+                    <td>
+                        <div style="position: relative;">
+                            <input class="form-control input-sm text-center input-goods-discount"
+                                   value="{:number_format($vo.goods_price/$vo.original_price*100,2)}"
+                                   style="width: 80px;display: inline-block;"
+                                   type="number"
+                                   data-original_price="{$vo.original_price}">
+                            <switch name="vo.table_name">
+                                <case value="chem_product">
+                                    <php>
+                                        $brand_name=empty($more['goods_spec']['brand'])?'':$more['goods_spec']['brand'];
+                                        if(!empty($brand_name)){
+                                        $brand_id=db('chem_brand')->where('name',$brand_name)->value('id');
+                                        $discount=db('chem_company_discount')->where('company_id',$company_id)->where('brand_id',$brand_id)->value('discount');
+                                        }
+                                    </php>
+                                    <span style="position: absolute;right: 0;top: 0;font-size: 12px;line-height: 24px;background: #eee;width: 30px;text-align: center;" title="公司折扣">{$discount}</span>
+                                </case>
+                            </switch>
+                        </div>
+
+                    </td>
+                </neq>
+                <td>{$vo.goods_quantity}/{$vo.goods_quantity_locked}</td>
                 <td>
                     <span class="input-goods-amount-{$vo.id}">
                         {:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}
@@ -147,23 +229,50 @@
             </tr>
         </foreach>
         <tr>
-            <td colspan="3"></td>
+            <eq name="order.user_confirmed" value="1">
+                <td colspan="4"></td>
+                <else/>
+                <td colspan="5"></td>
+            </eq>
             <td align="right">合计：</td>
             <td width="110"><em>￥<b class="total-amount-text">{:number_format($total_amount,2)}</b></em></td>
         </tr>
     </table>
-    <!--
-    <div class="text-center">
-        <a href="javascript:;" onclick="openSplitOrderDialog(this);" class="btn btn-primary">分拆订单</a>
-    </div>
-    -->
 </div>
 <script src="__STATIC__/js/admin.js"></script>
 <script>
     $(function () {
-        $('.input-goods-price').on('change', function () {
+        $('.input-goods-price').on('keyup', function () {
+            var $this         = $(this);
+            var price         = $this.val();
+            var originalPrice = $this.data('original_price');
 
-            var $this   = $(this);
+            var $parent = $this.parents('tr');
+
+            var $discountInput = $parent.find('.input-goods-discount');
+
+            $discountInput.val((price / originalPrice * 100).toFixed(2));
+
+            _changePrice($this);
+        });
+
+
+        $('.input-goods-discount').on('keyup', function () {
+            var $this         = $(this);
+            var discount      = $this.val();
+            var originalPrice = $this.data('original_price');
+
+            var $parent = $this.parents('tr');
+
+            var $priceInput = $parent.find('.input-goods-price');
+
+            $priceInput.val((originalPrice * discount / 100).toFixed(2));
+
+
+            _changePrice($priceInput);
+        });
+
+        function _changePrice($this) {
             var id      = $this.data('id');
             var orderId = $this.data('order-id');
             var price   = $this.val();
@@ -192,18 +301,17 @@
                     $this.data('loading', false);
                 }
             });
-
-        });
+        }
 
         $('#js-admin-note-wrap').click(function () {
-            var $this=$(this);
-            var height=$this.height();
+            var $this  = $(this);
+            var height = $this.height();
             $this.hide();
             $('#js-admin-note').height(height).show().focus();
         });
 
         $('#js-admin-note').change(function () {
-            var $this=$(this);
+            var $this     = $(this);
             var adminNote = $this.val();
             $this.hide();
             $('#js-admin-note-wrap').text(adminNote).show();

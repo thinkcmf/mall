@@ -237,16 +237,16 @@ class CartController extends UserBaseController
 
             $shippingStatus = 0;
 
-//            try{
-//                $paymentType = Db::name('crm_customer')->where('user_id', $userId)->value('payment_type');
-//
-//                if ($paymentType == 2) {//后款可以直接发货
-//                    $shippingStatus = 10;
-//                }
-//
-//            }catch (\Exception $e){
-//
-//            }
+            try {
+                $paymentType = Db::name('crm_customer')->where('user_id', $userId)->value('payment_type');
+
+                if ($paymentType == 2) {//后款可以直接发货
+                    $shippingStatus = 10;
+                }
+
+            } catch (\Exception $e) {
+
+            }
 
             Db::startTrans();
 

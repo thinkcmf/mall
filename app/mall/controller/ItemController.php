@@ -113,20 +113,6 @@ class ItemController extends HomeBaseController
 
         $this->assign('sku_ids', $skuIds);
 
-        $orderCommentModel = new OrderCommentModel();
-        $where             = [
-            'goods_id'    => $id,
-            'delete_time' => 0
-        ];
-
-        $commentData = $orderCommentModel->where($where)->order('create_time DESC')->select()->toArray();
-        foreach ($commentData as $k => $v) {
-            foreach ((array)$v['more'] as $k1 => $v1) {
-                $commentData[$k]['more'][$k1] = json_decode($v1, true);
-            }
-
-        }
-        $this->assign('comment', $commentData);
 
         return $this->fetch('item');
     }
