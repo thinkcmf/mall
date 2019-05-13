@@ -117,7 +117,12 @@ class ItemController extends HomeBaseController
         return $this->fetch('item');
     }
 
-    // 添加产品包装到购物车
+    /**
+     * 添加产品包装到购物车
+     * memo:
+     *      23:20 2019-05-09 ccbox: 修改函数，增加服务接口获取商品
+     * @return void
+     */
     public function addToCart()
     {
         $this->checkUserLogin();
@@ -127,35 +132,24 @@ class ItemController extends HomeBaseController
         $buyNow    = $this->request->param('buy_now', 0, 'intval');
         $quantity  = $this->request->param('quantity', 1, 'intval');
 
-        $mallItemModel    = new MallItemModel();
-        $mallItemSkuModel = new MallItemSkuModel();
-
-        $findMallItem = $mallItemModel->where('id', $itemId)->find();
-
-        if (empty($findMallItem)) {
+        $findMallItem = \app\mall\service\ApiService::itemInfo($itemId, $itemSkuId);
+        if (!$findMallItem) {
             $this->error('商品不存在！');
         }
-
-        $skuWhere = ['item_id' => $itemId];
-
-        if (!empty($itemSkuId)) {
-            $skuWhere['id'] = $itemSkuId;
-        }
-
-        $findMallItemSku = $mallItemSkuModel->where($skuWhere)->find();
-        $price           = 0;
-
-        if (empty($findMallItemSku)) {
+        
+        if (empty($findMallItem['skus'])) {
             $itemSkuId       = 0;
             $price           = $findMallItem['price'];
-            $findMallItemSku = $findMallItem;
+            $findMallItemSku = $findMallItem; // 这里以后如果默认添加sku记得改一下。
             $goodsSpec       = "";
-        } else {
-            $itemSkuId = $findMallItemSku['id'];
-            $goodsSpec = $findMallItemSku['spec_info'];
-            $price     = $findMallItemSku['price'];
+        } elseif(array_key_exists($itemSkuId,$findMallItem['skus'])) {
+            $itemSkuId = $findMallItem['skus'][$itemSkuId]['id'];
+            $price     = $findMallItem['skus'][$itemSkuId]['price'];
+            $findMallItemSku = $findMallItem['skus'][$itemSkuId];
+            $goodsSpec = $findMallItem['skus'][$itemSkuId]['spec_info'];
+        }else{
+            $this->error('请选择要购买的规格！');
         }
-
 
         $userId      = cmf_get_current_user_id();
         $currentTime = time();

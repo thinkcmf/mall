@@ -16,111 +16,70 @@ use think\Db;
 class CartController extends UserBaseController
 {
 
+    /**
+     * 购物车首页
+     *
+     * @return void
+     */
     public function index()
     {
         $userId      = cmf_get_current_user_id();
-        $currentTime = time();
-        $goods       = Db::name('OrderCart')
-            ->where(['user_id' => $userId])
-            ->where('expire_time', 'gt', $currentTime)->select();
-        $totalAmount = Db::name('OrderCart')->where(['user_id' => $userId, 'selected' => 1])
-            ->where('expire_time', 'gt', $currentTime)->sum('goods_price*goods_quantity');
-
-        $shopIds = ['1' => 1];
-
-        $shopsGoods = [];
-
-        foreach ($goods as $item) {
-            if (!empty($item['shop_id'])) {
-                $shopId                    = $item['shop_id'];
-                $shopIds[$item['shop_id']] = $shopId;
-            } else {
-                $shopId = $item['shop_id'];
-            }
-
-            if (empty($shopsGoods[$shopId])) {
-                $shopsGoods[$shopId] = [];
-            }
-
-            array_push($shopsGoods[$item['shop_id']], $item);
+        $getCart = \app\order\service\ApiService::getCartItems($userId);
+        if(isset($getCart['error'])){
+            $this->error($getCart['error'][1]);
         }
 
-        $shops = [];
-
-        try {
-            $shops = Db::name('shop')->where('id', 'in', $shopIds)->column('*', 'id');
-        } catch (\Exception $e) {
-
-        }
-
-
-        $this->assign('goods', $goods);
-        $this->assign('shops_goods', $shopsGoods);
-        $this->assign('shops', $shops);
-        $this->assign('total_amount', $totalAmount);
+        $this->assign('goods', $getCart['goods']);
+        $this->assign('shops_cart', $getCart['shopscart']);
+        $this->assign('shops', $getCart['shops']);
+        $this->assign('total_amount', $getCart['amount']);
         return $this->fetch();
     }
 
+    /**
+     * 购物下单页面
+     * 增加了直接购买的流程，购物提交商品采用统一接口获取和计算
+     * 
+     * @author ccbox <ccbox.net@163.com>
+     * 
+     * @return void
+     */
     public function confirm()
     {
         $userId      = cmf_get_current_user_id();
         $currentTime = time();
-        $goods       = Db::name('OrderCart')->where(['user_id' => $userId, 'selected' => 1])
-            ->where('expire_time', 'gt', time())->select();
 
-        if (empty($goods)) {
-            $this->error('您还没有选中任何商品！');
-        }
+        $buynow       = $this->request->param('buynow', 0, 'intval');
+        $this->assign('buynow', $buynow);
 
-        $goodsCount        = 0;
-        $virtualGoodsCount = 0;
-
-        foreach ($goods as $item) {
-            if ($item['is_virtual']) {
-                $virtualGoodsCount++;
-            } else {
-                $goodsCount++;
+        if($buynow==1){
+            // 直接购买流程
+            $itemId       = $this->request->param('id', 0, 'intval');
+            $skuId       = $this->request->param('sku', 0, 'intval');
+            $number       = $this->request->param('num', 0, 'intval');
+            if($itemId>0 && $number>0){
+                $getCart = \app\order\service\ApiService::getBuynowItems($itemId, $skuId, $number);
+                if(isset($getCart['error'])){
+                    $this->error($getCart['error'][1]);
+                }
+                if( $getCart['goods'][$itemId]['status']<1 
+                    || $getCart['goods'][$itemId]['skus'][$skuId]['status']<1 
+                ){
+                    $this->error('商品已失效或下架。');
+                }
+            }else{
+                $this->error('传入参数错误。');
+            }
+        }else{
+            // 购物车购买流程
+            $getCart = \app\order\service\ApiService::getCartItems($userId, true);
+            if(!isset($getCart['error']) && $getCart['invalid']>0){
+                $getCart['error'] = ['er09','提交的商品中存在已失效的商品或者规格。'];
             }
         }
 
-        if ($goodsCount > 0 && $virtualGoodsCount > 0) {
-            $this->error('虚拟商品和实体商品不能同时提交！');
-        }
-
-        if ($goodsCount > 0) {
-            $this->assign('is_virtual', false);
-        }
-
-
-        if ($virtualGoodsCount > 0) {
-            $this->assign('is_virtual', true);
-        }
-
-        $shopIds = ['1' => 1];
-
-        $shopsGoods = [];
-
-        foreach ($goods as $item) {
-            if (!empty($item['shop_id'])) {
-                $shopId                    = $item['shop_id'];
-                $shopIds[$item['shop_id']] = $shopId;
-            } else {
-                $shopId = $item['shop_id'];
-            }
-
-            if (empty($shopsGoods[$shopId])) {
-                $shopsGoods[$shopId] = [];
-            }
-
-            array_push($shopsGoods[$item['shop_id']], $item);
-        }
-
-        $shops = [];
-
-        try {
-            $shops = Db::name('shop')->where('id', 'in', $shopIds)->column('*', 'id');
-        } catch (\Exception $e) {
-
+        if (isset($getCart['error'])) {
+            $this->error($getCart['error'][1]);
         }
 
         $userAddresses = Db::name('order_user_address')->where('user_id', $userId)->select();
@@ -137,11 +96,7 @@ class CartController extends UserBaseController
                 }
             }
 
-
             $areas       = Db::name('Area')->where('id', 'in', $areaIds)->column('id,name', 'id');
-            $totalAmount = Db::name('OrderCart')->where(['user_id' => $userId, 'selected' => 1])
-                ->where('expire_time', 'gt', $currentTime)
-                ->sum('goods_price*goods_quantity');
 
             $this->assign('user_addresses', $userAddresses);
             $this->assign('areas', $areas);
@@ -153,19 +108,28 @@ class CartController extends UserBaseController
             $invoiceInfo['consignee_info'] = json_decode($invoiceInfo['consignee_info'], true);
             $this->assign('invoice_info', $invoiceInfo);
         }
-
-        $this->assign('total_amount', $totalAmount);
-        $this->assign('goods', $goods);
-        $this->assign('shops_goods', $shopsGoods);
-        $this->assign('shops', $shops);
+        
+        $this->assign('goods', $getCart['goods']);
+        $this->assign('shops_cart', $getCart['shopscart']);
+        $this->assign('shops', $getCart['shops']);
+        $this->assign('total_amount', $getCart['amount']);
         return $this->fetch();
     }
 
+    /**
+     * 购物订单提交页面
+     * 购买商品采用统一接口获取和计算
+     * 
+     * @author ccbox <ccbox.net@163.com>(update)
+     * 
+     * @return void
+     */
     public function submit()
     {
         if ($this->request->isPost()) {
 
             $data   = $this->request->param();
+
             $result = $this->validate($data, 'CartSubmit');
             if ($result !== true) {
                 $this->error($result);
@@ -189,37 +153,30 @@ class CartController extends UserBaseController
 //                $this->error('物流方式不存在！');
 //            }
 
-            $goods = Db::name('OrderCart')->where(['user_id' => $userId, 'selected' => 1])
-                ->where('expire_time', 'gt', time())->order('expire_time ASC')->select();
-            if ($goods->isEmpty()) {
+
+            $items   = $this->request->param('items/a', '');
+            if(empty($items)){
                 $this->error('你没有选择商品！');
             }
+            $buyItems = \array_map(function($val){
+                $return['goods_id'] = intval($val['id']);
+                $return['goods_sku_id'] = intval($val['sku']);
+                $return['selected'] = 1;
+                $return['goods_quantity'] = intval($val['num']);
+                return $return;
+            },$items);
 
-            $shopIds = ['1' => 1];
+            $getCart = \app\order\service\ApiService::getSubmitItems($buyItems);
 
-            $shopsGoods = [];
-
-            foreach ($goods as $item) {
-                if (!empty($item['shop_id'])) {
-                    $shopId                    = $item['shop_id'];
-                    $shopIds[$item['shop_id']] = $shopId;
-                } else {
-                    $shopId = $item['shop_id'];
-                }
-
-                if (empty($shopsGoods[$shopId])) {
-                    $shopsGoods[$shopId] = [
-                        'amount' => 0,
-                        'items'  => []
-                    ];
-                }
-
-                $shopsGoods[$shopId]['amount'] += $item['goods_price'] * $item['goods_quantity'];
-                array_push($shopsGoods[$item['shop_id']]['items'], $item);
+            if (isset($getCart['error'])) {
+                $this->error($getCart['error'][1]);
             }
 
+            $shopsGoods = $getCart['shopscart'];
 
-            $expireTime  = $goods[0]['expire_time'];
+            // $expireTime  = $goods[0]['expire_time'];
+            // 订单超时，一般是下单后24小时，或者自定义
+            $expireTime = time() + 60*60*24;
             $invoiceId   = $this->request->param('invoice_id', 0, 'intval');
             $userNotes   = $this->request->param('user_note/a', '');
             $userInvoice = Db::name('order_user_invoice')->where(['user_id' => $userId, 'id' => $invoiceId])->find();
@@ -290,21 +247,23 @@ class CartController extends UserBaseController
 
                     $orderItems = [];
 
-                    foreach ($shopGoods['items'] as $item) {
+                    foreach ($shopGoods['goods'] as $item) {
+                        $nowSku = $getCart['goods'][$item['goods_id']]['skus'][$item['goods_sku_id']];
                         array_push($orderItems, [
                             'order_id'        => $orderId,
                             'goods_id'        => $item['goods_id'],
                             'goods_sku_id'    => $item['goods_sku_id'],
-                            'expire_time'     => $item['expire_time'],
+                            // 'expire_time'     => $item['expire_time'],
+                            'expire_time'     => $expireTime,
                             'goods_quantity'  => $item['goods_quantity'],
-                            'original_price'  => $item['goods_price'],
-                            'goods_price'     => $item['goods_price'],
-                            'table_name'      => $item['table_name'],
-                            'goods_sku_table' => $item['goods_sku_table'],
-                            'goods_name'      => $item['goods_name'],
-                            'goods_thumbnail' => $item['goods_thumbnail'],
-                            'goods_spec'      => $item['goods_spec'],
-                            'more'            => $item['more']
+                            'original_price'  => $nowSku['original_price'],
+                            'goods_price'     => $nowSku['price'],
+                            'table_name'      => isset($item['table_name'])?$item['table_name']:'mall_item',
+                            'goods_sku_table' => isset($item['goods_sku_table'])?$item['goods_sku_table']:'mall_item_sku',
+                            'goods_name'      => $nowSku['title'],
+                            'goods_thumbnail' => $getCart['goods'][$item['goods_id']]['thumbnail'],
+                            'goods_spec'      => $nowSku['spec_info'],
+                            'more'            => $nowSku['more']
                         ]);
                     }
 

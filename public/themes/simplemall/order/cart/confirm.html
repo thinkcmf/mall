@@ -115,14 +115,14 @@
                     <thead>
                     <tr>
                         <th>商品</th>
-                        <th></th>
+                        <th>规格</th>
                         <th>价格</th>
                         <th>数量</th>
                         <th>小计</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <foreach name="shops_goods" item="goods" key="shop_id">
+                    <foreach name="shops_cart" item="scart" key="shop_id">
                         <tr>
                             <td colspan="5">
                                 店铺:
@@ -133,13 +133,22 @@
                                 </empty>
                             </td>
                         </tr>
-                        <foreach name="goods" item="vo">
+                        <foreach name="scart.goods" item="vo" key="vk">
                             <tr>
-                                <td>{$vo.goods_name}</td>
-                                <td>{:str_replace(";\\n",'<br>',$vo.goods_spec)}</td>
-                                <td>{$vo.goods_price}</td>
+                                <td>
+                                    <input type="hidden" name="items[{$vk}][id]" value="{$vo['goods_id']}">
+                                    <input type="hidden" name="items[{$vk}][sku]" value="{$vo['goods_sku_id']}">
+                                    <input type="hidden" name="items[{$vk}][num]" value="{$vo['goods_quantity']}">
+                                    {$goods[$vo['goods_id']]['title']}
+                                </td>
+                                <td>
+                                    <gt name="vo['goods_sku_id']" value="0">
+                                    {:str_replace(";\\n",'<br>',$goods[$vo['goods_id']]['skus'][$vo['goods_sku_id']]['spec_info'])}
+                                    </gt>
+                                </td>
+                                <td>{$goods[$vo['goods_id']]['skus'][$vo['goods_sku_id']]['price']}</td>
                                 <td>{$vo.goods_quantity}</td>
-                                <td>{:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}</td>
+                                <td>{:number_format(round($goods[$vo['goods_id']]['skus'][$vo['goods_sku_id']]['price'] * $vo.goods_quantity,2),2)}</td>
                             </tr>
                         </foreach>
                         <tr>
@@ -163,6 +172,11 @@
                     合计：<em>￥<b class="total-amount-text">{:number_format($total_amount,2)}</b></em>
                 </div>
                 <div class="pull-right">
+                    <gt name="buynow" value="0">
+                        <a href="javascript:history.back(-1)" class="btn btn-primary" >返回</a>
+                    <else/>
+                        <a href="{:cmf_url('order/Cart/index')}" class="btn btn-primary" >返回购物车</a>
+                    </gt>
                     <button class="btn btn-danger js-ajax-submit submit-order-btn" data-wait="3000">提交订单</button>
                 </div>
                 <div class="clearfix"></div>

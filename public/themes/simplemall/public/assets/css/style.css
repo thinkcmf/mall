@@ -1,4 +1,9 @@
 @CHARSET "UTF-8";
+
+*{
+    font-family: "Lucida Grande","Hiragino Sans GB","Hiragino Sans GB W3",verdana!important;
+}
+
 body {
     padding-top: 60px;
     background: #f0f0f0;

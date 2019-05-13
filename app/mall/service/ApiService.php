@@ -13,6 +13,7 @@ namespace app\mall\service;
 use app\mall\model\MallBrandModel;
 use app\mall\model\MallCategoryModel;
 use app\mall\model\MallItemModel;
+use app\mall\model\MallItemSkuModel;
 use think\Db;
 use think\db\Query;
 
@@ -88,6 +89,40 @@ class ApiService
 
         }
         return $return;
+    }
+
+    /**
+     * 获取商品信息（带SKU信息）
+     * @author ccbox <ccbox.net@163.com>
+     * 
+     *
+     * @param integer $itemId
+     * @param integer $skuId
+     * @return array
+     */
+    public static function itemInfo($itemId)
+    {
+        if($itemId < 1){
+            return false;
+        }
+        
+        $mallItemModel    = new MallItemModel();
+        $item = $mallItemModel->where('id', $itemId)->field('content',true)->find();
+        if (empty($item)) {
+            return false;
+        }
+        
+        $item['skus'] = [];
+        $mallItemSkuModel = new MallItemSkuModel();
+        $skuWhere = ['item_id'=> $itemId];
+        $itemSkus = $mallItemSkuModel->where($skuWhere)->select()->toArray();
+        if($itemSkus){
+            foreach($itemSkus as $sku){
+                $skus[$sku['id']] = $sku; // 这里要定义一个中间变量
+            }
+            $item['skus'] = $skus;
+        }
+        return $item;
     }
 
     /**

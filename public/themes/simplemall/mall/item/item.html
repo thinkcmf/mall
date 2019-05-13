@@ -629,6 +629,13 @@
 
             addingToCart = true;
             var quantity = $quantity.val();
+            
+            if(buyNow>0){
+                var jumpurl = "{:url('order/Cart/confirm')}";
+                jumpurl = jumpurl + '?buynow=1&id={$item.id}&sku=' + skuId + '&num=' + quantity;
+                window.location.href = jumpurl;
+                return;
+            }
 
             $.ajax({
                 url: "{:url('mall/item/addToCart')}",

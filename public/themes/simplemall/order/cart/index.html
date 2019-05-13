@@ -70,7 +70,7 @@
                             </foreach>
                             </tbody>
                         </table>
-                        <else/>
+                    <else/>
                         <table class="table table-bordered table-centered">
                             <thead>
                             <tr>
@@ -83,7 +83,7 @@
                             </tr>
                             </thead>
                             <tbody>
-                            <foreach name="shops_goods" item="goods" key="shop_id">
+                            <foreach name="shops_cart" item="scart" key="shop_id">
                                 <tr>
                                     <td colspan="7">
                                         店铺:
@@ -94,14 +94,16 @@
                                         </empty>
                                     </td>
                                 </tr>
-                                <foreach name="goods" item="vo">
+                                <foreach name="scart.goods" item="vo">
                                     <tr>
                                         <td>
-                                            <notempty name="vo.selected">
-                                                <input type="checkbox" checked="checked" class="goods-checkbox"
-                                                       data-id="{$vo.id}">
-                                                <else/>
-                                                <input type="checkbox" class="goods-checkbox" data-id="{$vo.id}">
+                                            <notempty name="vo.status">
+                                                <input type="checkbox" class="goods-checkbox" data-id="{$vo.id}" 
+                                                    <notempty name="vo.selected">checked="checked"</notempty>
+                                                />
+                                            <else/>
+                                                <!-- 下架的商品，不能选择 -->
+                                                <input type="checkbox" class="goods-checkbox" data-id="{$vo.id}" disabled/>
                                             </notempty>
                                         </td>
                                         <td>
@@ -117,7 +119,12 @@
                                                         <img src="{:cmf_get_image_url($vo.goods_thumbnail)}"
                                                              class="goods-thumbnail" alt=""
                                                              onerror="javascript:this.src='__TMPL__/public/assets/images/compound_default.png'">
-                                                        <a href="{:cmf_url('mall/Item/index',['id'=>$vo.goods_id])}">{$vo.goods_name}</a>
+                                                             
+                                                        <notempty name="vo.status">
+                                                            <a href="{:cmf_url('mall/Item/index',['id'=>$vo.goods_id])}">{$goods[$vo['goods_id']]['title']}</a>
+                                                        <else/>
+                                                            <a href="#" alt="商品已失效">{$goods[$vo['goods_id']]['title']}</a>
+                                                        </notempty>
                                                     </case>
                                                     <default>
                                                         <img src="{:cmf_get_image_url($vo.goods_thumbnail)}"
@@ -130,15 +137,21 @@
                                         <td>
                                             {:str_replace(";\\n",'<br>',$vo.goods_spec)}
                                         </td>
-                                        <td>{$vo.goods_price}</td>
+                                        <td>{$goods[$vo['goods_id']]['skus'][$vo['goods_sku_id']]['price']}</td>
                                         <td>
-                                            <input value="{$vo.goods_quantity}" type="number"
-                                                   class="form-control input-sm input-goods-quantity"
-                                                   style="width:60px;"
-                                                   data-id="{$vo.id}"
-                                                   min="1">
+                                            <notempty name="vo.status">
+                                                <input value="{$vo.goods_quantity}" type="number"
+                                                        class="form-control input-sm input-goods-quantity"
+                                                        style="width:60px;"
+                                                        data-id="{$vo.id}"
+                                                        min="1">
+                                            <else/>
+                                                商品已失效
+                                            </notempty>
                                         </td>
-                                        <td><span class="input-goods-amount-{$vo.id}">{:number_format(round($vo.goods_price * $vo.goods_quantity,2),2)}</span>
+                                        <td><span class="input-goods-amount-{$vo.id}">
+                                            {:number_format(round($goods[$vo['goods_id']]['skus'][$vo['goods_sku_id']]['price'] * $vo['goods_quantity'],2),2)}
+                                        </span>
                                         </td>
                                         <td>
                                             <eq name="vo.deletable" value="1">
@@ -187,6 +200,11 @@
                 </notempty>
             </div>
         </div>
+    </div>
+    <div>
+        <php>
+            dump($goods);
+        </php>
     </div>
 </block>
 <block name="footer"></block>
