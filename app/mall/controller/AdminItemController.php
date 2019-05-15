@@ -271,7 +271,6 @@ class AdminItemController extends AdminBaseController
         $data['model_id']    = $item['model_id'];
         $data['category_id'] = $item['category_id'];
         $data['brand_id']    = $item['brand_id'];
-        $data['status']      = 0;
         $data['title']       = $item['title'];
         $data['key']         = implode(';', $keyArr);
         $data['spec_info']   = implode(';', $specInfos);
