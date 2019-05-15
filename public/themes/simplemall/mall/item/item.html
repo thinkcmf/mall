@@ -541,7 +541,7 @@
                 $(".goods-spec-box").each(function (i, item) {
                     var $this = $(this);
                     var attrValue = $this.data('attr_value');
-                    if (canSelectedSkuKeysStr.indexOf(attrValue + ';') >= 0 || canSelectedSkuKeysStr.indexOf(';' + attrValue) >= 0) {
+                    if (canSelectedSkuKeysStr == attrValue || canSelectedSkuKeysStr.indexOf(attrValue + ';') >= 0 || canSelectedSkuKeysStr.indexOf(';' + attrValue) >= 0) {
                     } else {
                         $this.addClass("goods-spec-box-cannot-select");
                     }
