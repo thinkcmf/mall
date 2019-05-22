@@ -120,7 +120,7 @@ class PortalPostModel extends Model
 
         $this->categories()->save($categories);
 
-        $data['post_keywords'] = str_replace('，', ',', $data['post_keywords']);
+        $data['post_keywords'] = str_replace(['，','、'], ',', $data['post_keywords']);
 
         $keywords = explode(',', $data['post_keywords']);
 
@@ -174,8 +174,7 @@ class PortalPostModel extends Model
             $this->categories()->attach(array_values($newCategoryIds));
         }
 
-
-        $data['post_keywords'] = str_replace('，', ',', $data['post_keywords']);
+        $data['post_keywords'] = str_replace(['，','、'], ',', $data['post_keywords']);
 
         $keywords = explode(',', $data['post_keywords']);
 
