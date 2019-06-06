@@ -229,10 +229,6 @@ function cmf_get_user_avatar_url($avatar)
         if (strpos($avatar, "http") === 0) {
             return $avatar;
         } else {
-            if (strpos($avatar, 'avatar/') === false) {
-                $avatar = 'avatar/' . $avatar;
-            }
-
             return cmf_get_image_url($avatar, 'avatar');
         }
 
@@ -1844,10 +1840,10 @@ function cmf_curl_get($url)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 5);
     $SSL = substr($url, 0, 8) == "https://" ? true : false;
-    if ($SSL) {
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 信任任何证书
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // 检查证书中是否设置域名
-    }
+//    if ($SSL) {
+//        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 信任任何证书
+//        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // 检查证书中是否设置域名
+//    }
     $content = curl_exec($ch);
     curl_close($ch);
     return $content;
