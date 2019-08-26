@@ -445,7 +445,7 @@ class CartController extends UserBaseController
             $this->error('订单不存在！');
         }
 
-        $payments = Db::name('OrderPayment')->where(['status' => 1])->select();
+        $payments = hook_one('order_payment');
 
         $this->assign("order", $order);
         $this->assign("order_ids", join(',', $orderIds));

@@ -10,6 +10,7 @@
 // +----------------------------------------------------------------------
 namespace app\order\service;
 
+use app\order\model\OrderModel;
 use think\Db;
 
 class ApiService
@@ -238,6 +239,37 @@ class ApiService
         }
         $return = self::getCartInfo($items, false, true);
         return $return;
+    }
+
+    /**
+     * 订单支付完成
+     *
+     * @param $order_sn   id 或 sn
+     * @param array $params  拓展参数 $params['out_transaction_id'] 第三方订单流水号
+     * @return bool|int|string
+     * @throws \think\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     * @throws \think\exception\PDOException
+     */
+    public static function orderPayed($order_sn,$params = []){
+        $order = OrderModel::where('order_sn|id',$order_sn)->find();
+        if($order){
+            if($order['pay_status'] === 1){
+                return true;
+            }
+            $result = $order->where('id',$order->id)->update([
+                'pay_status'=>1,
+                'pay_time'  =>time(),
+                'out_transaction_id'=>isset($params['out_transaction_id'])?$params['out_transaction_id']:''
+            ]);
+            if($result){
+                hook_one('order_paid');
+            }
+            return $result;
+        }
+        return false;
     }
     
 }
