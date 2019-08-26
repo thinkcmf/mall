@@ -17,6 +17,12 @@ class IndexController extends HomeBaseController
 {
     public function index()
     {
+        $a = 1;
+        $a = 2;
+        $a = 31;
+        $a = 41;
+        var_dump($a);
+        $a = 5;
 
         return $this->fetch('/index');
     }

@@ -135,9 +135,18 @@ class PayPlugin extends Plugin
             $options = $pay->driver($payType)->gateway($payMethod)->apply($order);
             switch ($params['code']) {
                 case self::CMF_WECHAT_QRCODE:
-
+                    return $options;
+                    break;
+                case self::CMF_WECHAT_MP:
+                    return $options;
+                    break;
+                case self::CMF_WECHAT_H5:
+                    return \response($options);
                     break;
                 case self::CMF_ALIPAY_WEB:
+                    return \response($options);
+                    break;
+                case self::CMF_ALIPAY_H5:
                     return \response($options);
                     break;
                 default:
@@ -167,7 +176,7 @@ class PayPlugin extends Plugin
                 ->where('status', 1)
                 ->where('code',self::CMF_ALIPAY_H5)
                 ->whereOr(
-                    code,self::CMF_WECHAT_H5
+                    'code',self::CMF_WECHAT_H5
                 )
                 ->field(true)
                 ->select();
