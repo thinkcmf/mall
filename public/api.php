@@ -16,15 +16,17 @@ define('APP_DEBUG', true);
 
 // 定义CMF根目录,可更改此目录
 define('CMF_ROOT', dirname(__DIR__) . '/');
-//
-//// 定义应用目录
-define('APP_PATH', CMF_ROOT . 'api/');
+
+// 定义CMF数据目录,可更改此目录
+define('CMF_DATA', CMF_ROOT . 'data/');
+// 定义应用目录
+define('APP_PATH', CMF_ROOT . 'app/');
 
 // 定义路由目录
 define('ROUTE_PATH', APP_PATH . 'route.php');
 
 // 定义配置目录
-define('CONFIG_PATH', CMF_ROOT . 'data/config/');
+define('CONFIG_PATH', CMF_DATA . 'config/');
 
 // 定义命名空间
 define('APP_NAMESPACE', 'api');

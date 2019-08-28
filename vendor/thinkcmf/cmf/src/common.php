@@ -108,7 +108,7 @@ function cmf_get_root()
     $root = str_replace("//", '/', $root);
     $root = str_replace('/index.php', '', $root);
     if (defined('APP_NAMESPACE') && APP_NAMESPACE == 'api') {
-        $root = preg_replace('/\/api$/', '', $root);
+        $root = preg_replace('/\/api(.php)$/', '', $root);
     }
 
     $root = rtrim($root, '/');
@@ -382,7 +382,7 @@ function cmf_set_dynamic_config($data)
 
     foreach ($data as $key => $value) {
         if (is_array($value)) {
-            $configFile = CMF_ROOT . "data/config/{$key}.php";
+            $configFile = CMF_DATA . "config/{$key}.php";
             if (file_exists($configFile)) {
                 $configs = include $configFile;
             } else {
@@ -1141,12 +1141,19 @@ function cmf_sub_dirs($dir)
 /**
  * 生成访问插件的url
  * @param string $url    url格式：插件名://控制器名/方法
- * @param array  $param  参数
+ * @param array  $vars   参数
  * @param bool   $domain 是否显示域名 或者直接传入域名
  * @return string
  */
-function cmf_plugin_url($url, $param = [], $domain = false)
+function cmf_plugin_url($url, $vars = [], $domain = false)
 {
+    global $CMF_GV_routes;
+
+    if (empty($CMF_GV_routes)) {
+        $routeModel    = new \app\admin\model\RouteModel();
+        $CMF_GV_routes = $routeModel->getRoutes();
+    }
+
     $url              = parse_url($url);
     $case_insensitive = true;
     $plugin           = $case_insensitive ? Loader::parseName($url['scheme']) : $url['scheme'];
@@ -1156,7 +1163,7 @@ function cmf_plugin_url($url, $param = [], $domain = false)
     /* 解析URL带的参数 */
     if (isset($url['query'])) {
         parse_str($url['query'], $query);
-        $param = array_merge($query, $param);
+        $vars = array_merge($query, $vars);
     }
 
     /* 基础参数 */
@@ -1165,9 +1172,24 @@ function cmf_plugin_url($url, $param = [], $domain = false)
         '_controller' => $controller,
         '_action'     => $action,
     ];
-    $params = array_merge($params, $param); //添加额外参数
 
-    return url('\\cmf\\controller\\PluginController@index', $params, true, $domain);
+    $pluginUrl = '\\cmf\\controller\\PluginController@index?' . http_build_query($params);
+
+    if (!empty($vars) && !empty($CMF_GV_routes[$pluginUrl])) {
+
+        foreach ($CMF_GV_routes[$pluginUrl] as $actionRoute) {
+            $sameVars = array_intersect_assoc($vars, $actionRoute['vars']);
+
+            if (count($sameVars) == count($actionRoute['vars'])) {
+                ksort($sameVars);
+                $pluginUrl  = $pluginUrl . '&' . http_build_query($sameVars);
+                $vars = array_diff_assoc($vars, $sameVars);
+                break;
+            }
+        }
+    }
+
+    return url($pluginUrl, $vars, true, $domain);
 }
 
 /**
@@ -1737,7 +1759,7 @@ function cmf_is_installed()
 {
     static $cmfIsInstalled;
     if (empty($cmfIsInstalled)) {
-        $cmfIsInstalled = file_exists(CMF_ROOT . 'data/install.lock');
+        $cmfIsInstalled = file_exists(CMF_DATA . 'install.lock');
     }
     return $cmfIsInstalled;
 }

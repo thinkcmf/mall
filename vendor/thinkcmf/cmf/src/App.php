@@ -173,9 +173,9 @@ class App extends Container
         $this->beginMem    = memory_get_usage();
 
         $this->rootPath    = dirname($this->appPath) . DIRECTORY_SEPARATOR;
-        $this->runtimePath = $this->rootPath . 'data/runtime' . DIRECTORY_SEPARATOR;
-        $this->routePath   = $this->rootPath . 'data/route' . DIRECTORY_SEPARATOR;
-        $this->configPath  = $this->rootPath . 'data/config' . DIRECTORY_SEPARATOR;
+        $this->runtimePath = CMF_DATA . 'runtime' . DIRECTORY_SEPARATOR;
+        $this->routePath   = CMF_DATA . 'route' . DIRECTORY_SEPARATOR;
+        $this->configPath  = CMF_DATA . 'config' . DIRECTORY_SEPARATOR;
 
         if (defined('RUNTIME_PATH')) {
             $this->runtimePath = RUNTIME_PATH;
@@ -275,8 +275,10 @@ class App extends Container
         // 路由初始化
         $this->routeInit();
 
-        // 监听app_init
-        $this->hook->listen('app_init');
+        if (PHP_SAPI != 'cli') {
+            // 监听app_init
+            $this->hook->listen('app_init');
+        }
     }
 
     /**
@@ -443,6 +445,13 @@ class App extends Container
             if (empty($dispatch)) {
                 // 路由检测
                 $dispatch = $this->routeCheck()->init();
+            }
+
+            // 插件路由参数处理
+            $routeInfo = $this->request->routeInfo();
+            if (!empty($routeInfo['route']) && strpos($routeInfo['route'], '\cmf\controller\PluginController@index?') !== false) {
+                parse_str(str_replace('\cmf\controller\PluginController@index?', '', $routeInfo['route']), $routeParams);
+                $this->request->withRoute($routeParams);
             }
 
             // 记录当前调度信息
