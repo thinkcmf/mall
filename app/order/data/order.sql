@@ -191,7 +191,7 @@ CREATE TABLE `cmf_order_payment` (
   `is_prepay` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '是否先付费;0:否;1:是',
   `status` tinyint(3) unsigned NOT NULL DEFAULT '1' COMMENT '状态(1:开启;0:关闭)',
   `fee` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '手续费',
-  `list_order` float(5,2) unsigned NOT NULL DEFAULT '0.00' COMMENT 'pay_coder',
+  `list_order` float(5,2) unsigned NOT NULL DEFAULT '0.00' COMMENT '排序',
   `code` varchar(20) NOT NULL DEFAULT '' COMMENT '支付code',
   `name` varchar(30) NOT NULL DEFAULT '' COMMENT '支付方式名称',
   `description` varchar(255) NOT NULL COMMENT '描述',
