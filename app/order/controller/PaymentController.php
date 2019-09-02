@@ -65,13 +65,11 @@ class PaymentController extends UserBaseController
             'amount' => $order['order_amount'],
             'sn'     => $order['order_sn']
         ];
-        $payment = hook_one('order_payment_unifiedorder', $params);
-        return $payment;
-    }
-
-    public function unifiedorder()
-    {
-        $params = $this->request->param();
-        hook_one('order_payment_unifiedorder', $params);
+        $info = hook_one('order_payment_unifiedorder', $params);
+        $this->assign([
+            'payment'=>$payment,
+            'info'=>$info
+        ]);
+        return $this->fetch('payment');
     }
 }

@@ -4,6 +4,7 @@ namespace plugins\pay;
 
 use cmf\lib\Plugin;
 use think\Db;
+use think\exception\HttpResponseException;
 
 
 class PayPlugin extends Plugin
@@ -141,13 +142,13 @@ class PayPlugin extends Plugin
                     return $options;
                     break;
                 case self::CMF_WECHAT_H5:
-                    return \response($options);
+                    throw new HttpResponseException(\redirect($options));
                     break;
                 case self::CMF_ALIPAY_WEB:
-                    return \response($options);
+                    throw new HttpResponseException(\response($options));
                     break;
                 case self::CMF_ALIPAY_H5:
-                    return \response($options);
+                    throw new HttpResponseException(\response($options));
                     break;
                 default:
                     return $options;
