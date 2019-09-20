@@ -164,8 +164,8 @@
         </tr>
         <php>
             $user_id=$order['user_id'];
-            $customer=db('crm_customer')->where('user_id',$user_id)->find();
-            $company_id=empty($customer['company_id'])?0:$customer['company_id'];
+            //$customer=db('crm_customer')->where('user_id',$user_id)->find();
+            //$company_id=empty($customer['company_id'])?0:$customer['company_id'];
         </php>
         <foreach name="order_items" item="vo">
             <php>
@@ -209,8 +209,8 @@
                                     <php>
                                         $brand_name=empty($more['goods_spec']['brand'])?'':$more['goods_spec']['brand'];
                                         if(!empty($brand_name)){
-                                        $brand_id=db('chem_brand')->where('name',$brand_name)->value('id');
-                                        $discount=db('chem_company_discount')->where('company_id',$company_id)->where('brand_id',$brand_id)->value('discount');
+                                        //$brand_id=db('chem_brand')->where('name',$brand_name)->value('id');
+                                        //$discount=db('chem_company_discount')->where('company_id',$company_id)->where('brand_id',$brand_id)->value('discount');
                                         }
                                     </php>
                                     <span style="position: absolute;right: 0;top: 0;font-size: 12px;line-height: 24px;background: #eee;width: 30px;text-align: center;" title="公司折扣">{$discount}</span>
