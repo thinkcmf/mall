@@ -63,8 +63,10 @@
             </div>
         </div>
         <div class="form-group">
-            <label for="js-thumbnail" class="col-sm-2 control-label">价格及总库存</label>
+            <label for="js-thumbnail" class="col-sm-2 control-label"><span class="form-required">*</span>SKU</label>
             <div class="col-md-6 col-sm-10">
+                <div id="app">
+                </div>
                 <table class="table table-bordered">
                     <tr>
                         <th><span class="form-required">*</span>价格</th>
@@ -113,6 +115,7 @@
     </form>
 </div>
 <script src="__STATIC__/js/admin.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
 <script type="text/javascript">
     //编辑器路径定义
     var editorURL = GV.WEB_ROOT;
@@ -128,6 +131,15 @@
             editorcontent.sync();
         } catch (err) {
         }
+
+        //规格
+        var app = new Vue({
+            el: '#app',
+            data: {
+
+                message: 'Hello Vue!'
+            }
+        })
 
     });
 </script>
