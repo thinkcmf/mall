@@ -22,7 +22,7 @@ class AdminModelController extends AdminBaseController
      * @adminMenu(
      *     'name'   => '模型管理',
      *     'parent' => 'mall/AdminIndex/default',
-     *     'display'=> true,
+     *     'display'=> false,
      *     'hasView'=> true,
      *     'order'  => 10000,
      *     'icon'   => '',

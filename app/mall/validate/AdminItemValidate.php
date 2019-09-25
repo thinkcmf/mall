@@ -15,9 +15,9 @@ use think\Validate;
 class AdminItemValidate extends Validate
 {
     protected $rule = [
-        'category_id'    => 'require',
+//        'category_id'    => 'require',
         'title'          => 'require',
-        'brand_id'       => 'require',
+//        'brand_id'       => 'require',
         'thumbnail'      => 'require',
         'price'          => 'require',
         'original_price' => 'require',
@@ -28,7 +28,7 @@ class AdminItemValidate extends Validate
     protected $message = [
         'category_id.require'    => '请选择宝贝分类!',
         'title.require'          => '宝贝标题不能为空!',
-        'brand_id.require'       => '请选择宝贝品牌!',
+//        'brand_id.require'       => '请选择宝贝品牌!',
         'thumbnail.require'      => '请上传宝贝图片!',
         'price.require'          => '请填写宝贝价格!',
         'original_price.require' => '请填写宝贝原价!',

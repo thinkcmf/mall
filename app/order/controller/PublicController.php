@@ -55,17 +55,17 @@ class PublicController extends HomeBaseController
 
                     $app = $tableNameArr[0];
 
-                    $class = 'app\\' . $app . '\\behavior\\OrderConfirmCallback' . cmf_parse_name($item['table_name'], 1) . "Behavior";
-
-                    if (class_exists($class)) {
-                        try {
-                            Hook::exec($class, 'run', $params);
-                        } catch (\Exception $e) {
-                            $allPass = false;
-                            Db::rollback();
-                            file_put_contents('OrderConfirmCallback.log', $e->getMessage() . "\n\n\n", 8);
-                        }
-                    }
+//                    $class = 'app\\' . $app . '\\behavior\\OrderConfirmCallback' . cmf_parse_name($item['table_name'], 1) . "Behavior";
+//
+//                    if (class_exists($class)) {
+//                        try {
+//                            Hook::exec($class, 'run', $params);
+//                        } catch (\Exception $e) {
+//                            $allPass = false;
+//                            Db::rollback();
+//                            file_put_contents('OrderConfirmCallback.log', $e->getMessage() . "\n\n\n", 8);
+//                        }
+//                    }
                 }
 
 

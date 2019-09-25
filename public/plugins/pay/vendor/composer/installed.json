@@ -1,0 +1,49 @@
+[
+    {
+        "name": "zoujingli/pay-php-sdk",
+        "version": "v2.0.0",
+        "version_normalized": "2.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/zoujingli/pay-php-sdk.git",
+            "reference": "9416c91857a90ac76d86794859c6cb21260c0378"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/zoujingli/pay-php-sdk/zipball/9416c91857a90ac76d86794859c6cb21260c0378",
+            "reference": "9416c91857a90ac76d86794859c6cb21260c0378",
+            "shasum": "",
+            "mirrors": [
+                {
+                    "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
+                    "preferred": true
+                }
+            ]
+        },
+        "require": {
+            "ext-curl": "*",
+            "ext-openssl": "*",
+            "php": ">=5.3.3"
+        },
+        "time": "2019-08-17T06:53:45+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Pay\\": "./src"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "description": "WxPay and AliPay development of SDK",
+        "homepage": "https://github.com/zoujingli/pay-php-sdk",
+        "keywords": [
+            "Wxpay",
+            "alipay",
+            "pay-php-sdk"
+        ],
+        "abandoned": "https://github.com/zoujingli/WeChatDeveloper"
+    }
+]

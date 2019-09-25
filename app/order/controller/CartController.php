@@ -429,15 +429,11 @@ class CartController extends UserBaseController
 
     public function pay()
     {
-        $orderIds = $this->request->param('order_id');
+        $orderId = $this->request->param('order_id');
 
-        if (empty($orderIds)) {
+        if (empty($orderId)) {
             $this->error('参数错误！');
         }
-
-        $orderIds = explode(',', $orderIds);
-
-        $orderId = $orderIds[0];
         $userId  = cmf_get_current_user_id();
         $order   = Db::name('Order')->where(['id' => $orderId, 'user_id' => $userId])->find();
 
@@ -445,10 +441,14 @@ class CartController extends UserBaseController
             $this->error('订单不存在！');
         }
 
-        $payments = Db::name('OrderPayment')->where(['status' => 1])->select();
+        if($order['pay_status'] === 1){
+            $this->error('已支付','order/order/index');
+        }
+
+        $payments = hook_one('order_payment');
 
         $this->assign("order", $order);
-        $this->assign("order_ids", join(',', $orderIds));
+        $this->assign("order_id",  $orderId);
         $this->assign('payments', $payments);
 
         return $this->fetch();

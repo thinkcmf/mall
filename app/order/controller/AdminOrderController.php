@@ -563,20 +563,20 @@ class AdminOrderController extends AdminBaseController
 
                     $app = $tableNameArr[0];
 
-                    $class = 'app\\' . $app . '\\behavior\\OrderDeliverCallback' . cmf_parse_name($item['table_name'], 1) . "Behavior";
-
-                    if (class_exists($class)) {
-                        try {
-                            Hook::exec($class, 'run', $params);
-                        } catch (\Exception $e) {
-                            $allPass = false;
-                            Db::rollback();
-                            file_put_contents('OrderDeliverCallback.log', $e->getMessage() . "\n\n\n", 8);
-                        }
-                    } else {
-                        $this->error('no');
-                        file_put_contents('OrderDeliverCallback.log', $class . '不存在' . "\n\n\n", 8);
-                    }
+//                    $class = 'app\\' . $app . '\\behavior\\OrderDeliverCallback' . cmf_parse_name($item['table_name'], 1) . "Behavior";
+//
+//                    if (class_exists($class)) {
+//                        try {
+//                            Hook::exec($class, 'run', $params);
+//                        } catch (\Exception $e) {
+//                            $allPass = false;
+//                            Db::rollback();
+//                            file_put_contents('OrderDeliverCallback.log', $e->getMessage() . "\n\n\n", 8);
+//                        }
+//                    } else {
+//                        $this->error('no');
+//                        file_put_contents('OrderDeliverCallback.log', $class . '不存在' . "\n\n\n", 8);
+//                    }
                 }
 
 

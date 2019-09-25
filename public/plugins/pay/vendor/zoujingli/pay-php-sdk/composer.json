@@ -1,0 +1,22 @@
+{
+  "type": "library",
+  "name": "zoujingli/pay-php-sdk",
+  "homepage": "https://github.com/zoujingli/pay-php-sdk",
+  "description": "WxPay and AliPay development of SDK",
+  "license": "MIT",
+  "keywords": [
+    "pay-php-sdk",
+    "alipay",
+    "wxpay"
+  ],
+  "require": {
+    "php": ">=5.3.3",
+    "ext-curl": "*",
+    "ext-openssl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Pay\\": "./src"
+    }
+  }
+}
