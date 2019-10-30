@@ -806,6 +806,8 @@ function cmf_get_file_download_url($file, $expires = 3600)
         return $file;
     } else if (strpos($file, "/") === 0) {
         return $file;
+    } else if(strpos($file, "#") === 0) {
+        return $file;
     } else {
         $storage = Storage::instance();
         return $storage->getFileDownloadUrl($file, $expires);
@@ -1009,11 +1011,9 @@ function cmf_is_android()
 function cmf_is_ios()
 {
     if (strpos($_SERVER['HTTP_USER_AGENT'], 'iPhone') || strpos($_SERVER['HTTP_USER_AGENT'], 'iPad')) {
-        {
-            return true;
-        }
-        return false;
+        return true;
     }
+    return false;
 }
 
 /**
@@ -1023,11 +1023,9 @@ function cmf_is_ios()
 function cmf_is_iphone()
 {
     if (strpos($_SERVER['HTTP_USER_AGENT'], 'iPhone')) {
-        {
-            return true;
-        }
-        return false;
+        return true;
     }
+    return false;
 }
 
 /**
@@ -1037,11 +1035,9 @@ function cmf_is_iphone()
 function cmf_is_ipad()
 {
     if (strpos($_SERVER['HTTP_USER_AGENT'], 'iPad')) {
-        {
-            return true;
-        }
-        return false;
+        return true;
     }
+    return false;
 }
 
 /**
