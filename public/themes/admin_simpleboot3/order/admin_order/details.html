@@ -1,0 +1,287 @@
+<div style="padding: 5px;">
+    订单详情信息
+    <br>
+    <notempty name="$order.flag">
+        <i class="fa fa-flag" style="color:{$order->flag}"></i>
+    </notempty>
+    <notempty name="$order.notice">
+        后台备注：
+        {$order->notice}
+    </notempty>
+</div>
+
+<form method="post" class="js-ajax-form margin-top-20" action="">
+
+    <hr>
+    <!-- TODO：待完善 -->
+    <div class="row">
+        <div class="grid-item col-md-6">
+            <div class="dashboard-box">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">订单信息</h3>
+                    </div>
+                    <div class="panel-body home-info">
+                        <ul class="list-unstyled">
+                            <li><em>下单时间</em> <span>{:date('Y-m-d H:i:s',$order->create_time)}</span></li>
+                            <li><em>支付状态</em> <span>
+                                    <eq name="$order.pay_status" value="1">
+                                        已支付，支付时间： {:date('Y-m-d H:i:s',$order->pay_time)}
+                                        <else />
+                                        未支付
+                                    </eq>
+                                </span></li>
+
+                            <li><em>订单进程</em> <span>{$order->process_text}</span></li>
+                            <li><em>订单状态</em> <span>{$order->status?'正常':'关闭'}</span></li>
+
+                            <li><em>————</em><span>————————</span></li>
+
+                            <li><em>下单用户</em> <span>
+                                    {$order->user->user_nickname}
+                                    (UID：{$order->user->id})
+                                </span></li>
+                            <li><em>用户留言</em> <span>{$order->remark}</span></li>
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-item col-md-6">
+            <div class="dashboard-box">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">收货信息</h3>
+                    </div>
+                    <div class="panel-body home-info">
+                        <ul class="list-unstyled">
+                            <li><em>收件人</em> <span>{$order->consignee}</span></li>
+                            <li><em>联系电话</em> <span>{$order->phone} / {$order->phone2}</span></li>
+                            <li><em>收件地区</em> <span>{$order->country} / {$order->province} / {$order->city} /
+                                    {$order->district} / {$order->town}</span></li>
+                            <li><em>收件地址</em> <span>{$order->address}</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-item col-md-12">
+            <div class="dashboard-box">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">订单货品</h3>
+                    </div>
+                    <div class="panel-body home-info">
+                        {$item_table}
+                        <ul class="list-unstyled">
+                            <li><em>包裹重量(KG)</em> <span>{$order->total_weight}</span></li>
+                            <li><em>商品件数</em> <span>{$order->total_item}</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-item col-md-4">
+            <div class="dashboard-box">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">结算信息</h3>
+                    </div>
+                    <div class="panel-body home-info">
+                        <ul class="list-unstyled">
+                            <li><em>商品总价</em> <span>¥{$order->amount_goods}</span></li>
+                            <li><em>运费总额</em> <span>¥{$order->amount_shipfee}</span></li>
+                            <li><em>优惠总额</em> <span>-¥{$order->amount_offset}</span></li>
+                            <li><em>————</em><span>————————</span></li>
+                            <li><em>订单金额</em> <span>¥{$order->amount_payable}</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-item col-md-4">
+            <div class="dashboard-box">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">支付信息</h3>
+                    </div>
+                    <div class="panel-body home-info">
+                        <ul class="list-unstyled">
+                            <li><em>支付状态</em> <span>
+                                    <eq name="$order.pay_status" value="1">已支付
+                                        <else />未支付</eq>
+                                </span></li>
+                            <li><em>支付时间</em> <span>{$order->pay_time?date('Y-m-d H:i:s',$order->pay_time):'未支付'}</span>
+                            </li>
+                            <li><em>支付金额</em> <span>¥{$order->pay_amount}</span></li>
+                            <li><em>支付渠道</em> <span>{$order->pay_method}</span></li>
+                            <li><em>支付流水号</em> <span>{$order->pay_sn}</span></li>
+
+                            <!-- TODO 要校验管理员的身份是否有权限去操作支付 -->
+                            <if condition="($order['status'] == 1) AND ($order['pay_status']==0) ">
+                                <php>$pay = hook_one('order_payment');</php>
+                                <li><em>————</em><span>————————</span></li>
+                                <notempty name="pay">
+
+                                    <li><em>支付金额：</em> <span><input value="{$order->amount_payable}" type="number"
+                                                                    name="pay_info[pay_amount]"> </span></li>
+                                    <li><em>支付方式：</em> <span>
+                                        <select name="pay_info[pay_method]" id="">
+                                            <volist name="$pay" id="vo">
+                                                <option value="{vo.code}">{vo.name}</option>
+                                            </volist>
+                                        </select>
+                                    </span>
+                                    </li>
+                                    <li><em>支付流水号：</em> <span><input value="" type="text" name="pay_info[pay_sn]"></span>
+                                    </li>
+                                    <li><em>支付备注信息：</em> <span><input value="" type="text" name="pay_info[pay_info]"></span>
+                                    </li>
+                                    <li><em><button class="btn btn-sm btn-primary js-ajax-submit" type="submit"
+                                                    data-action="{:url('order/AdminOrderAct/paid')}">后台支付</button></em>
+                                        <span></span></li>
+                                    <else/>
+                                    <li>支付插件未安装</li>
+                                </notempty>
+                            </if>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-item col-md-4">
+            <div class="dashboard-box">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">物流信息</h3>
+                    </div>
+                    <div class="panel-body home-info">
+                        <ul class="list-unstyled">
+                            <li><em>发货状态</em> <span>
+                                    <eq name="$order.ship_status" value="1">已发货
+                                        <else />未发货</eq>
+                                </span></li>
+                            <li><em>发货时间</em> <span>{$order->ship_time?date('Y-m-d
+                                    H:i:s',$order->ship_time):'未发货'}</span>
+                            </li>
+                            <li><em>物流公司</em> <span>{$order->ship_name?:'.'}</span></li>
+                            <li><em>公司代码</em> <span>{$order->ship_code?:'.'}</span></li>
+                            <li><em>物流单号</em> <span>{$order->ship_sn?:'.'}</span></li>
+
+                            <!-- TODO 要校验管理员的身份是否有权限去操作支付 -->
+                            <if
+                                condition="($order['status'] == 1) AND ($order['pay_status']==1) AND ($order['ship_status']==0) ">
+                                <li><em>————</em><span>————————</span></li>
+                                <notempty name="$express">
+                                    <li><em>物流公司：</em> <span><select name="ship_info[ship_code]" id="">
+                                        <volist name="express" id="vo">
+                                            <option value="{vo.code}" data-key="{$key}">{$vo.name}</option>
+                                        </volist>
+                                        <input type="hidden" name="ship_info[ship_name]">
+                                    </select></span>
+                                    </li>
+                                    <script>
+                                        let express = {$express};
+
+                                        $("select[name='ship_info[ship_code]']").change(function(e){
+                                            let key = $( "select option:selected" ).data('key');
+                                            console.log(express,'express',key)
+                                            $("input[name='ship_info[ship_name]']").val(express[key].name)
+                                        });
+                                    </script>
+<!--                                    <li><em>公司代码：</em> <span><input value="" type="text" name="ship_info[ship_code]"></span>-->
+                                    </li>
+                                    <li><em>物流单号：</em> <span><input value="" type="text" name="ship_info[ship_sn]"></span>
+                                    </li>
+                                    <li><em><button class="btn btn-sm btn-primary js-ajax-submit" type="submit"
+                                                    data-action="{:url('order/AdminOrderAct/ship')}">发货</button></em>
+                                        <span></span></li>
+                                    <else/>
+                                    <li>物流插件未安装</li>
+
+                                </notempty>
+
+                            </if>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <hr>
+
+    <div class="table-actions">
+        <input type="hidden" name="order_id" value="{$order->id}">
+        <if condition="($order['status'] == 1) AND ($order['ship_status']==1) AND ($order['delivery_time']==0) ">
+            <button class="btn btn-sm btn-primary js-ajax-submit" type="submit"
+                data-action="{:url('order/AdminOrderAct/delivery')}">确认送达</button>
+        </if>
+        <if condition="($order['status'] == 1) AND ($order['delivery_time'] gt 0) AND ($order['received_time']==0) ">
+            <button class="btn btn-sm btn-primary js-ajax-submit" type="submit"
+                data-action="{:url('order/AdminOrderAct/received')}">确认收货</button>
+        </if>
+        <if condition="($order['status'] == 1) AND ($order['received_time'] gt 0) AND ($order['finished_time']==0) ">
+            <button class="btn btn-sm btn-primary js-ajax-submit" type="submit"
+                data-action="{:url('order/AdminOrderAct/finished')}">订单完成</button>
+        </if>
+        <hr>
+        <if condition="($order['status'] == 1)">
+            标记：
+            <input type="radio" name="flag" value="red" {$order->flag=='red' ? 'checked' : ''}>红
+            <input type="radio" name="flag" value="green" {$order->flag=='green' ? 'checked' : ''}>绿
+            <input type="radio" name="flag" value="gray" {$order->flag=='gray' ? 'checked' : ''}>灰
+            <input type="radio" name="flag" value="blue"" {$order->flag=='blue' ? 'checked' : ''}>蓝
+            <input type=" radio" name="flag" value="yellow" {$order->flag=='yellow' ? 'checked' : ''}>黄
+            <input type="radio" name="flag" value="none" {$order->flag=='' ? 'checked' : ''}>不标记
+            <br>
+            备注：<input name="notice" value="{$order->notice}">
+            <br>
+            <button class="btn btn-sm btn-danger js-ajax-submit" type="submit"
+                data-action="{:url('order/AdminOrderAct/notice')}">添加标注</button>
+            <button class="btn btn-sm btn-danger js-ajax-submit" type="submit"
+                data-action="{:url('order/AdminOrderAct/cancel')}">关闭终止订单</button>
+            <button class="btn btn-sm btn-danger js-ajax-submit" type="submit"
+                data-action="{:url('order/AdminOrderAct/cancel', ['force'=>1])}">～强制终止订单！</button>
+        </if>
+    </div>
+</form>
+
+
+<style>
+    .home-info li em {
+        float: left;
+        width: 120px;
+        font-style: normal;
+        font-weight: bold;
+    }
+
+    .home-info ul {
+        padding: 0;
+        margin: 0;
+    }
+
+    .panel {
+        margin-bottom: 0;
+    }
+
+    .grid-sizer {
+        width: 10%;
+    }
+
+    .grid-item {
+        margin-bottom: 5px;
+        padding: 5px;
+    }
+
+    .table-actions {
+        text-align: right;
+    }
+</style>

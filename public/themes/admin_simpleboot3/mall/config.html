@@ -1,0 +1,39 @@
+<include file="public@header" />
+</head>
+
+<body>
+	<div class="wrap">
+		<include file="../common/block/nav_tabs" />
+		<form method="post" class="form-horizontal js-ajax-form margin-top-20" action="{:url('')}">
+			<div class="form-group">
+				<label for="input-name" class="col-sm-2 control-label">搜索热词<span class="form-required">*</span></label>
+				<div class="col-md-6 col-sm-8">
+					<textarea type="text" class="form-control" id="input-name" name="data[hot_word]">{$data.hot_word|default='母婴,宠物'}</textarea>
+				</div>
+				<p class="help-block col-sm-2">英文逗号,分隔词语</p>
+			</div>
+			<div class="form-group">
+				<label for="input-name" class="col-sm-2 control-label">首页幻灯片ID<span class="form-required">*</span></label>
+				<div class="col-md-6 col-sm-10">
+					<input type="text" class="form-control" id="input-name" name="data[slide_index]" value="{$data.slide_index|default = 1}">
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="input-name" class="col-sm-2 control-label">分类幻灯片ID<span class="form-required">*</span></label>
+				<div class="col-md-6 col-sm-10">
+					<input type="text" class="form-control" id="input-name" name="data[slide_cate]" value="{$data.slide_cate|default = 1}">
+				</div>
+			</div>
+
+			<div class="form-group">
+				<div class="col-sm-offset-2 col-sm-10">
+					<button type="submit" class="btn btn-primary js-ajax-submit">{:lang('SAVE')}</button>
+					<a class="btn btn-default" href="{:url('index')}">{:lang('BACK')}</a>
+				</div>
+			</div>
+		</form>
+	</div>
+	<script src="__STATIC__/js/admin.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,214 @@
+<style>
+    img {
+        width: 100%;
+    }
+</style>
+
+<div style="padding: 20px;">
+    商品详情信息配置
+</div>
+
+<form method="post" class="js-ajax-form margin-top-20" action="">
+    <div class="table-actions">
+        <button class="btn btn-primary btn-block js-ajax-submit" type="submit" data-action="{:url('post')}">保存</button>
+    </div>
+
+    <php>
+        $detail = $goods->content;
+    </php>
+
+    <div style="clear: both;">
+        <div class="wrap_content row">
+            <div class="col-md-3 col-sm-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">预览</div>
+                    <div class="panel-body">
+                        <div id="wrap_content-preview" class="pic-list list-unstyled images_preview"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-4">
+                <div class="panel panel-default">
+                    <div class="panel-heading">编辑</div>
+                    <div class="panel-body">
+                        <div id="wrap_content-input"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-4">
+                <div class="panel panel-default" style="background-color: #fff9e8;border: solid 1px #c5a23f">
+                    <div class="panel-heading">图片临时回收站</div>
+                    <div class="panel-body">
+                        <small>此框内的图片将不会提交或保存</small>
+                        <hr>
+                        <div id="wrap_content-recycle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" name="id" value="{$goods->id}">
+    <button class="btn btn-primary btn-block js-ajax-submit" type="submit" data-action="{:url('post')}">保存</button>
+</form>
+
+
+<script>
+    var default_thumbnail = "__TMPL__/public/assets/images/default-thumbnail.png";
+    var detail_data = {:json_encode($detail)};
+
+    $(function () {
+        multiImagesField.init(detail_data);
+    });
+
+    var multiImagesField = {
+        title: '上传详情图',
+
+        wrapInput: null,
+        wrapPreview: null,
+        wrapRecycle: null,
+
+        dataInput: [],
+        dataRecycle: [],
+
+        noPic: default_thumbnail,
+
+        init: function (initData) {
+            let _this = this;
+
+            this.wrapInput = $("#wrap_content-input");
+            this.wrapPreview = $("#wrap_content-preview");
+            this.wrapRecycle = $("#wrap_content-recycle");
+
+            if(initData!=null){
+                this.dataInput = initData;
+            }
+            this.reload();
+        },
+        reload: function () {
+            this.input();
+            this.preview();
+            this.recycle();
+        },
+        loadInput() {
+            let currentData = [];
+            let inputItems = this.wrapInput.find('.input_item');
+            $.each(inputItems, function (i, e) {
+                let eleData = {
+                    'file_url': $(e).find('img').attr('src'),
+                    'file_path': $(e).find('input.input_file_path').val(),
+                    'title': $(e).find('input.input_title').val(),
+                    'link': $(e).find('input.input_link').val(),
+                    'type': $(e).find('input.input_type').val()
+                };
+                currentData.push(eleData);
+            });
+            this.dataInput = currentData;
+        },
+        addNewBtn: function (parentEle) {
+            let appendEle = '';
+            appendEle += '<div>';
+            appendEle +=
+                '<button type="button" class="btn btn-success btn-block" onclick="multiImagesField.upload();"">添加图片</button>';
+            appendEle += '</div>';
+            parentEle.append(appendEle);
+        },
+        input: function () {
+            let _this = this;
+            this.wrapInput.html('');
+            $.each(this.dataInput, function (i, e) {
+                let appendEle = '';
+                appendEle +=
+                    '<div style="margin: 5px 0;padding:5px; border: solid 1px #c5a23f" class="row input_item">';
+                appendEle += '<div class="col-md-4 img_preview"><img src="' + e.file_url +
+                    '" onclick="imagePreviewDialog(this.src);"></div>';
+                appendEle += '<div class="col-md-8 form-inline data_form">';
+                appendEle += '图片地址：<input type="text" name="file_path[]" value="' + e.file_path +
+                    '" class="input_src form-control input_file_path" readonly><br>';
+                appendEle += '图片标题：<input type="text" name="title[]" value="' + e.title +
+                    '" class="input_title form-control input_title"><br>';
+                appendEle += '图片链接：<input type="text" name="link[]" value="' + e.link +
+                    '" class="input_link form-control input_link"><br>';
+                appendEle += '<span style="display:none;">';
+                appendEle += '数据类型：<input type="text" name="type[]" value="' + e.type +
+                    '" class="input_type form-control input_type"><br>';
+                appendEle += '</span>';
+                appendEle += '<div style="margin-top:5px;">';
+                appendEle += '<button type="button" class="btn btn-danger btn-xs btn-block"';
+                appendEle += ' onclick="multiImagesField.remove(' + i + ',this);" >移入回收站</button>';
+                appendEle += '</div>';
+                appendEle += '</div>';
+                appendEle += '</div>';
+                _this.wrapInput.append(appendEle);
+            });
+            this.addNewBtn(this.wrapInput);
+        },
+        preview: function () {
+            let _this = this;
+            this.wrapPreview.html('');
+            this.loadInput();
+            $.each(this.dataInput, function (i, e) {
+                let appendEle = "";
+                appendEle += "<img src='" + e.file_url + "' onclick='imagePreviewDialog(this.src);' >";
+                _this.wrapPreview.append(appendEle);
+            });
+        },
+        recycle: function () {
+            let _this = this;
+            _this.wrapRecycle.html('');
+            $.each(this.dataRecycle, function (i, e) {
+                let appendEle = "";
+                appendEle = "<span style='padding:0 2px;display:inline-block;'>";
+                appendEle += "<img src='" + e.file_url +
+                    "' onclick='imagePreviewDialog(this.src);' style='width:80px;cursor: pointer;'/>";
+                appendEle += '<div>';
+                appendEle +=
+                    '<button type="button" class="btn btn-success btn-xs btn-block" onclick="multiImagesField.restore(' +
+                    i + ');">恢复图片</button>';
+                appendEle += '</div>';
+                appendEle += "</span>";
+                _this.wrapRecycle.append(appendEle);
+            });
+        },
+        remove: function (i, e) {
+            this.loadInput();
+
+            let currentEle = $(e).closest('.input_item');
+            let currentData = {
+                'file_url': currentEle.find('img').attr('src'),
+                'file_path': currentEle.find('input.input_file_path').val(),
+                'title': currentEle.find('input.input_title').val(),
+                'link': currentEle.find('input.input_link').val(),
+                'type': currentEle.find('input.input_type').val(),
+            };
+
+            this.dataInput.splice(i, 1);
+            this.dataRecycle.push(currentData);
+            this.reload();
+        },
+        restore: function (i) {
+            let popElement = this.dataRecycle[i];
+            this.dataRecycle.splice(i, 1);
+            this.loadInput();
+            this.dataInput.push(popElement);
+            this.reload();
+        },
+        upload: function (extra_params, app) {
+            let _this = this;
+            _this.loadInput();
+            openUploadDialog(this.title, function (dialog, files) {
+                $.each(files, function (i, e) {
+                    let newImg = {
+                        'file_url': e.preview_url,
+                        'file_path': e.filepath,
+                        'title': e.name,
+                        'link': '',
+                        'type': 'image',
+                    };
+                    _this.dataInput.push(newImg);
+                    _this.reload();
+                });
+            }, extra_params, 1, 'image', app);
+        }
+    }
+</script>

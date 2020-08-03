@@ -1,0 +1,8 @@
+
+<if condition="$nav_tabs">
+    <ul class="nav nav-tabs">
+        <foreach name="nav_tabs" item="nav" key="key">
+            <li class="{$active==$key?'active':''}"><a href="{:url($nav.url, $nav.params??'')}">{$nav.name}</a></li>
+        </foreach>
+    </ul>
+</if>

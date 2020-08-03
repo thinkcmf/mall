@@ -1,0 +1,12 @@
+{
+    "name": "thinkcmf/apps-mall",
+    "description": "CmfMall_2020",
+    "type": "cmf-app",
+    "require": {},
+    "authors": [
+        {
+            "name": "CCBox",
+            "email": "ccbox.net@163.com"
+        }
+    ]
+}

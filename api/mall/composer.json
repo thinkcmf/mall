@@ -1,0 +1,12 @@
+{
+    "name": "thinkcmf/apis-mall",
+    "description": "CmfMall_2020",
+    "type": "cmf-api",
+    "require": {},
+    "authors": [
+        {
+            "name": "CCBox",
+            "email": "ccbox.net@163.com"
+        }
+    ]
+}

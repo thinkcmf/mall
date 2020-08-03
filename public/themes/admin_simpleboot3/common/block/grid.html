@@ -1,0 +1,116 @@
+<notempty name="table.batch">
+    <form method="post" class="js-ajax-form margin-top-20" action="">
+        <div class="table-actions">
+            <foreach name="table.batch" item="batch">
+                <button class="btn btn-sm {$batch.class} js-ajax-submit" type="submit" data-action="{:url($batch.url, $batch.params)}" data-subcheck="true">{$batch.name}</button>
+            </foreach>
+        </div>
+</notempty>
+<table class="table table-hover table-bordered margin-top-20">
+    <thead>
+        <tr>
+            <notempty name="table.batch">
+                <th width="16"><label><input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x"></label></th>
+            </notempty>
+            <notempty name="table.list_order">
+                <th width="50">{$table.list_order}</th>
+            </notempty>
+            <foreach name="table.thead" item="th">
+                <th {$th.attr}>{$th.name}</th>
+            </foreach>
+            <notempty name="table.act_col">
+                <th>{:lang('ACTIONS')}</th>
+            </notempty>
+        </tr>
+    </thead>
+    <tbody>
+        <foreach name="table.data" item="vo">
+            <tr>
+                <notempty name="table.batch">
+                    <td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]" value="{$vo.id}"></td>
+                </notempty>
+                <notempty name="table.list_order">
+                    <td><input name='list_orders[{$vo.id}]' class="input input-order mr5" type='text' size='3'
+                               value='{$vo.list_order}'></td>
+                </notempty>
+                <foreach name="table.thead" item="th">
+                    <td {$th.td_attr}>
+                        <switch name="th.type">
+                            <case value="img|image">
+                                <img style="max-width: 100px;max-height: 100px;" src="{:cmf_get_image_preview_url($vo[$th['field']])}" alt="">        
+                            </case>
+                            <case value="flag">
+                                <notempty name="$vo[$th['field']]">
+                                    <i class="fa fa-{$th['params']['icon']}" style="color:{$vo[$th['field']]}"></i>
+                                </notempty>
+                            </case>
+                            <case value="map">
+                                {$th['params'][$vo[$th['field']]]|default=""}
+                            </case>
+                            <case value="switch">
+                                <a class="btn btn-xs <eq name="$vo[$th['field']]" value="1">btn-primary<else/>btn-danger</eq>">{$th['params'][$vo[$th['field']]]|default=""}</a>
+                            </case>
+                            <default />
+                                {$vo[$th['field']]}
+                        </switch>
+                    </td>
+                </foreach>
+
+                <notempty name="table.act_col">
+                    <td>
+                        <foreach name="table.act_col" item="act">
+                            <php>
+                                $url_params = [];
+                                if(!empty($act['params'])){
+                                    foreach($act['params'] as $param_index=>$param_field){
+                                        if(isset($act['map'])){
+                                            $url_params[$act['map'][$param_index]] = $vo[$param_field];
+                                        }else{
+                                            $url_params[$param_field] = $vo[$param_field];
+                                        }
+                                    }
+                                }
+                                $url = url($act['url'], $url_params);
+                                $url_id = str_replace('/', '_', $url);
+                            </php>
+                            <switch name="act.type">
+                                <case value="ajax">
+                                    <a class="btn btn-xs {$act.class} js-ajax" href="{$url}">{$act.name}</a>
+                                </case>
+                                <case value="dialog">
+                                    <a class="btn btn-xs btn-danger js-ajax-dialog-btn" href="{$url}" data-msg="{$act.msg??''}">{$act.name}</a>
+                                </case>
+                                <case value="delete">
+                                    <a class="btn btn-xs btn-danger js-ajax-delete" href="{$url}">{$act.name}</a>
+                                </case>
+                                <case value="pop">
+                                    <!-- FIXME：未关闭标签时，再次点击打开，页面会空白。 -->
+                                    <a class="btn btn-xs {$act.class}"
+                                        href="javascript:parent.openIframeLayer('{$url}','{$act.name}',{
+                                            cancel: function(index, layero){ 
+                                                location.reload()
+                                              }
+                                        });">{$act.name}</a>
+                                </case>
+                                <case value="jump">
+                                    <a class="btn btn-xs {$act.class}"
+                                        href="javascript:parent.openapp('{$url}','{$url_id}','{$act.option?$act.option.title:$act.name}ID:{$vo.id}');">{$act.name}</a>
+                                </case>
+                                <case value="link">
+                                <default />
+                                <a class="btn btn-xs {$act.class}" href="{$url}">{$act.name}</a>
+                            </switch>
+                        </foreach>
+                    </td>
+                </notempty>
+            </tr>
+        </foreach>
+    </tbody>
+</table>
+<notempty name="table.batch">
+    </form>
+</notempty>
+
+<script>
+
+</script>

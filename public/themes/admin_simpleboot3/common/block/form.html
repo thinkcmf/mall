@@ -1,0 +1,348 @@
+<form method="{$form.method|default='post'}" class="form-horizontal js-ajax-form margin-top-20"
+    action="{:url($form.action)}">
+
+    <foreach name="form.item" item="item">
+        <div class="form-group" <eq name="item.type" value="hidden">style="display:none;"</eq> >
+            <label for="{$item.field}" class="col-sm-2 control-label">
+                {$item.name}
+                <if condition="$item.required">
+                    <span class="form-required">*</span>
+                </if>
+            </label>
+            <div class="col-md-6 col-sm-10">
+                <php>
+                    $item_value = $item['default'] ?? '';
+                    $item_value = $form['data'][$item['field']] ?? $item_value;
+                </php>
+                <switch name="item.type">
+                    <case value="textarea">
+                        <textarea class="form-control" id="input_{$item.field}" name="{$item.field}" 
+                            <if condition="is_string($item['option'])">{$item.option}</if> >{$item_value}</textarea>
+                    </case>
+                    <case value="richtext">
+                        <div class="richtext-field" data-field="{$item.field}">    
+                            <script type="text/plain" id="input_{$item.field}" name="{$item.field}">{$item_value}</script>
+                        </div>
+                    </case>
+                    <case value="password">
+                        <input class="form-control" type="password" id="input_{$item.field}" name="{$item.field}" value="{$item_value}" />
+                    </case>
+                    <case value="select">
+                        <select class="form-control" name="{$item.field}" id="input_{$item.field}">
+                            <foreach name="item.option" item="option" key="optionval">
+                                <option value="{$optionval}" <eq name="optionval" value="$item_value">selected</eq> >{$option}</option>
+                            </foreach>
+                        </select>
+                    </case>
+                    <case value="checkbox">
+                        <foreach name="item.option" item="option" key="optionval">
+                            <label class="">
+                            <input class="" type="checkbox" id="input_{$item.field}_{$optionval}" name="{$item.field}" value="{$optionval}"
+                            <if condition="in_array($optionval,$item_value)">checked</if> >
+                                {$option}</label class="">
+                        </foreach>
+                    </case>
+                    <case value="radio">
+                        <foreach name="item.option" item="option" key="optionval">
+                            <input class="" type="radio" id="input_{$item.field}_{$optionval}" name="{$item.field}" value="{$optionval}"
+                            <eq name="optionval" value="$item_value">checked</eq> >
+                            <label for="input_{$item.field}_{$optionval}">{$option}</label>
+                        </foreach>
+                    </case>
+                    <case value="image|uploadimg">
+                        <!-- FIXME: 新窗口中，在弹窗中再弹出上传窗口会被盖住。 -->
+                        <!-- <input class="form-control" type="text" id="input_{$item.field}" name="{$item.field}" value="{$item_value}" /> -->
+                        <!-- <a href="javascript:uploadOneImage('图片上传','#input_{$item.field}');">上传图片</a> -->
+                        <input class="form-control" type="hidden" name="{$item.field}" id="input_{$item.field}" value="{$item_value|default=''}">
+                        <a href="javascript:imgUpload('图片上传','input_{$item.field}');">
+                            <if condition="empty($item_value)">
+                                <img src="__TMPL__/public/assets/images/default-thumbnail.png"
+                                    id="input_{$item.field}-preview" width="135" style="cursor: hand"/>
+                                <else/>
+                                <img src="{:cmf_get_image_preview_url($item_value)}" id="input_{$item.field}-preview"
+                                    width="135" style="cursor: hand"/>
+                            </if>
+                        </a>
+                        <input type="button" class="btn btn-sm" onclick="imgCancel('input_{$item.field}')" value="取消图片">
+                        <input type="button" class="btn btn-sm" 
+                            id="input_{$item.field}_restore" 
+                            data-src="{$item_value|default=''}" 
+                            data-srcfull="{:cmf_get_image_preview_url($item_value)}"
+                            onclick="imgRestore('input_{$item.field}')" 
+                            value="恢复原图">
+                        <div id="input_{$item.field}_recycle" style="display: none;margin: 10px 0;padding: 5px;background-color: #fff9e8;border: solid 1px #c5a23f">图片回收站：<br/></div>
+                    </case>
+                    <case value="images">
+                        <div style="clear: both;">
+                            <div class="images-field field_{$item.field}" data-field="{$item.field}" data-title="{$item.name}" data-max="{$item['option']['max']??0}">
+                                <div id="field_{$item.field}-input" style="display: none;">
+                                    <notempty name="item_value">
+                                        <foreach name="item_value" key="key" item="vo">
+                                            <php>$vo_url=cmf_get_image_preview_url($vo);</php>
+                                            <input type="text" id="input_{$item.field}_{$key}" name="{$item.field}[]" value="{$vo}" data-url="{$vo_url}" class="input_{$item.field} form-control">
+                                            <br>
+                                        </foreach>
+                                    </notempty>
+                                </div>
+                                <div id="field_{$item.field}-preview" class="pic-list list-unstyled images_preview" style="clear: both;"></div>
+                                <div id="field_{$item.field}-recycle" 
+                                style="display: none;margin: 10px 0;padding: 5px;clear: both;background-color: #fff9e8;border: solid 1px #c5a23f">
+                                </div>
+                            </div>
+                        </div>
+                    </case>
+                    <case value="hidden">
+                        <input class="form-control" type="hidden" id="input_{$item.field}" name="{$item.field}" value="{$item_value}" />
+                    </case>
+                    <default />
+                        <if condition="!is_array($item_value)">
+                            <input class="form-control" type="text" id="input_{$item.field}" name="{$item.field}" value="{$item_value}" />
+                        </if>
+                </switch>
+                
+                <notempty name="item.help">
+                    <p class="help-block">{$item.help}</p>
+                </notempty>
+
+            </div>
+        </div>
+    </foreach>
+
+
+    <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+            <if condition="!empty($form['data'])">
+                <input type="hidden" name="id" value="{$form.data.id}">
+            </if>
+
+            <button type="submit" class="btn btn-primary js-ajax-submit">{:lang('SAVE')}</button>
+
+            <if condition="!empty($form['backurl'])">
+                <a class="btn btn-default" href="{:url($form.backurl)}">{:lang('BACK')}</a>
+            </if>
+
+        </div>
+    </div>
+
+</form>
+
+<script src="__STATIC__/js/admin.js"></script>
+<script type="text/javascript">
+    //编辑器路径定义
+    var editorURL = GV.WEB_ROOT;
+</script>
+<script type="text/javascript" src="__STATIC__/js/ueditor/ueditor.config.js"></script>
+<script type="text/javascript" src="__STATIC__/js/ueditor/ueditor.all.min.js"></script>
+<script type="text/javascript">
+    $(function () {
+        
+
+        let richtext_field = $('.richtext-field');
+        if(richtext_field.length > 0){
+            $.each(richtext_field, function(i,e){
+                let field = $(e).data('field');
+                editorcontent = new baidu.editor.ui.Editor();
+                editorcontent.render('input_'+field);
+                try {
+                    editorcontent.sync();
+                } catch (err) {
+                }
+            });
+        }
+
+
+    });
+    
+
+
+    var default_thumbnail = "__TMPL__/public/assets/images/default-thumbnail.png";
+
+    // ## 单图部分：
+    // 取消图片
+    function imgCancel(input_id){
+        var img = $("#"+input_id).val();
+        var imgfull =  $("#"+input_id+"-preview").attr("src");
+
+        var recycle_add = true;
+        if(img == ""){
+            recycle_add = false;
+        }
+        $("#"+input_id+"_recycle img").each(function(){
+            let r_img = $(this).data("img");
+            if(r_img == img || img == "" || img == default_thumbnail){
+                recycle_add = false;
+            }
+        });
+        
+        if(recycle_add) {
+            let img_tag = "<img src='"+imgfull+"' data-img='"+img+"' onclick='imgApply(\""+input_id+"\",\""+imgfull+"\", \""+img+"\")' width='100' style='cursor: pointer;'/>";
+            $("#"+input_id+"_recycle").append(img_tag);
+            $("#"+input_id+"_recycle").show();
+        }
+        
+        $("#"+input_id+"-preview").attr("src",default_thumbnail);
+        $("#"+input_id).val("");
+        return false;
+    }
+
+    // 图片上传（单张图）
+    function imgUpload(title, input_id){
+        imgCancel(input_id);
+        uploadOneImage('图片上传','#'+input_id);
+        return false;
+    }
+
+    // 应用此图
+    function imgApply(input_id, src, img){
+        imgCancel(input_id);
+        $("#"+input_id+"-preview").attr("src",src);
+        $("#"+input_id+"").val(img);
+        return false;
+    }
+
+    // 恢复原图
+    function imgRestore(input_id){
+        imgCancel(input_id);
+        var img_src = $("#"+input_id+"_restore").data("src");
+        var img_srcfull = $("#"+input_id+"_restore").data("srcfull");
+        if(img_src != ""){
+            $("#"+input_id+"-preview").attr("src",img_srcfull);
+            $("#"+input_id+"").val(img_src);
+        }
+        return false;
+    }
+
+    // ## 多图部分
+    $(document).ready(function() {
+        let images_field = $('.images-field');
+        if(images_field.length > 0){
+            $.each(images_field, function(i,e){
+                let field = $(e).data('field');
+                let title = $(e).data('title');
+                let max = $(e).data('max');
+                multiImagesField.init(field, title, max);
+            });
+        }
+    });
+
+    var multiImagesField = {
+        title: '',
+        field: '',
+        width: 80,
+        height: 80,
+        maxInput: 0,
+
+        fieldInput: null,
+        fieldPreview: null,
+        fieldRecycle: null,
+        
+        dataOld: [],
+        dataInput: [],
+        dataRecycle: [],
+
+        noPic: default_thumbnail,
+
+        init:function(field,title,max){
+            this.field = field;
+            this.title = title;
+            this.maxInput = max;
+
+            this.fieldInput = $("#field_"+field+"-input");
+            this.fieldPreview = $("#field_"+field+"-preview");
+            this.fieldRecycle = $("#field_"+field+"-recycle");
+
+            // let imgsInput = $(".field_"+field).find('input.input_'+field);
+            let imgsInput = $("input.input_"+this.field);
+            let _this = this;
+            this.srcInput = [];
+            this.srcOld = [];
+            this.urlRecycle = [];
+
+            if(imgsInput.length>0){
+                $.each(imgsInput,function(i,e){
+                    let src = $(e).val(), url = $(e).data("url");
+                    let data = [src, url];
+                    _this.dataOld.push(data);
+                    _this.dataInput.push(data);
+                });
+            }
+            this.reload();
+        },
+        reload:function(){
+            this.input();
+            this.preview();
+            this.recycle();
+        },
+        input:function (src, url){
+            this.fieldInput.html('');
+            let _this = this;
+            if(this.dataInput.length>0){
+                $.each(this.dataInput,function(i,e){
+                    let field = _this.field, src = e[0], url = e[1];
+                    let appendEle = "<input type='text' name='"+field+"[]' value='"+src+"' data-url='"+url+"' class='input_"+field+" form-control'>";
+                    _this.fieldInput.append(appendEle);
+                });
+            }
+        },
+        preview:function (){
+            this.fieldPreview.html('');
+            let _this = this;
+            if(this.dataInput.length>0){
+                $.each(this.dataInput,function(i,e){
+                    let src = e[0], url = e[1];
+                    let new_elm = "<span style='padding:0 2px;display:inline-block;'>";
+                        new_elm += "<img src='"+url+"' data-img='"+src+"' onclick='imagePreviewDialog(this.src);' style='width:"+_this.width+"px;height:"+_this.height+"px;'/>";
+                        new_elm += "<br> <input type='button' onclick='multiImagesField.remove(\""+i+"\");' class='btn btn-sm img-replace' value='移除此图'>";
+                        new_elm += "</span>";
+                    _this.fieldPreview.append(new_elm);
+                });
+            }
+            if(this.maxInput < 1 || this.dataInput.length < this.maxInput){
+                let new_elm = "<span style='padding:0 2px;display:inline-block;'>";
+                    new_elm += "<img src='"+this.noPic+"' data-img='"+this.noPic+"' onclick='multiImagesField.upload();' style='width:"+_this.width+"px;height:"+_this.height+"px;'/>";
+                    new_elm += "<br> <input type='button' onclick='multiImagesField.upload();' class='btn btn-sm img-replace' value='添加图片'>";
+                    new_elm += "</span>";
+                this.fieldPreview.append(new_elm);
+            }
+        },
+        recycle:function (){
+            let _this = this;
+            _this.fieldRecycle.html('<div style="margin:5px;">图片临时回收站（此框内的图片将不会提交或者保存）</div>');
+            if(this.dataRecycle.length>0){
+                $.each(this.dataRecycle,function(i,e){
+                    let src = e[0], url = e[1];
+                    let new_elm = "<span style='padding:0 2px;display:inline-block;'>";
+                        new_elm += "<img src='"+url+"' data-img='"+src+"' onclick='imagePreviewDialog(this.src);' style='width:"+_this.width+"px;height:"+_this.height+"px;cursor: pointer;'/>";
+                        new_elm += "<br> <input type='button' onclick='multiImagesField.restore(\""+i+"\");' class='btn btn-sm img-replace' value='应用此图'>";
+                        new_elm += "</span>";
+                        _this.fieldRecycle.append(new_elm);
+                });
+                _this.fieldRecycle.show();
+            }else{
+                _this.fieldRecycle.hide();
+            }
+        },
+        remove:function(i){
+            let popElement = this.dataInput[i];
+            this.dataInput.splice(i, 1);
+            this.dataRecycle.push(popElement);
+            this.reload();
+        },
+        restore:function(i){
+            let popElement = this.dataRecycle[i];
+            this.dataRecycle.splice(i, 1);
+            this.dataInput.push(popElement);
+            this.reload();
+        },
+        upload:function(extra_params, app){
+            let _this = this;
+            openUploadDialog(this.title, function (dialog, files) {
+                $.each(files, function (i, e) {
+                    let newImg = [e.filepath, e.preview_url];
+                    _this.dataInput.push(newImg);
+                    _this.reload();
+                });
+            }, extra_params, 1, 'image', app);
+        }
+    }
+</script>

@@ -1,0 +1,81 @@
+<div style="padding: 20px;">
+    请配置各个省份地区运费信息。<br>
+    <span style="color:red;">排序值为<b> 9999 </b>时，则为不配送地区。</span>
+</div>
+
+<form method="post" class="js-ajax-form margin-top-20" action="">
+    <div class="table-actions">
+        <button class="btn btn-sm btn-primary js-ajax-submit" type="submit" data-action="{:url('post')}">保存</button>
+    </div>
+    <table class="table table-hover table-bordered margin-top-20" style="max-width: 1200px;">
+        <thead>
+            <tr>
+                <th width="50">排序</th>
+                <th>省份地区</th>
+                <th>首重(KG)</th>
+                <th>首重运费</th>
+                <th>续重(KG)</th>
+                <th>续重运费</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <th></th>
+                <th>默认运费</th>
+                <th>{$express->base_weight}</th>
+                <th>{$express->base_fee}</th>
+                <th>{$express->next_weight}</th>
+                <th>{$express->next_fee}</th>
+            </tr>
+            <foreach name="provinces" item="province">
+                <tr>
+                    <!-- <td><input type="text" name="ids[]" value="{$fee[$province.id]['list_order']??''}"></td> -->
+                    <td><input type="text" name="grid[{$province.id}][list_order]" class="input input-order mr5"
+                            size="3" value="{$fee[$province.id]['list_order']??'1000'}"></td>
+                    <td>
+                        {$province.name}
+                        <!-- <input type="text" name="grid[{$province.id}][province]" class="input input-order mr5" size="3" value="{$province.name}"> -->
+                        <!-- <input type="text" name="grid[{$province.id}][province_id]" class="input input-order mr5" size="3" value="{$province.id}"> -->
+                    </td>
+                    <td><input type="number" data-fix=3 name="grid[{$province.id}][base_weight]"
+                            value="{$fee[$province.id]['base_weight']??$express->base_weight}" class="grid_value"
+                            data-default="{$express->base_weight}">KG</td>
+                    <td>¥<input type="number" data-fix=2 name="grid[{$province.id}][base_fee]"
+                            value="{$fee[$province.id]['base_fee']??$express->base_fee}" class="grid_value"
+                            data-default="{$express->base_fee}"></td>
+                    <td><input type="number" data-fix=3 name="grid[{$province.id}][next_weight]"
+                            value="{$fee[$province.id]['next_weight']??$express->next_weight}" class="grid_value"
+                            data-default="{$express->next_weight}">KG</td>
+                    <td>¥<input type="number" data-fix=2 name="grid[{$province.id}][next_fee]"
+                            value="{$fee[$province.id]['next_fee']??$express->next_fee}" class="grid_value"
+                            data-default="{$express->next_fee}"></td>
+                </tr>
+            </foreach>
+        </tbody>
+    </table>
+    <input type="hidden" name="express_id" value="{$express->id}">
+    <button class="btn btn-sm btn-primary js-ajax-submit" type="submit" data-action="{:url('post')}">保存</button>
+</form>
+
+
+<script>
+    $(function () {
+        function grid_fix(thisObj) {
+            var default_val = $(thisObj).data("default");
+            var fix = $(thisObj).data("fix");
+            var current_val = Number($(thisObj).val()).toFixed(fix);
+            if (default_val != current_val) {
+                $(thisObj).parent().css("background-color", "#c7efe7");
+            }
+            $(thisObj).val(current_val);
+        }
+
+        $(".grid_value").each(function () {
+            grid_fix($(this));
+        });
+
+        $("input.grid_value").on("change", function () {
+            grid_fix($(this));
+        });
+    });
+</script>

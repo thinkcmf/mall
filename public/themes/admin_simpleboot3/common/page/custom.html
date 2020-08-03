@@ -1,0 +1,25 @@
+<include file="public@header" />
+</head>
+
+<body>
+    <div class="wrap js-check-wrap">
+		{$before_nav_tabs|default=""}
+        <php>
+            if(isset($content)){
+                if (is_array($content)){
+                    foreach($content as $line){
+                        if(is_string($line)){
+                            echo $line;
+                        }
+                    }
+                }elseif(is_string($content)){
+                    echo $content;
+                }
+            }
+        </php>
+        {$after_page|default=""}
+    </div>
+    <script src="__STATIC__/js/admin.js"></script>
+</body>
+
+</html>
