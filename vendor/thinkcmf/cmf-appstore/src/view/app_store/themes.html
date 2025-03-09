@@ -1,0 +1,133 @@
+<include file="public@header"/>
+</head>
+<body>
+<div class="wrap js-check-wrap">
+    <ul class="nav nav-tabs">
+        <li><a href="{:url('AppStore/apps')}">{:lang('ADMIN_APPSTORE_APPS')}</a></li>
+        <li><a href="{:url('AppStore/plugins')}">{:lang('ADMIN_APPSTORE_PLUGINS')}</a></li>
+        <li class="active"><a href="{:url('AppStore/themes')}">{:lang('ADMIN_APPSTORE_THEMES')}</a></li>
+    </ul>
+    <form method="post" class="js-ajax-form margin-top-20">
+        <php>
+            $status=array("1"=>'开启',"0"=>'禁用',"3"=>'未安装');
+        </php>
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th>模板名称</th>
+                <th>模板标识</th>
+                <th>描述</th>
+                <th>版本</th>
+                <!--                <th width="60">状态</th>-->
+                <th width="90">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <foreach name="themes" item="vo">
+                <tr>
+                    <td>
+                        <a href="{$vo.buy_url}" target="_blank">{$vo.title}</a>
+                    </td>
+                    <td><span class="label label-info">{$vo.name}</span></td>
+                    <td>{$vo.description}</td>
+                    <td>
+                        <empty name="vo.installed">
+                            <span class="label label-success">{$vo.version}</span>
+                            <else/>
+                            <span class="label label-info">{$vo.installed_theme.version|default='0.0.0'}</span>
+                            <notempty name="vo.need_update">
+                                -> <span class="label label-success">{$vo.version}</span>
+                            </notempty>
+                        </empty>
+                    </td>
+                    <td>
+                        <empty name="vo.installed">
+                            <empty name="appstore_settings.access_token">
+                                <a class="btn btn-primary btn-xs js-install-plugin-btn"
+                                   data-href="{:url('AppStore/installTheme',['id'=>$vo.id])}"
+                                   title="{:lang('Install')}" data-toggle="tooltip">
+                                    <i class="fa fa-plus-circle fa-fw"></i>
+                                </a>
+                                <else/>
+                                <empty name="vo.has_bought">
+                                    <a class="btn btn-info btn-xs"
+                                       href="javascript:;" onclick="doBuyApp('{$vo.buy_url}')"
+                                       title="购买" data-toggle="tooltip">
+                                        <i class="fa fa-cart-plus fa-fw"></i>
+                                    </a>
+                                    <else/>
+                                    <a class="btn btn-primary btn-xs js-ajax-dialog-btn"
+                                       data-href="{:url('AppStore/installTheme',['id'=>$vo.id])}"
+                                       data-wait-msg="正在安装..."
+                                       title="{:lang('Install')}" data-toggle="tooltip">
+                                        <i class="fa fa-plus-circle fa-fw"></i>
+                                    </a>
+                                </empty>
+                            </empty>
+                            <else/>
+                            <notempty name="vo.need_update">
+                                <a class="btn btn-success btn-xs js-ajax-dialog-btn"
+                                   data-href="{:url('AppStore/installTheme',['id'=>$vo.id,'version'=>$vo.installed_theme.version])}"
+                                   title="升级" data-toggle="tooltip">
+                                    <i class="fa fa-refresh fa-fw"></i>
+                                </a>
+                            </notempty>
+                            <a class="btn btn-danger btn-xs disabled"
+                               title="{:lang('Uninstall')}" data-toggle="tooltip">
+                                <i class="fa fa-trash fa-fw"></i>
+                            </a>
+                        </empty>
+                        <!--<a target="_blank" href2="https://www.thinkcmf.com/appstore/login/index" class="btn btn-primary btn-xs js-install-plugin-btn" data-href="{:url('AppStore/installApp',['id'=>$vo.id])}">安装</a>-->
+                    </td>
+                </tr>
+            </foreach>
+            </tbody>
+        </table>
+        <ul class="pagination">{$page}</ul>
+    </form>
+</div>
+<script src="__STATIC__/js/admin.js"></script>
+<script>
+    $('.js-install-plugin-btn').click(function () {
+        parent.openIframeLayer("{:url('admin/AppStore/login')}", '登录应用市场', {
+            area: ['600px', '450px'],
+            end: function () {
+                window.location.reload()
+            }
+        });
+    });
+
+    var buyAppLayerIndex = '';
+
+    function doBuyApp(buyUrl) {
+        buyUrl = buyUrl + "?app_store_token={$appstore_settings.access_token|default=''}"
+        parent.openIframeLayer(buyUrl, '购买应用', {
+            area: ['95%', '90%'],
+            end: function () {
+            },
+            success: function (layero, index) {
+                buyAppLayerIndex = index
+            }
+        });
+    }
+
+
+    window.parent.addEventListener('message', e => {
+        // e.data为子页面发送的数据
+        if (e.origin.match(/https?:\/\/www\.thinkcmf\.c(om|n)/)) {
+            console.log(e)
+            console.log(e.data)
+
+            switch (e.data.action) {
+                case "appstore/pay/complete":
+                    window.location.reload()
+                    parent.layer.close(buyAppLayerIndex);
+                    break;
+            }
+        }
+
+
+    })
+</script>
+</body>
+</html>
