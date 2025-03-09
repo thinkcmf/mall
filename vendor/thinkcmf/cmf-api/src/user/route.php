@@ -12,14 +12,29 @@
 // +----------------------------------------------------------------------
 use think\facade\Route;
 
-Route::get('user/favorites/my', 'user/favorites/getFavorites'); //获取收藏列表
-Route::get('user/comments/my', 'user/comments/getUserComments'); //获取我的评论列表
-Route::get('user/comments', 'user/comments/getComments'); //获评论列表
-Route::get('user/favorites/hasFavorite', 'user/favorites/hasFavorite'); // 判断是否已经收藏
+Route::get('admin/user/oauth/users$', 'user/AdminOauth/index');
+Route::delete('admin/user/oauth/users/:id$', 'user/AdminOauth/delete');
 
-Route::post('user/articles/deletes', 'user/Articles/deletes');
-Route::post('user/favorites', 'user/favorites/setFavorites'); //添加收藏
-Route::post('user/comments', 'user/comments/setComments');//添加评论
+Route::post('admin/user/actions/sync$', 'user/AdminUserAction/sync');
+Route::get('admin/user/actions$', 'user/AdminUserAction/index');
+Route::get('admin/user/actions/:id$', 'user/AdminUserAction/read')->pattern(['id' => '\d+']);
+Route::put('admin/user/actions/:id$', 'user/AdminUserAction/update')->pattern(['id' => '\d+']);
 
-Route::delete('user/favorites/:id', 'user/favorites/unsetFavorites');  //删除收藏
-Route::delete('user/comments/:id', 'user/comments/delComments'); //删除评论
+Route::get('admin/user/users$', 'user/AdminUser/index');
+Route::post('admin/user/users/:id/status/:status$', 'user/AdminUser/status')->pattern(['id' => '\d+', 'status' => '\d+',]);
+
+Route::get('user/favorites/my$', 'user/Favorites/getFavorites'); //获取收藏列表
+Route::get('user/comments/my$', 'user/Comments/getUserComments'); //获取我的评论列表
+Route::get('user/comments$', 'user/Comments/getComments'); //获评论列表
+Route::get('user/favorites/hasFavorite$', 'user/Favorites/hasFavorite'); // 判断是否已经收藏
+
+Route::post('user/articles/deletes$', 'user/Articles/deletes');
+Route::post('user/favorites$', 'user/Favorites/setFavorites'); //添加收藏
+Route::post('user/comments$', 'user/Comments/setComments');//添加评论
+
+Route::delete('user/favorites/:id$', 'user/Favorites/unsetFavorites');  //删除收藏
+Route::delete('user/comments/:id$', 'user/Comments/delComments'); //删除评论
+
+Route::post('admin/user/upload/one', 'user/AdminUpload/one'); //上传
+Route::post('user/upload/one', 'user/Upload/one'); //上传
+

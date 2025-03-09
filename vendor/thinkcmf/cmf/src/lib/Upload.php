@@ -2,7 +2,7 @@
 // +---------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +---------------------------------------------------------------------
-// | Copyright (c) 2013-2014 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +---------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +---------------------------------------------------------------------
@@ -10,12 +10,12 @@
 // +---------------------------------------------------------------------
 namespace cmf\lib;
 
+use cmf\traits\GetHeaderToken;
 use think\exception\HttpResponseException;
-use think\facade\Env;
 use think\File;
 use app\user\model\AssetModel;
 use think\Response;
-use think\Db;
+use think\facade\Db;
 
 /**
  * ThinkCMF上传类,分块上传
@@ -26,11 +26,15 @@ class Upload
     private $error = false;
     private $fileType;
     private $formName = 'file';
+    private $uploadDir = '';//文件保存目录
+    private $private = false;//私有文件
 
     public function __construct()
     {
         $this->request = request();
     }
+
+    use GetHeaderToken;
 
     public function getError()
     {
@@ -46,6 +50,23 @@ class Upload
     {
         $this->formName = $name;
     }
+
+    /**
+     * @param string $uploadDir
+     */
+    public function setUploadDir(string $uploadDir): void
+    {
+        $this->uploadDir = $uploadDir;
+    }
+
+    /**
+     * @param bool $private
+     */
+    public function setPrivate(bool $private = true): void
+    {
+        $this->private = $private;
+    }
+
 
     public function upload()
     {
@@ -93,12 +114,12 @@ class Upload
          */
 
         $app = $this->request->param('app');
-        if (empty($app) || !file_exists(APP_PATH . $app)) {
+        if (empty($app) || !file_exists(app_path() . $app)) {
             $app = 'default';
         }
 
         $fileImage    = $this->request->file($this->formName);
-        $originalName = $fileImage->getInfo('name');
+        $originalName = $fileImage->getOriginalName();
 
         $arrAllowedExtensions = explode(',', $arrFileTypes[$fileType]['extensions']);
 
@@ -120,10 +141,12 @@ class Upload
         $userId  = cmf_get_current_user_id();
         $userId  = empty($adminId) ? $userId : $adminId;
         if (empty($userId)) {
-            $userId = Db::name('user_token')->where('token', $this->request->header('XX-Token'))->field('user_id,token')->value('user_id');
+            $token = $this->getHeaderToken();
+
+            $userId = Db::name('user_token')->where('token', $token)->field('user_id,token')->value('user_id');
         }
-        $targetDir = Env::get('runtime_path') . "upload" . DIRECTORY_SEPARATOR . $userId . DIRECTORY_SEPARATOR; // 断点续传 need
-        if (!file_exists($targetDir)) {
+        $targetDir = runtime_path() . "upload" . DIRECTORY_SEPARATOR . $userId . DIRECTORY_SEPARATOR; // 断点续传 need
+        if (!is_dir($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
 
@@ -164,7 +187,7 @@ class Upload
             return false;
         }
         // Read binary input stream and append it to temp file
-        if (!$in = @fopen($fileImage->getInfo("tmp_name"), "rb")) {
+        if (!$in = @fopen($fileImage->getPathname(), "rb")) {
             $this->error = "Failed to open input stream！";
             return false;
         }
@@ -201,7 +224,7 @@ class Upload
             throw new HttpResponseException($response);
         }
 
-        $uploadPath = WEB_ROOT . 'upload/';
+        $uploadPath = empty($this->uploadDir) ? WEB_ROOT . 'upload/' : $this->uploadDir;
 
         $fileSaveName    = (empty($app) ? '' : $app . '/') . $strDate . '/' . md5(uniqid()) . "." . $strFileExtension;
         $strSaveFilePath = $uploadPath . $fileSaveName; //TODO 测试 windows 下
@@ -234,23 +257,25 @@ class Upload
         @fclose($out);
 
         $fileImage = new File($strSaveFilePath, 'r');
-        $arrInfo   = [
-            "name"     => $originalName,
-            "type"     => $fileImage->getMime(),
-            "tmp_name" => $strSaveFilePath,
-            "error"    => 0,
-            "size"     => $fileImage->getSize(),
-        ];
-
-        $fileImage->setSaveName($fileSaveName);
-        $fileImage->setUploadInfo($arrInfo);
+//        $arrInfo   = [
+//            "name"     => $originalName,
+//            "type"     => $fileImage->getMime(),
+//            "tmp_name" => $strSaveFilePath,
+//            "error"    => 0,
+//            "size"     => $fileImage->getSize(),
+//        ];
+//
+//        $fileImage->setSaveName($fileSaveName);
+//        $fileImage->setUploadInfo($arrInfo);
 
         /**
          * 断点续传 end
          */
 
-        if (!$fileImage->validate(['size' => $fileUploadMaxFileSize])->check()) {
-            $error = $fileImage->getError();
+
+        $fileValidator = validate(['file' => "fileSize:$fileUploadMaxFileSize"]);
+        if (!$fileValidator->check(['file' => $fileImage])) {
+            $error = $fileValidator->getError();
             unset($fileImage);
             unlink($strSaveFilePath);
             $this->error = $error;
@@ -259,7 +284,13 @@ class Upload
 
         //  $url=$first['url'];
         $storageSetting = cmf_get_cmf_settings('storage');
-        $qiniuSetting   = $storageSetting['Qiniu']['setting'];
+
+        if (is_array($storageSetting) && is_array($storageSetting['Qiniu']) && array_key_exists("setting", $storageSetting['Qiniu'])) {
+            $qiniuSetting = $storageSetting['Qiniu']['setting'];
+        } else {
+            $qiniuSetting = "";
+
+        }
         //$url=preg_replace('/^https/', $qiniu_setting['protocol'], $url);
         //$url=preg_replace('/^http/', $qiniu_setting['protocol'], $url);
 
@@ -280,7 +311,7 @@ class Upload
                 $arrInfo["file_md5"]    = md5_file($strSaveFilePath);
                 $arrInfo["file_sha1"]   = sha1_file($strSaveFilePath);
                 $arrInfo["file_key"]    = $arrInfo["file_md5"] . md5($arrInfo["file_sha1"]);
-                $arrInfo["filename"]    = $fileImage->getInfo("name");
+                $arrInfo["filename"]    = $originalName;
                 $arrInfo["file_path"]   = $strWebPath . $fileSaveName;
                 $arrInfo["suffix"]      = $fileImage->getExtension();
             }
@@ -323,7 +354,7 @@ class Upload
         if ($objAsset) {
             $assetModel->where('id', $objAsset['id'])->update(['filename' => $arrInfo["filename"]]);
         } else {
-            $assetModel->data($arrInfo)->allowField(true)->save();
+            $assetModel->save($arrInfo);
         }
 
         //删除临时文件
@@ -333,7 +364,7 @@ class Upload
 //        }
         @rmdir($targetDir);
 
-        if ($storage['type'] != 'Local') { //  增加存储驱动
+        if ($storage['type'] != 'Local' && !$this->private) { //  增加存储驱动
             $watermark = cmf_get_plugin_config($storage['type']);
             $storage   = new Storage($storage['type'], $storage['storages'][$storage['type']]);
 

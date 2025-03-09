@@ -11,9 +11,10 @@
 namespace app\portal\controller;
 
 use app\admin\model\RouteModel;
+use app\portal\model\PortalCategoryPostModel;
+use app\portal\model\RecycleBinModel;
 use cmf\controller\AdminBaseController;
 use app\portal\model\PortalCategoryModel;
-use think\Db;
 use app\admin\model\ThemeModel;
 
 
@@ -163,8 +164,7 @@ class AdminCategoryController extends AdminBaseController
         $id = $this->request->param('id', 0, 'intval');
         if ($id > 0) {
             $portalCategoryModel = new PortalCategoryModel();
-            $category            = $portalCategoryModel->get($id)->toArray();
-
+            $category            = $portalCategoryModel->find($id)->toArray();
 
             $categoriesTree = $portalCategoryModel->adminCategoryTree($category['parent_id'], $id);
 
@@ -280,7 +280,7 @@ tpl;
      */
     public function listOrder()
     {
-        parent::listOrders(Db::name('portal_category'));
+        parent::listOrders('portal_category');
         $this->success("排序更新成功！", '');
     }
 
@@ -345,7 +345,7 @@ tpl;
             $this->error('此分类有子类无法删除!');
         }
 
-        $categoryPostCount = Db::name('portal_category_post')->where('category_id', $id)->count();
+        $categoryPostCount = PortalCategoryPostModel::where('category_id', $id)->count();
 
         if ($categoryPostCount > 0) {
             $this->error('此分类有文章无法删除!');
@@ -361,7 +361,7 @@ tpl;
             ->where('id', $id)
             ->update(['delete_time' => time()]);
         if ($result) {
-            Db::name('recycleBin')->insert($data);
+            RecycleBinModel::insert($data);
             $this->success('删除成功!');
         } else {
             $this->error('删除失败');

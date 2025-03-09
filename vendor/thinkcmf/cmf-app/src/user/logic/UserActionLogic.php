@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -11,7 +11,7 @@
 
 namespace app\user\logic;
 
-use think\Db;
+use app\user\model\UserActionModel;
 
 class UserActionLogic
 {
@@ -47,12 +47,12 @@ class UserActionLogic
                     $userAction['url'] = '';
                 }
 
-                $findUserAction = Db::name('user_action')->where('action', $userActionKey)->count();
+                $findUserAction = UserActionModel::where('action', $userActionKey)->count();
 
                 $userAction['app'] = $app;
 
                 if ($findUserAction > 0) {
-                    Db::name('user_action')->where('action', $userActionKey)
+                    UserActionModel::where('action', $userActionKey)
                         ->strict(false)->field(true)
                         ->update([
                             'name' => $userAction['name'],
@@ -60,7 +60,7 @@ class UserActionLogic
                         ]);
                 } else {
                     $userAction['action'] = $userActionKey;
-                    Db::name('user_action')->strict(false)
+                    UserActionModel::strict(false)
                         ->field(true)
                         ->insert($userAction);
                 }

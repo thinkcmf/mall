@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -62,7 +62,7 @@ class CommentsController extends RestBaseController
         $commentService = new CommentService();
         $data           = $commentService->userComments($param);
         if (!$data->isEmpty()) {
-            $data->load('user,toUser');
+            $data->load(['user', 'toUser']);
         }
         if (empty($this->apiVersion) || $this->apiVersion == '1.0.0') {
             $response = [$data];

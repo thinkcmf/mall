@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -12,7 +12,6 @@ namespace app\admin\controller;
 
 use app\admin\model\RouteModel;
 use cmf\controller\AdminBaseController;
-use think\Db;
 
 class RouteController extends AdminBaseController
 {
@@ -34,7 +33,7 @@ class RouteController extends AdminBaseController
     {
         global $CMF_GV_routes;
         $routeModel = new RouteModel();
-        $routes     = Db::name('route')->order("list_order asc")->select();
+        $routes     = RouteModel::order("list_order asc")->select();
         $routeModel->getRoutes(true);
         unset($CMF_GV_routes);
         $this->assign("routes", $routes);
@@ -74,15 +73,17 @@ class RouteController extends AdminBaseController
      */
     public function addPost()
     {
-        $data       = $this->request->param();
-        $routeModel = new RouteModel();
-        $result     = $this->validate($data, 'Route');
-        if ($result !== true) {
-            $this->error($result);
-        }
-        $routeModel->allowField(true)->save($data);
+        if ($this->request->isPost()) {
+            $data       = $this->request->param();
+            $routeModel = new RouteModel();
+            $result     = $this->validate($data, 'Route');
+            if ($result !== true) {
+                $this->error($result);
+            }
+            $routeModel->save($data);
 
-        $this->success("添加成功！", url("Route/index", ['id' => $routeModel->id]));
+            $this->success(lang('ADD_SUCCESS'), url("Route/index", ['id' => $routeModel->id]));
+        }
     }
 
     /**
@@ -101,7 +102,7 @@ class RouteController extends AdminBaseController
     public function edit()
     {
         $id    = $this->request->param("id", 0, 'intval');
-        $route = Db::name('route')->where('id', $id)->find();
+        $route = RouteModel::where('id', $id)->find()->toArray();
         $this->assign($route);
         return $this->fetch();
     }
@@ -121,15 +122,17 @@ class RouteController extends AdminBaseController
      */
     public function editPost()
     {
-        $data       = $this->request->param();
-        $routeModel = new RouteModel();
-        $result     = $this->validate($data, 'Route');
-        if ($result !== true) {
-            $this->error($result);
-        }
-        $routeModel->allowField(true)->isUpdate(true)->save($data);
+        if ($this->request->isPost()) {
+            $data       = $this->request->param();
+            $routeModel = new RouteModel();
+            $result     = $this->validate($data, 'Route');
+            if ($result !== true) {
+                $this->error($result);
+            }
+            $routeModel->where('id', $data['id'])->update($data);
 
-        $this->success("保存成功！", url("Route/index"));
+            $this->success(lang('EDIT_SUCCESS'), url("Route/index"));
+        }
     }
 
     /**
@@ -147,10 +150,12 @@ class RouteController extends AdminBaseController
      */
     public function delete()
     {
-        $id = $this->request->param('id', 0, 'intval');
-        RouteModel::destroy($id);
+        if ($this->request->isPost()) {
+            $id = $this->request->param('id', 0, 'intval');
+            RouteModel::destroy($id);
 
-        $this->success("删除成功！");
+            $this->success(lang('DELETE_SUCCESS'));
+        }
     }
 
     /**
@@ -168,14 +173,16 @@ class RouteController extends AdminBaseController
      */
     public function ban()
     {
-        $id             = $this->request->param("id", 0, 'intval');
-        $data           = [];
-        $data['status'] = 0;
-        $data['id']     = $id;
-        $routeModel     = new RouteModel();
+        if ($this->request->isPost()) {
+            $id             = $this->request->param("id", 0, 'intval');
+            $data           = [];
+            $data['status'] = 0;
+            $data['id']     = $id;
+            $routeModel     = new RouteModel();
 
-        $routeModel->isUpdate(true)->save($data);
-        $this->success("禁用成功！");
+            $routeModel->where('id', $data['id'])->update($data);
+            $this->success("禁用成功！");
+        }
     }
 
     /**
@@ -193,14 +200,16 @@ class RouteController extends AdminBaseController
      */
     public function open()
     {
-        $id             = $this->request->param("id", 0, 'intval');
-        $data           = [];
-        $data['status'] = 1;
-        $data['id']     = $id;
-        $routeModel     = new RouteModel();
+        if ($this->request->isPost()) {
+            $id             = $this->request->param("id", 0, 'intval');
+            $data           = [];
+            $data['status'] = 1;
+            $data['id']     = $id;
+            $routeModel     = new RouteModel();
 
-        $routeModel->isUpdate(true)->save($data);
-        $this->success("启用成功！");
+            $routeModel->where('id', $data['id'])->update($data);
+            $this->success("启用成功！");
+        }
     }
 
     /**
@@ -220,7 +229,7 @@ class RouteController extends AdminBaseController
     {
         $routeModel = new RouteModel();
         parent::listOrders($routeModel);
-        $this->success("排序更新成功！");
+        $this->success(lang('Sort update successful'));
     }
 
     /**

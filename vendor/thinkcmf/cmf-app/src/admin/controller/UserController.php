@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,9 +10,14 @@
 // +----------------------------------------------------------------------
 namespace app\admin\controller;
 
+use app\admin\logic\UserLogic;
+use app\admin\model\RoleModel;
+use app\admin\model\RoleUserModel;
+use app\admin\model\UserModel;
+use app\admin\service\EmailService;
 use cmf\controller\AdminBaseController;
-use think\Db;
 use think\db\Query;
+use think\Validate;
 
 /**
  * Class UserController
@@ -21,7 +26,7 @@ use think\db\Query;
  *     'name'   => '管理组',
  *     'action' => 'default',
  *     'parent' => 'user/AdminIndex/default',
- *     'display'=> true,
+ *     'display'=> false,
  *     'order'  => 10000,
  *     'icon'   => '',
  *     'remark' => '管理组'
@@ -34,7 +39,7 @@ class UserController extends AdminBaseController
      * 管理员列表
      * @adminMenu(
      *     'name'   => '管理员',
-     *     'parent' => 'default',
+     *     'parent' => 'user/AdminIndex/default',
      *     'display'=> true,
      *     'hasView'=> true,
      *     'order'  => 10000,
@@ -54,10 +59,9 @@ class UserController extends AdminBaseController
 
         /**搜索条件**/
         $userLogin = $this->request->param('user_login');
-        $userEmail = trim($this->request->param('user_email'));
+        $userEmail = trim($this->request->param('user_email',''));
 
-        $users = Db::name('user')
-            ->where('user_type', 1)
+        $users = UserModel::where('user_type', 1)
             ->where(function (Query $query) use ($userLogin, $userEmail) {
                 if ($userLogin) {
                     $query->where('user_login', 'like', "%$userLogin%");
@@ -73,7 +77,7 @@ class UserController extends AdminBaseController
         // 获取分页显示
         $page = $users->render();
 
-        $rolesSrc = Db::name('role')->select();
+        $rolesSrc = RoleModel::select();
         $roles    = [];
         foreach ($rolesSrc as $r) {
             $roleId           = $r['id'];
@@ -106,7 +110,7 @@ class UserController extends AdminBaseController
             return $content;
         }
 
-        $roles = Db::name('role')->where('status', 1)->order("id DESC")->select();
+        $roles = RoleModel::where('status', 1)->order("id DESC")->select();
         $this->assign("roles", $roles);
         return $this->fetch();
     }
@@ -127,26 +131,28 @@ class UserController extends AdminBaseController
     public function addPost()
     {
         if ($this->request->isPost()) {
-            if (!empty($_POST['role_id']) && is_array($_POST['role_id'])) {
-                $role_ids = $_POST['role_id'];
-                unset($_POST['role_id']);
-                $result = $this->validate($this->request->param(), 'User');
+            $roleIds = $this->request->param('role_id/a');
+            if (!empty($roleIds) && is_array($roleIds)) {
+                $data   = $this->request->param();
+                $result = $this->validate($data, 'User.add');
                 if ($result !== true) {
                     $this->error($result);
                 } else {
-                    $_POST['user_pass'] = cmf_password($_POST['user_pass']);
-                    $result             = DB::name('user')->insertGetId($_POST);
-                    if ($result !== false) {
+                    $data['user_pass']       = cmf_password($data['user_pass']);
+                    $data['create_time']     = time();
+                    $data['last_login_time'] = $data['create_time'];
+                    $userId            = UserModel::strict(false)->insertGetId($data);
+                    if ($userId !== false) {
                         //$role_user_model=M("RoleUser");
-                        foreach ($role_ids as $role_id) {
-                            if (cmf_get_current_admin_id() != 1 && $role_id == 1) {
+                        foreach ($roleIds as $roleId) {
+                            if (cmf_get_current_admin_id() != 1 && $roleId == 1) {
                                 $this->error("为了网站的安全，非网站创建者不可创建超级管理员！");
                             }
-                            Db::name('RoleUser')->insert(["role_id" => $role_id, "user_id" => $result]);
+                            RoleUserModel::insert(["role_id" => $roleId, "user_id" => $userId]);
                         }
-                        $this->success("添加成功！", url("user/index"));
+                        $this->success(lang('ADD_SUCCESS'), url('User/index'));
                     } else {
-                        $this->error("添加失败！");
+                        $this->error(lang('ADD_FAILED'));
                     }
                 }
             } else {
@@ -176,14 +182,16 @@ class UserController extends AdminBaseController
         if (!empty($content)) {
             return $content;
         }
-
+        if(!UserLogic::isCreator()){
+            $this->error('为了网站的安全，非网站创建者不可访问编辑页面');
+        }
         $id    = $this->request->param('id', 0, 'intval');
-        $roles = DB::name('role')->where('status', 1)->order("id DESC")->select();
+        $roles = RoleModel::where('status', 1)->order("id DESC")->select();
         $this->assign("roles", $roles);
-        $role_ids = DB::name('RoleUser')->where("user_id", $id)->column("role_id");
+        $role_ids = RoleUserModel::where("user_id", $id)->column("role_id");
         $this->assign("role_ids", $role_ids);
 
-        $user = DB::name('user')->where("id", $id)->find();
+        $user = UserModel::where("id", $id)->find()->toArray();
         $this->assign($user);
         return $this->fetch();
     }
@@ -204,33 +212,36 @@ class UserController extends AdminBaseController
     public function editPost()
     {
         if ($this->request->isPost()) {
-            if (!empty($_POST['role_id']) && is_array($_POST['role_id'])) {
-                if (empty($_POST['user_pass'])) {
-                    unset($_POST['user_pass']);
+            if(!UserLogic::isCreator()){
+                $this->error('为了网站的安全，非网站创建者不可编辑');
+            }
+            $roleIds = $this->request->param('role_id/a');
+            if (!empty($roleIds) && is_array($roleIds)) {
+                $data = $this->request->param();
+                if (empty($data['user_pass'])) {
+                    unset($data['user_pass']);
                 } else {
-                    $_POST['user_pass'] = cmf_password($_POST['user_pass']);
+                    $data['user_pass'] = cmf_password($data['user_pass']);
                 }
-                $role_ids = $this->request->param('role_id/a');
-                unset($_POST['role_id']);
-                $result = $this->validate($this->request->param(), 'User.edit');
+                $result = $this->validate($data, 'User.edit');
 
                 if ($result !== true) {
                     // 验证失败 输出错误信息
                     $this->error($result);
                 } else {
-                    $result = DB::name('user')->update($_POST);
+                    $userId = $this->request->param('id', 0, 'intval');
+                    $result = UserModel::strict(false)->where('id', $userId)->save($data);
                     if ($result !== false) {
-                        $uid = $this->request->param('id', 0, 'intval');
-                        DB::name("RoleUser")->where("user_id", $uid)->delete();
-                        foreach ($role_ids as $role_id) {
-                            if (cmf_get_current_admin_id() != 1 && $role_id == 1) {
+                        RoleUserModel::where("user_id", $userId)->delete();
+                        foreach ($roleIds as $roleId) {
+                            if (cmf_get_current_admin_id() != 1 && $roleId == 1) {
                                 $this->error("为了网站的安全，非网站创建者不可创建超级管理员！");
                             }
-                            DB::name("RoleUser")->insert(["role_id" => $role_id, "user_id" => $uid]);
+                            RoleUserModel::insert(["role_id" => $roleId, "user_id" => $userId]);
                         }
-                        $this->success("保存成功！");
+                        $this->success(lang('EDIT_SUCCESS'));
                     } else {
-                        $this->error("保存失败！");
+                        $this->error(lang('EDIT_FAILED'));
                     }
                 }
             } else {
@@ -256,7 +267,7 @@ class UserController extends AdminBaseController
     public function userInfo()
     {
         $id   = cmf_get_current_admin_id();
-        $user = Db::name('user')->where("id", $id)->find();
+        $user = UserModel::where("id", $id)->find()->toArray();
         $this->assign($user);
         return $this->fetch();
     }
@@ -281,11 +292,11 @@ class UserController extends AdminBaseController
             $data             = $this->request->post();
             $data['birthday'] = strtotime($data['birthday']);
             $data['id']       = cmf_get_current_admin_id();
-            $create_result    = Db::name('user')->update($data);;
+            $create_result    = UserModel::update($data);;
             if ($create_result !== false) {
-                $this->success("保存成功！");
+                $this->success(lang('EDIT_SUCCESS'));
             } else {
-                $this->error("保存失败！");
+                $this->error(lang('EDIT_FAILED'));
             }
         }
     }
@@ -305,16 +316,21 @@ class UserController extends AdminBaseController
      */
     public function delete()
     {
-        $id = $this->request->param('id', 0, 'intval');
-        if ($id == 1) {
-            $this->error("最高管理员不能删除！");
-        }
+        if ($this->request->isPost()) {
+            $id = $this->request->param('id', 0, 'intval');
+            if(!UserLogic::isCreator()){
+                $this->error('为了网站的安全，非网站创建者不可删除');
+            }
+            if ($id == 1) {
+                $this->error("最高管理员不能删除！");
+            }
 
-        if (Db::name('user')->delete($id) !== false) {
-            Db::name("RoleUser")->where("user_id", $id)->delete();
-            $this->success("删除成功！");
-        } else {
-            $this->error("删除失败！");
+            if (UserModel::destroy($id) !== false) {
+                RoleUserModel::where('user_id', $id)->delete();
+                $this->success(lang('DELETE_SUCCESS'));
+            } else {
+                $this->error(lang('DELETE_FAILED'));
+            }
         }
     }
 
@@ -333,16 +349,21 @@ class UserController extends AdminBaseController
      */
     public function ban()
     {
-        $id = $this->request->param('id', 0, 'intval');
-        if (!empty($id)) {
-            $result = Db::name('user')->where(["id" => $id, "user_type" => 1])->setField('user_status', '0');
-            if ($result !== false) {
-                $this->success("管理员停用成功！", url("user/index"));
+        if ($this->request->isPost()) {
+            $id = $this->request->param('id', 0, 'intval');
+            if (!empty($id)) {
+                if(!UserLogic::isCreator()){
+                    $this->error('为了网站的安全，非网站创建者不可拉黑');
+                }
+                $result = UserModel::where(['id' => $id, 'user_type' => 1])->update(['user_status' => '0']);
+                if ($result !== false) {
+                    $this->success('管理员停用成功！', url('User/index'));
+                } else {
+                    $this->error('管理员停用失败！');
+                }
             } else {
-                $this->error('管理员停用失败！');
+                $this->error('数据传入失败！');
             }
-        } else {
-            $this->error('数据传入失败！');
         }
     }
 
@@ -361,16 +382,121 @@ class UserController extends AdminBaseController
      */
     public function cancelBan()
     {
-        $id = $this->request->param('id', 0, 'intval');
-        if (!empty($id)) {
-            $result = Db::name('user')->where(["id" => $id, "user_type" => 1])->setField('user_status', '1');
-            if ($result !== false) {
-                $this->success("管理员启用成功！", url("user/index"));
+        if ($this->request->isPost()) {
+            $id = $this->request->param('id', 0, 'intval');
+            if (!empty($id)) {
+                if(!UserLogic::isCreator()){
+                    $this->error('为了网站的安全，非网站创建者不可启用');
+                }
+                $result = UserModel::where(['id' => $id, 'user_type' => 1])->update(['user_status' => '1']);
+                if ($result !== false) {
+                    $this->success('管理员启用成功！', url('User/index'));
+                } else {
+                    $this->error('管理员启用失败！');
+                }
             } else {
-                $this->error('管理员启用失败！');
+                $this->error('数据传入失败！');
             }
-        } else {
-            $this->error('数据传入失败！');
         }
     }
+
+    /**
+     * 我的邮箱配置
+     * @adminMenu(
+     *     'name'   => '我的邮箱配置',
+     *     'parent' => 'admin/Setting/default',
+     *     'display'=> false,
+     *     'hasView'=> true,
+     *     'order'  => 10000,
+     *     'icon'   => '',
+     *     'remark' => '我的邮箱配置',
+     *     'param'  => ''
+     * )
+     */
+    public function emailSetting()
+    {
+        $adminId      = cmf_get_current_admin_id();
+        $emailSetting = cmf_get_option('admin_smtp_setting_' . $adminId);
+
+        $this->assign($emailSetting);
+
+        return $this->fetch();
+    }
+
+    /**
+     * 我的邮箱设置提交保存
+     * @adminMenu(
+     *     'name'   => '我的邮箱设置提交保存',
+     *     'parent' => 'emailSetting',
+     *     'display'=> false,
+     *     'hasView'=> false,
+     *     'order'  => 10000,
+     *     'icon'   => '',
+     *     'remark' => '我的邮箱设置提交保存',
+     *     'param'  => ''
+     * )
+     */
+    public function emailSettingPost()
+    {
+        if ($this->request->isPost()) {
+            $post = array_map('trim', $this->request->param());
+
+            if (in_array('', $post) && !empty($post['smtpsecure'])) {
+                $this->error("不能留空！");
+            }
+
+            $adminId = cmf_get_current_admin_id();
+            cmf_set_option('admin_smtp_setting_' . $adminId, $post);
+
+            $this->success(lang('EDIT_SUCCESS'));
+        }
+    }
+
+    /**
+     * 我的邮箱设置测试
+     * @adminMenu(
+     *     'name'   => '我的邮箱设置测试',
+     *     'parent' => 'admin/Setting/default',
+     *     'display'=> false,
+     *     'hasView'=> true,
+     *     'order'  => 10000,
+     *     'icon'   => 'email',
+     *     'remark' => '我的邮箱设置测试',
+     *     'param'  => ''
+     * )
+     */
+    public function emailSettingTest()
+    {
+        if ($this->request->isPost()) {
+
+            $validate = new Validate();
+            $validate->rule([
+                'to'      => 'require|email',
+                'subject' => 'require',
+                'content' => 'require',
+            ]);
+            $validate->message([
+                'to.require'      => '收件箱不能为空！',
+                'to.email'        => '收件箱格式不正确！',
+                'subject.require' => '标题不能为空！',
+                'content.require' => '内容不能为空！',
+            ]);
+
+            $data = $this->request->param();
+            if (!$validate->check($data)) {
+                $this->error($validate->getError());
+            }
+
+            $result = EmailService::send($data['to'], $data['subject'], $data['content']);
+            if ($result && empty($result['error'])) {
+                $this->success('发送成功！');
+            } else {
+                $this->error('发送失败：' . $result['message']);
+            }
+
+        } else {
+            return $this->fetch();
+        }
+    }
+
 }

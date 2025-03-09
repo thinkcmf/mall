@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -11,7 +11,7 @@
 
 namespace app\admin\logic;
 
-use think\Db;
+use app\admin\model\HookModel;
 
 class HookLogic
 {
@@ -41,19 +41,19 @@ class HookLogic
 
                 $hook['type'] = empty($hook['type']) ? 2 : $hook['type'];
 
-                if (!in_array($hook['type'], [2, 3, 4]) && !in_array($app, ['cmf', 'swoole'])) {
+                if (!in_array($hook['type'], [1, 2, 3, 4])) {
                     $hook['type'] = 2;
                 }
 
-                $findHook = Db::name('hook')->where('hook', $hookName)->count();
+                $findHook = HookModel::where('hook', $hookName)->count();
 
                 $hook['app'] = $app;
 
                 if ($findHook > 0) {
-                    Db::name('hook')->where('hook', $hookName)->strict(false)->field(true)->update($hook);
+                    HookModel::where('hook', $hookName)->strict(false)->field(true)->update($hook);
                 } else {
                     $hook['hook'] = $hookName;
-                    Db::name('hook')->insert($hook);
+                    HookModel::insert($hook);
                 }
             }
         }

@@ -2,7 +2,7 @@
 // +---------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +---------------------------------------------------------------------
-// | Copyright (c) 2013-2014 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +---------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +---------------------------------------------------------------------
@@ -10,12 +10,10 @@
 // +---------------------------------------------------------------------
 namespace cmf\lib;
 
-use think\exception\TemplateNotFoundException;
-use think\facade\Lang;
-use think\Loader;
-use think\Db;
+use think\template\exception\TemplateNotFoundException;
+use think\facade\Cache;
+use think\facade\Db;
 use think\View;
-use think\facade\Config;
 
 
 /**
@@ -53,14 +51,13 @@ abstract class Plugin
      */
     public function __construct()
     {
-
         $request = request();
 
-        $engineConfig = Config::pull('template');
+        $engineConfig = config('template');
 
         $this->name = $this->getName();
 
-        $nameCStyle = Loader::parseName($this->name);
+        $nameCStyle = cmf_parse_name($this->name);
 
         $this->pluginPath     = WEB_ROOT . 'plugins/' . $nameCStyle . '/';
         $this->configFilePath = $this->pluginPath . 'config.php';
@@ -87,8 +84,6 @@ abstract class Plugin
         $themePath = 'view' . $themeDir;
 
         $this->themeRoot = $this->pluginPath . $themePath . '/';
-
-        $engineConfig['view_base'] = $this->themeRoot;
 
         $pluginRoot = "plugins/{$nameCStyle}";
 
@@ -119,15 +114,20 @@ abstract class Plugin
                 '__WEB_ROOT__'    => $cdnStaticRoot
             ];
         }
-        $view = new View();
+        $app  = app();
+        $view = new View($app);
 
-        $this->view = $view->init($engineConfig);
-        $this->view->config('tpl_replace_string', $replaceConfig);
+        $this->view = $view;
+
+        $this->view->engine()->config([
+            'view_base'          => $this->themeRoot,
+            'tpl_replace_string' => $replaceConfig
+        ]);
 
         //加载多语言
-        $langSet   = $request->langset();
-        $lang_file = $this->pluginPath . "lang/" . $langSet . ".php";
-        Lang::load($lang_file);
+//        $langSet   = $app->lang->getLangSet();
+//        $lang_file = $this->pluginPath . "lang/" . $langSet . ".php";
+//        $app->lang->load($lang_file);
 
     }
 
@@ -141,7 +141,7 @@ abstract class Plugin
     final protected function fetch($template)
     {
         if (!is_file($template)) {
-            $engineConfig = Config::pull('template');
+            $engineConfig = config('view');
             $template     = $this->themeRoot . $template . '.' . $engineConfig['view_suffix'];
         }
 
@@ -256,15 +256,19 @@ abstract class Plugin
                 return $_config[$name];
             }
         }
-
-        $config = Db::name('plugin')->where('name', $name)->value('config');
+        $pluginCofingKey = 'cmf_' . $name . '_plugin_config';
+        if (Cache::has($pluginCofingKey)) {
+            return Cache::get($pluginCofingKey);
+        }
+        $ttl    = mt_rand(600, 6000);
+        $config = Db::name('plugin')->cache('cmf_' . $name . '_plugin_config_db', $ttl)->where('name', $name)->value('config');
 
         if (!empty($config) && $config != "null") {
             $config = json_decode($config, true);
         } else {
             $config = $this->getDefaultConfig();
-
         }
+        Cache::set($pluginCofingKey, $config, $ttl);
         $_config[$name] = $config;
         return $config;
     }
@@ -292,7 +296,6 @@ abstract class Plugin
                 }
             }
         }
-
 
         return $config;
     }

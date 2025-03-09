@@ -5,6 +5,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ...
 
+## [1.3.4] - 2024-02-17
+### Fixed
+* Solved a notice about missing T_NAME_RELATIVE constant on PHP <8.0 with "phpdocumentor/type-resolver" package installed.
+
+## [1.3.3] - 2022-07-16
+### Changed
+* Ignore static analysis annotations (phpstan, psalm, codeCoverage) by [@dimtrovich].
+
+## [1.3.2] - 2020-12-12
+### PHP 8 compatibility
+* Fix namespace parsing for annotations by [@jcheron] (see [namespaced names as single token RFC](https://wiki.php.net/rfc/namespaced_names_as_token)).
+
 ## [1.3.1] - 2019-01-15
 ### Added
 * Added missing "RangeAnnotation" to demo script by [@lsces].
@@ -69,7 +81,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/php-annotations/php-annotations/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/php-annotations/php-annotations/compare/v1.3.4...HEAD
+[1.3.4]: https://github.com/php-annotations/php-annotations/compare/v1.3.3...v1.3.4
+[1.3.3]: https://github.com/php-annotations/php-annotations/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/php-annotations/php-annotations/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/php-annotations/php-annotations/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/php-annotations/php-annotations/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/php-annotations/php-annotations/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/php-annotations/php-annotations/compare/v1.0.0...v1.1.0
 [@benesch]: https://github.com/benesch

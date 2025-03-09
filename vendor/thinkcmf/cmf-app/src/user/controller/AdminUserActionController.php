@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -12,8 +12,8 @@
 namespace app\user\controller;
 
 use app\user\logic\UserActionLogic;
+use app\user\model\UserActionModel;
 use cmf\controller\AdminBaseController;
-use think\Db;
 
 /**
  * Class AdminUserActionController
@@ -37,22 +37,7 @@ class AdminUserActionController extends AdminBaseController
      */
     public function index()
     {
-        $where   = [];
-        $request = input('request.');
-
-        if (!empty($request['uid'])) {
-            $where['id'] = intval($request['uid']);
-        }
-        $keywordComplex = [];
-        if (!empty($request['keyword'])) {
-            $keyword = $request['keyword'];
-
-            $keywordComplex['user_login']    = ['like', "%$keyword%"];
-            $keywordComplex['user_nickname'] = ['like', "%$keyword%"];
-            $keywordComplex['user_email']    = ['like', "%$keyword%"];
-        }
-
-        $actions = Db::name('user_action')->paginate(20);
+        $actions = UserActionModel::paginate(20);
         // 获取分页显示
         $page = $actions->render();
         $this->assign('actions', $actions);
@@ -77,7 +62,7 @@ class AdminUserActionController extends AdminBaseController
     public function edit()
     {
         $id     = $this->request->param('id', 0, 'intval');
-        $action = Db::name('user_action')->where('id', $id)->find();
+        $action = UserActionModel::where('id', $id)->find()->toArray();
         $this->assign($action);
 
         return $this->fetch();
@@ -98,23 +83,25 @@ class AdminUserActionController extends AdminBaseController
      */
     public function editPost()
     {
-        $id = $this->request->param('id', 0, 'intval');
+        if ($this->request->isPost()) {
+            $id = $this->request->param('id', 0, 'intval');
 
-        $data = $this->request->param();
+            $data = $this->request->param();
 
-        Db::name('user_action')->where('id', $id)
-            ->strict(false)
-            ->field('score,coin,reward_number,cycle_type,cycle_time')
-            ->update($data);
+            UserActionModel::where('id', $id)
+                ->strict(false)
+                ->field('score,coin,reward_number,cycle_type,cycle_time')
+                ->update($data);
 
-        $this->success('保存成功！');
+            $this->success(lang('EDIT_SUCCESS'));
+        }
     }
 
     /**
      * 同步用户操作
      * @adminMenu(
      *     'name'   => '同步用户操作',
-     *     'parent' => 'index',
+     *     'parent' => 'admin/Dev/index',
      *     'display'=> false,
      *     'hasView'=> true,
      *     'order'  => 10000,
@@ -126,7 +113,7 @@ class AdminUserActionController extends AdminBaseController
     public function sync()
     {
 
-        $apps = cmf_scan_dir(APP_PATH . '*', GLOB_ONLYDIR);
+        $apps = cmf_scan_dir($this->app->getAppPath() . '*', GLOB_ONLYDIR);
 
         array_push($apps, 'admin', 'user');
 

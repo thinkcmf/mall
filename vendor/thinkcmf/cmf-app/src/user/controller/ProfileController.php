@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -15,7 +15,6 @@ use think\Validate;
 use think\Image;
 use cmf\controller\UserBaseController;
 use app\user\model\UserModel;
-use think\Db;
 
 class ProfileController extends UserBaseController
 {
@@ -52,7 +51,8 @@ class ProfileController extends UserBaseController
     public function editPost()
     {
         if ($this->request->isPost()) {
-            $validate = new Validate([
+            $validate = new Validate();
+            $validate->rule([
                 'user_nickname' => 'max:32',
                 'sex'           => 'between:0,2',
                 'birthday'      => 'dateFormat:Y-m-d|after:-88 year|before:-1 day',
@@ -75,7 +75,14 @@ class ProfileController extends UserBaseController
                 $this->error($validate->getError());
             }
             $editData = new UserModel();
-            if ($editData->editData($data)) {
+            if ($editData->editData($data, [
+                'user_nickname',
+                'sex',
+                'birthday',
+                'user_url',
+                'signature',
+                'more'
+            ])) {
                 $this->success(lang('EDIT_SUCCESS'), "user/profile/center");
             } else {
                 $this->error(lang('NO_NEW_INFORMATION'));
@@ -101,21 +108,22 @@ class ProfileController extends UserBaseController
     public function passwordPost()
     {
         if ($this->request->isPost()) {
-            $validate = new Validate([
+            $validate = new Validate();
+            $validate->rule([
                 'old_password' => 'require|min:6|max:32',
                 'password'     => 'require|min:6|max:32',
                 'repassword'   => 'require|min:6|max:32',
             ]);
             $validate->message([
-                'old_password.require' => lang('old_password_is_required'),
-                'old_password.max'     => lang('old_password_is_too_long'),
-                'old_password.min'     => lang('old_password_is_too_short'),
-                'password.require'     => lang('password_is_required'),
-                'password.max'         => lang('password_is_too_long'),
-                'password.min'         => lang('password_is_too_short'),
-                'repassword.require'   => lang('repeat_password_is_required'),
-                'repassword.max'       => lang('repeat_password_is_too_long'),
-                'repassword.min'       => lang('repeat_password_is_too_short'),
+                'old_password.require' => lang('旧密码不能为空！'),
+                'old_password.max'     => lang('旧密码不能超过32个字符！'),
+                'old_password.min'     => lang('旧密码不能小于6个字符！'),
+                'password.require'     => lang('新密码不能为空！'),
+                'password.max'         => lang('新密码不能超过32个字符！'),
+                'password.min'         => lang('新密码不能小于6个字符！'),
+                'repassword.require'   => lang('重复密码不能为空！'),
+                'repassword.max'       => lang('重复密码不能超过32个字符！'),
+                'repassword.min'       => lang('重复密码不能小于6个字符！'),
             ]);
 
             $data = $this->request->post();
@@ -130,10 +138,10 @@ class ProfileController extends UserBaseController
                     $this->success(lang('change_success'));
                     break;
                 case 1:
-                    $this->error(lang('password_repeat_wrong'));
+                    $this->error(lang('密码输入不一致!'));
                     break;
                 case 2:
-                    $this->error(lang('old_password_is_wrong'));
+                    $this->error(lang('原始密码不正确！'));
                     break;
                 default :
                     $this->error(lang('ERROR'));
@@ -149,34 +157,57 @@ class ProfileController extends UserBaseController
     {
         $user = cmf_get_current_user();
         $this->assign($user);
-        return $this->fetch();
+        return $this->fetch('avatar');
     }
 
     // 用户头像上传
     public function avatarUpload()
     {
-        $file   = $this->request->file('file');
-        $result = $file->validate([
-            'ext'  => 'jpg,jpeg,png',
-            'size' => 1024 * 1024
-        ])->move(WEB_ROOT . 'upload' . DIRECTORY_SEPARATOR . 'avatar' . DIRECTORY_SEPARATOR);
+        $file = $this->request->file('file');
 
-        if ($result) {
-            $avatarSaveName = str_replace('//', '/', str_replace('\\', '/', $result->getSaveName()));
-            $avatar         = 'avatar/' . $avatarSaveName;
-            session('avatar', $avatar);
+        $validator = validate(['file' => 'fileExt:jpg,jpeg,png']);
 
-            return json_encode([
-                'code' => 1,
-                "msg"  => "上传成功",
-                "data" => ['file' => $avatar],
-                "url"  => ''
-            ]);
+        if (!$validator->check(['file' => $file])) {
+            if ($this->request->isAjax()) {
+                $this->error($validator->getError());
+            } else {
+                return json_encode([
+                    'code' => 0,
+                    "msg"  => $validator->getError(),
+                    "data" => "",
+                    "url"  => ''
+                ]);
+            }
+        }
+
+        $fileMd5 = $file->md5();
+        $fileExt = $file->getOriginalExtension();
+
+        $fileName = $fileMd5 . '.' . $fileExt;
+        $date     = date('Ymd');
+
+        $avatarDir = WEB_ROOT . 'upload' . DIRECTORY_SEPARATOR . 'avatar' . DIRECTORY_SEPARATOR . $date . DIRECTORY_SEPARATOR;
+
+        $file->move($avatarDir, $fileMd5 . '.' . $fileExt);
+
+        $avatar = 'avatar/' . $date . '/' . $fileName;
+        session('avatar', $avatar);
+
+        if ($this->request->isAjax()) {
+            $avatarPath = $avatarDir . $fileName;
+            $storage    = new Storage();
+            $result     = $storage->upload($avatar, $avatarPath, 'image');
+
+            $userId = cmf_get_current_user_id();
+            UserModel::where("id", $userId)->update(["avatar" => $avatar]);
+            session('user.avatar', $avatar);
+
+            $this->success(lang('Upload successful'), null, ['file' => $avatar]);
         } else {
             return json_encode([
-                'code' => 0,
-                "msg"  => $file->getError(),
-                "data" => "",
+                'code' => 1,
+                "msg"  => lang('Upload successful'),
+                "data" => ['file' => $avatar],
                 "url"  => ''
             ]);
         }
@@ -192,7 +223,7 @@ class ProfileController extends UserBaseController
             $x = $this->request->param('x', 0, 'intval');
             $y = $this->request->param('y', 0, 'intval');
 
-            $avatarPath = WEB_ROOT . "upload/" . $avatar;
+            $avatarPath = WEB_ROOT . 'upload/' . $avatar;
 
             $avatarImg = Image::open($avatarPath);
             $avatarImg->crop($w, $h, $x, $y)->save($avatarPath);
@@ -203,11 +234,11 @@ class ProfileController extends UserBaseController
                 $result  = $storage->upload($avatar, $avatarPath, 'image');
 
                 $userId = cmf_get_current_user_id();
-                Db::name("user")->where("id", $userId)->update(["avatar" => $avatar]);
+                UserModel::where('id', $userId)->update(['avatar' => $avatar]);
                 session('user.avatar', $avatar);
-                $this->success("头像更新成功！");
+                $this->success(lang('EDIT_SUCCESS'));
             } else {
-                $this->error("头像保存失败！");
+                $this->error(lang('EDIT_FAILED'));
             }
 
         }
@@ -229,15 +260,16 @@ class ProfileController extends UserBaseController
     public function bindingMobile()
     {
         if ($this->request->isPost()) {
-            $validate = new Validate([
+            $validate = new Validate();
+            $validate->rule([
                 'username'          => 'require|number|unique:user,mobile',
                 'verification_code' => 'require',
             ]);
             $validate->message([
-                'username.require'          => '手机号不能为空',
-                'username.number'           => '手机号只能为数字',
-                'username.unique'           => '手机号已存在',
-                'verification_code.require' => '验证码不能为空',
+                'username.require'          => lang('手机号不能为空！'),
+                'username.number'           => lang('手机号只能为数字！'),
+                'username.unique'           => lang('手机号已存在！'),
+                'verification_code.require' => lang('数字验证码不能为空！'),
             ]);
 
             $data = $this->request->post();
@@ -252,13 +284,13 @@ class ProfileController extends UserBaseController
             $log       = $userModel->bindingMobile($data);
             switch ($log) {
                 case 0:
-                    $this->success('手机号绑定成功');
+                    $this->success(lang('手机号绑定成功！'));
                     break;
                 default :
-                    $this->error('未受理的请求');
+                    $this->error(lang('未受理的请求！'));
             }
         } else {
-            $this->error("请求错误");
+            $this->error(lang('illegal request'));
         }
     }
 
@@ -268,15 +300,16 @@ class ProfileController extends UserBaseController
     public function bindingEmail()
     {
         if ($this->request->isPost()) {
-            $validate = new Validate([
+            $validate = new Validate();
+            $validate->rule([
                 'username'          => 'require|email|unique:user,user_email',
                 'verification_code' => 'require',
             ]);
             $validate->message([
-                'username.require'          => '邮箱地址不能为空',
-                'username.email'            => '邮箱地址不正确',
-                'username.unique'           => '邮箱地址已存在',
-                'verification_code.require' => '验证码不能为空',
+                'username.require'          => lang('邮箱不能为空！'),
+                'username.email'            => lang('邮箱格式不正确！'),
+                'username.unique'           => lang('邮箱已存在！'),
+                'verification_code.require' => lang('数字验证码不能为空！'),
             ]);
 
             $data = $this->request->post();
@@ -291,13 +324,13 @@ class ProfileController extends UserBaseController
             $log       = $userModel->bindingEmail($data);
             switch ($log) {
                 case 0:
-                    $this->success('邮箱绑定成功');
+                    $this->success(lang('邮箱绑定成功！'));
                     break;
                 default :
-                    $this->error('未受理的请求');
+                    $this->error(lang('未受理的请求！'));
             }
         } else {
-            $this->error("请求错误");
+            $this->error(lang('illegal request'));
         }
     }
 

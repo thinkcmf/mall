@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -15,10 +15,18 @@ use think\Model;
 
 class RecycleBinModel extends Model
 {
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'recycle_bin';
+
+    protected $autoWriteTimestamp = true;
+    protected $update = false;
 
     public function user()
     {
-        return $this->belongsTo('UserModel', 'user_id')->setEagerlyType(1);
+        return $this->belongsTo('UserModel', 'user_id');
     }
 
 

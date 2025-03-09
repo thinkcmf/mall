@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,8 +10,8 @@
 // +----------------------------------------------------------------------
 namespace app\user\controller;
 
+use app\user\model\ThirdPartyUserModel;
 use cmf\controller\AdminBaseController;
-use think\Db;
 
 class AdminOauthController extends AdminBaseController
 {
@@ -20,7 +20,7 @@ class AdminOauthController extends AdminBaseController
      * 后台第三方用户列表
      * @adminMenu(
      *     'name'   => '第三方用户',
-     *     'parent' => 'user/AdminIndex/default1',
+     *     'parent' => 'user/AdminIndex/default',
      *     'display'=> true,
      *     'hasView'=> true,
      *     'order'  => 10000,
@@ -37,9 +37,9 @@ class AdminOauthController extends AdminBaseController
             return $content;
         }
 
-        $lists = Db::name('third_party_user')->field('a.*,u.user_nickname,u.sex,u.avatar')
+        $lists = ThirdPartyUserModel::field('a.*,u.user_nickname,u.sex,u.avatar')
             ->alias('a')
-            ->join('__USER__ u', 'a.user_id = u.id')
+            ->join('user u', 'a.user_id = u.id')
             ->where("status", 1)
             ->order("create_time DESC")
             ->paginate(10);
@@ -67,12 +67,15 @@ class AdminOauthController extends AdminBaseController
      */
     public function delete()
     {
-        $id = input('param.id', 0, 'intval');
-        if (empty($id)) {
-            $this->error('非法数据！');
+        if ($this->request->isPost()) {
+            $id = $this->request->param('id', 0, 'intval');
+            if (empty($id)) {
+                $this->error(lang('illegal data'));
+            }
+
+            ThirdPartyUserModel::where("id", $id)->delete();
+            $this->success(lang('DELETE_SUCCESS'), url('AdminOauth/index'));
         }
-        Db::name("third_party_user")->where("id", $id)->delete();
-        $this->success("删除成功！", "admin_oauth/index");
     }
 
 

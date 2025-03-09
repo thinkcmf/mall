@@ -47,23 +47,19 @@ class PostService
     public function adminPostList($filter, $isPage = false)
     {
 
-        $join = [
-            ['__USER__ u', 'a.user_id = u.id']
-        ];
-
         $field = 'a.*,u.user_login,u.user_nickname,u.user_email';
+
+        $portalPostModel = new PortalPostModel();
+        $articlesQuery   = $portalPostModel->alias('a');
+        $articlesQuery->join('user u', 'a.user_id = u.id');
 
         $category = empty($filter['category']) ? 0 : intval($filter['category']);
         if (!empty($category)) {
-            array_push($join, [
-                '__PORTAL_CATEGORY_POST__ b', 'a.id = b.post_id'
-            ]);
+            $articlesQuery->join('portal_category_post b', 'a.id = b.post_id');
             $field = 'a.*,b.id AS post_category_id,b.list_order,b.category_id,u.user_login,u.user_nickname,u.user_email';
         }
 
-        $portalPostModel = new PortalPostModel();
-        $articles        = $portalPostModel->alias('a')->field($field)
-            ->join($join)
+        $articles = $articlesQuery->field($field)
             ->where('a.create_time', '>=', 0)
             ->where('a.delete_time', 0)
             ->where(function (Query $query) use ($filter, $isPage) {
@@ -102,8 +98,8 @@ class PostService
 
     /**
      * 已发布文章查询
-     * @param  int $postId     文章id
-     * @param int  $categoryId 分类id
+     * @param int $postId     文章id
+     * @param int $categoryId 分类id
      * @return array|string|\think\Model|null
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\ModelNotFoundException
@@ -112,6 +108,11 @@ class PostService
     public function publishedArticle($postId, $categoryId = 0)
     {
         $portalPostModel = new PortalPostModel();
+
+        $wherePublishedTime = function (Query $query) {
+            $query->where('post.published_time', '>', 0)
+                ->where('post.published_time', '<', time());
+        };
 
         if (empty($categoryId)) {
 
@@ -124,7 +125,7 @@ class PostService
 
             $article = $portalPostModel->alias('post')->field('post.*')
                 ->where($where)
-                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->where($wherePublishedTime)
                 ->find();
         } else {
             $where = [
@@ -135,13 +136,10 @@ class PostService
                 'relation.post_id'     => $postId
             ];
 
-            $join    = [
-                ['__PORTAL_CATEGORY_POST__ relation', 'post.id = relation.post_id']
-            ];
             $article = $portalPostModel->alias('post')->field('post.*')
-                ->join($join)
+                ->join('portal_category_post relation', 'post.id = relation.post_id')
                 ->where($where)
-                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->where($wherePublishedTime)
                 ->find();
         }
 
@@ -162,6 +160,11 @@ class PostService
     {
         $portalPostModel = new PortalPostModel();
 
+        $wherePublishedTime = function (Query $query) {
+            $query->where('post.published_time', '>', 0)
+                ->where('post.published_time', '<', time());
+        };
+
         if (empty($categoryId)) {
 
             $where = [
@@ -175,7 +178,7 @@ class PostService
                 ->field('post.*')
                 ->where($where)
                 ->where('post.id', '<', $postId)
-                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->where($wherePublishedTime)
                 ->order('id', 'DESC')
                 ->find();
 
@@ -187,16 +190,13 @@ class PostService
                 'relation.category_id' => $categoryId,
             ];
 
-            $join    = [
-                ['__PORTAL_CATEGORY_POST__ relation', 'post.id = relation.post_id']
-            ];
             $article = $portalPostModel
                 ->alias('post')
                 ->field('post.*')
-                ->join($join)
+                ->join('portal_category_post relation', 'post.id = relation.post_id')
                 ->where($where)
                 ->where('relation.post_id', '<', $postId)
-                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->where($wherePublishedTime)
                 ->order('id', 'DESC')
                 ->find();
         }
@@ -218,6 +218,11 @@ class PostService
     {
         $portalPostModel = new PortalPostModel();
 
+        $wherePublishedTime = function (Query $query) {
+            $query->where('post.published_time', '>', 0)
+                ->where('post.published_time', '<', time());
+        };
+
         if (empty($categoryId)) {
 
             $where = [
@@ -229,10 +234,13 @@ class PostService
             $article = $portalPostModel->alias('post')->field('post.*')
                 ->where($where)
                 ->where('post.id', '>', $postId)
-                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->where($wherePublishedTime)
                 ->order('id', 'ASC')
                 ->find();
         } else {
+
+
+
             $where = [
                 'post.post_type'       => 1,
                 'post.post_status'     => 1,
@@ -241,14 +249,11 @@ class PostService
 
             ];
 
-            $join    = [
-                ['__PORTAL_CATEGORY_POST__ relation', 'post.id = relation.post_id']
-            ];
             $article = $portalPostModel->alias('post')->field('post.*')
-                ->join($join)
+                ->join('portal_category_post relation', 'post.id = relation.post_id')
                 ->where($where)
                 ->where('relation.post_id', '>', $postId)
-                ->where('post.published_time', ['< time', time()], ['> time', 0], 'and')
+                ->where($wherePublishedTime)
                 ->order('id', 'ASC')
                 ->find();
         }
@@ -275,10 +280,15 @@ class PostService
             'id'          => $pageId
         ];
 
+        $wherePublishedTime = function (Query $query) {
+            $query->where('published_time', '>', 0)
+                ->where('published_time', '<', time());
+        };
+
         $portalPostModel = new PortalPostModel();
         $page            = $portalPostModel
             ->where($where)
-            ->where('published_time', ['< time', time()], ['> time', 0], 'and')
+            ->where($wherePublishedTime)
             ->find();
 
         return $page;

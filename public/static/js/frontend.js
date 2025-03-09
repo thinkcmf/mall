@@ -93,7 +93,7 @@
                                 buttons: [
                                     {
                                         addClass: 'btn btn-primary',
-                                        text: '确定',
+                                        text: GV.lang('OK'),
                                         onClick: function ($noty) {
                                             $noty.close();
                                             btn.data('subcheck', false);
@@ -102,7 +102,7 @@
                                     },
                                     {
                                         addClass: 'btn btn-danger',
-                                        text: '取消',
+                                        text: GV.lang('Close'),
                                         onClick: function ($noty) {
                                             $noty.close();
                                         }
@@ -116,7 +116,7 @@
 
                     } else {
                         noty({
-                            text: "请至少选择一项",
+                            text: GV.lang("Please select at least one"),
                             type: 'error',
                             layout: 'center'
                         });
@@ -194,14 +194,14 @@
                     },
                     submitHandler: function (form) {
                         var $form = $(form);
-                        if(!$btn){
-                            $btn=$form.find('button.js-ajax-submit');
+                        if (!$btn) {
+                            $btn = $form.find('button.js-ajax-submit');
                         }
                         $form.ajaxSubmit({
                             url: $btn && $btn.data('action') ? $btn.data('action') : $form.attr('action'), //按钮上是否自定义提交地址(多按钮情况)
                             dataType: 'json',
                             beforeSubmit: function (arr, $form, options) {
-                                if($btn){
+                                if ($btn) {
                                     $btn.data("loading", true);
                                     var text = $btn.text();
                                     //按钮文案、状态修改
@@ -221,13 +221,18 @@
                                         }
                                     } else {
                                         if (data.code == 1) {
-                                            var wait = $btn.data("wait");
-                                            if (window.parent.art) {
-                                                reloadPage(window.parent);
-                                            } else {
-                                                //刷新当前页
-                                                reloadPage(window);
+                                            var refresh = $btn.data('refresh');
+                                            refresh = refresh == undefined ? 1 : refresh;
+                                            if(refresh){
+                                                var wait = $btn.data("wait");
+                                                if (window.parent.art) {
+                                                    reloadPage(window.parent);
+                                                } else {
+                                                    //刷新当前页
+                                                    reloadPage(window);
+                                                }
                                             }
+
                                         }
                                     }
                                 }
@@ -336,7 +341,7 @@
                 cancelBtnText = $this.data('cancel-btn');
                 href          = href ? href : $this.attr('href');
                 noty({
-                    text: msg ? msg : '确定要删除吗？',
+                    text: msg ? msg : GV.lang('You sure you want to delete it?'),
                     type: 'confirm',
                     layout: "center",
                     timeout: false,
@@ -344,36 +349,41 @@
                     buttons: [
                         {
                             addClass: 'btn btn-primary',
-                            text: okBtnText ? okBtnText : '确定',
+                            text: okBtnText ? okBtnText : GV.lang('OK'),
                             onClick: function ($noty) {
                                 $noty.close();
-                                $.getJSON(href).done(function (data) {
-                                    if (data.code == 1) {
-                                        if (data.url) {
-                                            location.href = data.url;
-                                        } else if (refresh || refresh == undefined) {
-                                            reloadPage(window);
-                                        }
-                                    } else if (data.code == 0) {
-                                        noty({
-                                            text: data.msg,
-                                            type: 'error',
-                                            layout: 'center',
-                                            callback: {
-                                                afterClose: function () {
-                                                    if (data.url) {
-                                                        location.href = data.url;
+                                $.ajax({
+                                    url: href,
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    success: function (data) {
+                                        if (data.code == 1) {
+                                            if (data.url) {
+                                                location.href = data.url;
+                                            } else if (refresh || refresh == undefined) {
+                                                reloadPage(window);
+                                            }
+                                        } else if (data.code == 0) {
+                                            noty({
+                                                text: data.msg,
+                                                type: 'error',
+                                                layout: 'center',
+                                                callback: {
+                                                    afterClose: function () {
+                                                        if (data.url) {
+                                                            location.href = data.url;
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        });
+                                            });
+                                        }
                                     }
                                 });
                             }
                         },
                         {
                             addClass: 'btn btn-danger',
-                            text: cancelBtnText ? cancelBtnText : '取消',
+                            text: cancelBtnText ? cancelBtnText : GV.lang('Close'),
                             onClick: function ($noty) {
                                 $noty.close();
                             }
@@ -406,36 +416,53 @@
                     buttons: [
                         {
                             addClass: 'btn btn-primary',
-                            text: '确定',
+                            text: GV.lang('OK'),
                             onClick: function ($noty) {
                                 $noty.close();
-                                $.getJSON(href).done(function (data) {
-                                    if (data.code == 1) {
-                                        if (data.url) {
-                                            location.href = data.url;
-                                        } else if (refresh || refresh == undefined) {
-                                            reloadPage(window);
-                                        }
-                                    } else if (data.code == 0) {
-                                        noty({
-                                            text: data.msg,
-                                            type: 'error',
-                                            layout: 'center',
-                                            callback: {
-                                                afterClose: function () {
-                                                    if (data.url) {
-                                                        location.href = data.url;
+                                $.ajax({
+                                    url: href,
+                                    type: 'POST',
+                                    dataType: 'json',
+                                    success: function (data) {
+                                        if (data.code == 1) {
+                                            noty({
+                                                text: data.msg,
+                                                type: 'success',
+                                                layout: 'center',
+                                                callback: {
+                                                    afterClose: function () {
+                                                        if (refresh == undefined || refresh) {
+                                                            if (data.url) {
+                                                                location.href = data.url;
+                                                            } else {
+                                                                reloadPage(window);
+                                                            }
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        });
+                                            });
+
+                                        } else if (data.code == 0) {
+                                            noty({
+                                                text: data.msg,
+                                                type: 'error',
+                                                layout: 'center',
+                                                callback: {
+                                                    afterClose: function () {
+                                                        if (data.url) {
+                                                            location.href = data.url;
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
                                     }
                                 });
                             }
                         },
                         {
                             addClass: 'btn btn-danger',
-                            text: '取消',
+                            text: GV.lang('Close'),
                             onClick: function ($noty) {
                                 $noty.close();
                             }
@@ -448,58 +475,61 @@
         });
     }
 
-    if ($('a.js-ajax-btn').length) {
-        Wind.use('noty', function () {
-            $('.js-ajax-btn').on('click', function (e) {
-                e.preventDefault();
-                var $_this = this,
-                    $this  = $($_this),
-                    href   = $this.data('href'),
-                    msg    = $this.data('msg');
-                refresh    = $this.data('refresh');
-                href       = href ? href : $this.attr('href');
-                refresh    = refresh == undefined ? 1 : refresh;
+    Wind.use('noty', function () {
+        $('body').on('click', '.js-ajax-btn', function (e) {
+            e.preventDefault();
+            var $_this = this,
+                $this = $($_this),
+                href = $this.data('href'),
+                msg = $this.data('msg');
+            refresh = $this.data('refresh');
+            href = href ? href : $this.attr('href');
+            refresh = refresh == undefined ? 1 : refresh;
 
 
-                $.getJSON(href).done(function (data) {
-                    if (data.code == 1) {
-                        noty({
-                            text: data.msg,
-                            type: 'success',
-                            layout: 'center',
-                            callback: {
-                                afterClose: function () {
-                                    if (data.url) {
-                                        location.href = data.url;
-                                        return;
-                                    }
+                $.ajax({
+                    url: href,
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code == 1) {
+                            noty({
+                                text: data.msg,
+                                type: 'success',
+                                layout: 'center',
+                                callback: {
+                                    afterClose: function () {
+                                        if (data.url) {
+                                            location.href = data.url;
+                                            return;
+                                        }
 
-                                    if (refresh || refresh == undefined) {
-                                        reloadPage(window);
-                                    }
-                                }
-                            }
-                        });
-                    } else if (data.code == 0) {
-                        noty({
-                            text: data.msg,
-                            type: 'error',
-                            layout: 'center',
-                            callback: {
-                                afterClose: function () {
-                                    if (data.url) {
-                                        location.href = data.url;
+                                        if (refresh || refresh == undefined) {
+                                            reloadPage(window);
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                        } else if (data.code == 0) {
+                            noty({
+                                text: data.msg,
+                                type: 'error',
+                                layout: 'center',
+                                callback: {
+                                    afterClose: function () {
+                                        if (data.url) {
+                                            location.href = data.url;
+                                        }
+                                    }
+                                }
+                            });
+                        }
                     }
                 });
 
-            });
-
         });
-    }
+
+    });
 
     //所有的请求刷新操作
     var ajax_refresh = $('a.js-ajax-refresh'),
@@ -547,12 +577,18 @@
                 var $form           = $this.parents('form');
                 var $captchaInput   = $("input[name='captcha']", $form);
                 var $captchaIdInput = $("input[name='_captcha_id']", $form);
+                var $thirdPartyCaptchaInput = $("input[name='_third_party_captcha_params']", $form);
                 var captcha         = $captchaInput.val();
                 var captchaId       = $captchaIdInput.val();
 
-                if (!captcha) {
+                if ($captchaInput.length > 0 && !captcha) {
                     $captchaInput.focus();
                     return;
+                }
+
+                var thirdPartyCaptchaParams = '';
+                if ($thirdPartyCaptchaInput.length > 0) {
+                    thirdPartyCaptchaParams = $thirdPartyCaptchaInput.val();
                 }
 
 
@@ -571,7 +607,14 @@
                     url: url,
                     type: 'POST',
                     dataType: 'json',
-                    data: {username: mobile, captcha: captcha, captcha_id: captchaId, type: codeType},
+                    data: {
+                        username: mobile,
+                        captcha: captcha,
+                        captcha_id: captchaId,
+                        _captcha_id: captchaId,
+                        type: codeType,
+                        _third_party_captcha_params: thirdPartyCaptchaParams
+                    },
                     success: function (data) {
                         if (data.code == 1) {
                             noty({
@@ -605,13 +648,26 @@
                                 layout: 'center'
                             });
                             $this.data('sending', false);
+
+                            var callback = $this.data('error-callback');
+                            if (callback) {
+                                window[callback]();
+                            }
                         }
                     },
                     error: function () {
                         $this.data('sending', false);
+                        var callback = $this.data('error-callback');
+                        if (callback) {
+                            window[callback]();
+                        }
                     },
                     complete: function () {
                         $this.data('loading', false);
+                        var completeCallback = $this.data('complete-callback');
+                        if (completeCallback) {
+                            window[completeCallback]();
+                        }
                     }
                 });
             });
@@ -635,15 +691,21 @@
                     return;
                 }
 
-                var $form           = $this.parents('form');
-                var $captchaInput   = $("input[name='captcha']", $form);
+                var $form = $this.parents('form');
+                var $captchaInput = $("input[name='captcha']", $form);
                 var $captchaIdInput = $("input[name='_captcha_id']", $form);
-                var captcha         = $captchaInput.val();
-                var captchaId       = $captchaIdInput.val();
+                var $thirdPartyCaptchaInput = $("input[name='_third_party_captcha_params']", $form);
+                var captcha = $captchaInput.val();
+                var captchaId = $captchaIdInput.val();
 
-                if (!captcha) {
+                if ($captchaInput.length > 0 && !captcha) {
                     $captchaInput.focus();
                     return;
+                }
+
+                var thirdPartyCaptchaParams = '';
+                if ($thirdPartyCaptchaInput.length > 0) {
+                    thirdPartyCaptchaParams = $thirdPartyCaptchaInput.val();
                 }
 
                 $this.data('loading', true);
@@ -661,7 +723,14 @@
                     url: url,
                     type: 'POST',
                     dataType: 'json',
-                    data: {username: email, captcha: captcha, captcha_id: captchaId, type: codeType},
+                    data: {
+                        username: email,
+                        captcha: captcha,
+                        captcha_id: captchaId,
+                        _captcha_id: captchaId,
+                        type: codeType,
+                        _third_party_captcha_params: thirdPartyCaptchaParams
+                    },
                     success: function (data) {
                         if (data.code == 1) {
                             noty({
@@ -696,13 +765,26 @@
                                 layout: 'center'
                             });
                             $this.data('sending', false);
+
+                            var callback = $this.data('error-callback');
+                            if (callback) {
+                                window[callback]();
+                            }
                         }
                     },
                     error: function () {
                         $this.data('sending', false);
+                        var callback = $this.data('error-callback');
+                        if (callback) {
+                            window[callback]();
+                        }
                     },
                     complete: function () {
                         $this.data('loading', false);
+                        var completeCallback = $this.data('complete-callback');
+                        if (completeCallback) {
+                            window[completeCallback]();
+                        }
                     }
                 });
             });
@@ -730,7 +812,9 @@
             //分组各纵横项
             var check_all_direction = check_all.data('direction');
             check_items             = $('input.js-check[data-' + check_all_direction + 'id="' + check_all.data('checklist') + '"]').not(":disabled");
-
+            if ($('.js-check-all').is(':checked')) {
+                check_items.prop('checked', true);
+            }
             //点击全选框
             check_all.change(function (e) {
                 var check_wrap = check_all.parents('.js-check-wrap'); //当前操作区域所有复选框的父标签（重用考虑）
@@ -746,13 +830,13 @@
 
                 } else {
                     //非全选状态
-                    check_items.removeProp('checked');
+                    check_items.prop('checked', false);
 
-                    check_wrap.find(total_check_all).removeProp('checked');
+                    check_wrap.find(total_check_all).prop('checked', false);
 
                     //另一方向的全选框取消全选状态
                     var direction_invert = check_all_direction === 'x' ? 'y' : 'x';
-                    check_wrap.find($('input.js-check-all[data-direction="' + direction_invert + '"]')).removeProp('checked');
+                    check_wrap.find($('input.js-check-all[data-direction="' + direction_invert + '"]')).prop('checked', false);
                 }
 
             });
@@ -768,7 +852,7 @@
                     }
 
                 } else {
-                    check_all.removeProp('checked');
+                    check_all.prop('checked', false);
                 }
 
             });
@@ -805,6 +889,22 @@
                 language: 'zh-CN',
                 format: 'yyyy',
                 minView: 'decade',
+                startView: 'decade',
+                todayBtn: 1,
+                autoclose: true
+            });
+        });
+    }
+
+    // bootstrap年月份选择器
+    var bootstrapYearMonthInput = $("input.js-bootstrap-year-month");
+    if (bootstrapYearMonthInput.length) {
+        Wind.css('bootstrapDatetimePicker');
+        Wind.use('bootstrapDatetimePicker', function () {
+            bootstrapYearMonthInput.datetimepicker({
+                language: 'zh-CN',
+                format: 'yyyy-mm',
+                minView: 'year',
                 startView: 'decade',
                 todayBtn: 1,
                 autoclose: true
@@ -899,16 +999,25 @@
     //地址联动
     var $js_address_select = $('.js-address-select');
     if ($js_address_select.length > 0) {
-        $('.js-address-province-select,.js-address-city-select').change(function () {
-            var $this                   = $(this);
-            var id                      = $this.val();
+        $('.js-address-country-select,.js-address-province-select,.js-address-city-select,.js-address-district-select').change(function () {
+            var $this = $(this);
+            var id = $this.val();
             var $child_area_select;
             var $this_js_address_select = $this.parents('.js-address-select');
-            if ($this.is('.js-address-province-select')) {
-                $child_area_select = $this_js_address_select.find('.js-address-city-select');
-                $this_js_address_select.find('.js-address-district-select').hide();
+            if ($this.is('.js-address-country-select')) {
+                $child_area_select = $this_js_address_select.find('.js-address-province-select').hide().val('');
+                $this_js_address_select.find('.js-address-city-select').hide().val('');
+                $this_js_address_select.find('.js-address-district-select').hide().val('');
+                $this_js_address_select.find('.js-address-town-select').hide().val('');
+            } else if ($this.is('.js-address-province-select')) {
+                $child_area_select = $this_js_address_select.find('.js-address-city-select').hide().val('');
+                $this_js_address_select.find('.js-address-district-select').hide().val('');
+                $this_js_address_select.find('.js-address-town-select').hide().val('');
+            } else if ($this.is('.js-address-city-select')) {
+                $child_area_select = $this_js_address_select.find('.js-address-district-select').hide().val('');
+                $this_js_address_select.find('.js-address-town-select').hide().val('');
             } else {
-                $child_area_select = $this_js_address_select.find('.js-address-district-select');
+                $child_area_select = $this_js_address_select.find('.js-address-town-select').hide().val('');
             }
 
             var empty_option = '<option class="js-address-empty-option" value="">' + $child_area_select.find('.js-address-empty-option').text() + '</option>';
@@ -921,11 +1030,20 @@
                 return;
             }
 
+            if(!id){
+                return;
+            }
+
+            var isCountry = 0;
+            if ($this.is('.js-address-country-select')) {
+                isCountry = 1;
+            }
+
             $.ajax({
                 url: $this_js_address_select.data('url'),
                 type: 'POST',
                 dataType: 'JSON',
-                data: {id: id},
+                data: {id: id, is_country: isCountry},
                 success: function (data) {
                     if (data.code == 1) {
                         if (data.data.areas.length > 0) {
@@ -1245,8 +1363,6 @@ function uploadOne(dialog_title, input_selector, filetype, extra_params, app) {
 
         $(input_selector + '-name').val(files[0].name);
         $(input_selector + '-name-text').text(files[0].name);
-
-
     }, extra_params, 0, filetype, app);
 }
 
@@ -1347,4 +1463,113 @@ function openIframeLayer(url, title, options) {
         layer.open(params);
     });
 
+}
+
+/**
+ * 打开文件上传对话框
+ * @param dialog_title 对话框标题
+ * @param callback 回调方法，参数有（当前dialog对象，选择的文件数组，你设置的extra_params）
+ * @param extra_params 额外参数，object
+ * @param multi 是否可以多选
+ * @param filetype 文件类型，image,video,audio,file
+ * @param app  应用名，CMF的应用名
+ * @param openIn 打开窗口
+ */
+function openUploadPrivateDialog(dialog_title, callback, extra_params, multi, filetype, app, openIn) {
+    multi = multi ? 1 : 0;
+    filetype = filetype ? filetype : 'image';
+    app = app ? app : GV.APP;
+    var params = '&multi=' + multi + '&filetype=' + filetype + '&app=' + app;
+
+    openIn = openIn ? openIn : window;
+    openIn.openIframeLayer(GV.ROOT + 'user/Asset/upload?' + params, dialog_title, {
+        btn: [GV.lang('OK')], area: ['600px', '450px'], yes: function (index, layero) {
+            if (typeof callback == 'function') {
+                // var body = openIn.layer.getChildFrame('body', index);
+                //得到iframe页的窗口对象，执行iframe页的方法：iframeWin.method();
+                var iframeWin = openIn[layero.find('iframe')[0]['name']];
+                var files = iframeWin.get_selected_files();
+                console.log(files);
+                if (files && files.length > 0) {
+                    callback.apply(this, [this, files, extra_params]);
+                    openIn.layer.close(index);
+                } else {
+                    // return false;
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 单个文件上传
+ * @param dialog_title 上传对话框标题
+ * @param input_selector 图片容器
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF的应用名
+ * @param openIn 打开窗口
+ */
+function uploadPrivateOne(dialog_title, input_selector, filetype, extra_params, app, openIn) {
+    filetype = filetype ? filetype : 'file';
+    openUploadPrivateDialog(dialog_title, function (dialog, files) {
+        $(input_selector).val(files[0].filepath);
+        $(input_selector + '-preview').attr('href', files[0].preview_url);
+        $(input_selector + '-name').val(files[0].name);
+        $(input_selector + '-name-text').text(files[0].name);
+    }, extra_params, 0, filetype, app, openIn);
+}
+
+/**
+ * 单个文件上传(在父级窗口打开)
+ * @param dialog_title 上传对话框标题
+ * @param input_selector 图片容器
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF的应用名
+ */
+function parentUploadPrivateOne(dialog_title, input_selector, filetype, extra_params, app) {
+    uploadPrivateOne(dialog_title, input_selector, filetype, extra_params, app, parent);
+}
+
+/**
+ * 多文件上传
+ * @param dialog_title 上传对话框标题
+ * @param container_selector 图片容器
+ * @param item_tpl_wrapper_id 单个图片html模板容器id
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF 的应用名
+ * @param openIn 打开窗口
+ */
+function uploadPrivateMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, openIn) {
+    filetype = filetype ? filetype : 'file';
+    openUploadPrivateDialog(dialog_title, function (dialog, files) {
+        var tpl = $('#' + item_tpl_wrapper_id).html();
+        var html = '';
+        $.each(files, function (i, item) {
+            var itemtpl = tpl;
+            itemtpl = itemtpl.replace(/\{id\}/g, item.id);
+            itemtpl = itemtpl.replace(/\{url\}/g, item.url);
+            itemtpl = itemtpl.replace(/\{preview_url\}/g, item.preview_url);
+            itemtpl = itemtpl.replace(/\{filepath\}/g, item.filepath);
+            itemtpl = itemtpl.replace(/\{name\}/g, item.name);
+            html += itemtpl;
+        });
+        $(container_selector).append(html);
+
+    }, extra_params, 1, filetype, app, openIn);
+}
+
+/**
+ * 多文件上传
+ * @param dialog_title 上传对话框标题
+ * @param container_selector 图片容器
+ * @param item_tpl_wrapper_id 单个图片html模板容器id
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF 的应用名
+ */
+function parentUploadPrivateMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, openIn) {
+    uploadPrivateMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, parent)
 }

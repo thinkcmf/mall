@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,9 +10,10 @@
 // +----------------------------------------------------------------------
 namespace app\admin\controller;
 
+use app\admin\model\RecycleBinModel;
+use app\admin\model\SlideItemModel;
 use app\admin\model\SlideModel;
 use cmf\controller\AdminBaseController;
-use think\Db;
 
 class SlideController extends AdminBaseController
 {
@@ -43,7 +44,7 @@ class SlideController extends AdminBaseController
         }
 
         $slidePostModel = new SlideModel();
-        $slides         = $slidePostModel->where('delete_time', 'eq', 0)->select();
+        $slides         = $slidePostModel->where('delete_time', 0)->select();
         $this->assign('slides', $slides);
         return $this->fetch();
     }
@@ -81,15 +82,17 @@ class SlideController extends AdminBaseController
      */
     public function addPost()
     {
-        $data           = $this->request->param();
-        $slidePostModel = new SlideModel();
-        $result         = $this->validate($data, 'Slide');
-        if ($result !== true) {
-            $this->error($result);
-        }
-        $slidePostModel->save($data);
+        if ($this->request->isPost()) {
+            $data           = $this->request->param('',null,'strip_tags');
+            $slidePostModel = new SlideModel();
+            $result         = $this->validate($data, 'Slide');
+            if ($result !== true) {
+                $this->error($result);
+            }
+            $slidePostModel->save($data);
 
-        $this->success("添加成功！", url("slide/index"));
+            $this->success(lang('ADD_SUCCESS'), url('Slide/index'));
+        }
     }
 
     /**
@@ -129,14 +132,16 @@ class SlideController extends AdminBaseController
      */
     public function editPost()
     {
-        $data           = $this->request->param();
-        $slidePostModel = new SlideModel();
-        $result         = $this->validate($data, 'Slide');
-        if ($result !== true) {
-            $this->error($result);
+        if ($this->request->isPost()) {
+            $data   = $this->request->param('',null,'strip_tags');
+            $result = $this->validate($data, 'Slide');
+            if ($result !== true) {
+                $this->error($result);
+            }
+            $slidePostModel = SlideModel::find($data['id']);
+            $slidePostModel->save($data);
+            $this->success(lang('EDIT_SUCCESS'), url("Slide/index"));
         }
-        $slidePostModel->save($data, ['id' => $data['id']]);
-        $this->success("保存成功！", url("slide/index"));
     }
 
     /**
@@ -154,30 +159,31 @@ class SlideController extends AdminBaseController
      */
     public function delete()
     {
-        $id             = $this->request->param('id', 0, 'intval');
-        $slidePostModel = new SlideModel();
-        $result         = $slidePostModel->where('id', $id)->find();
-        if (empty($result)) {
-            $this->error('幻灯片不存在!');
-        }
+        if ($this->request->isPost()) {
+            $id             = $this->request->param('id', 0, 'intval');
+            $slidePostModel = SlideModel::where('id', $id)->find();
+            if (empty($slidePostModel)) {
+                $this->error('幻灯片不存在!');
+            }
 
-        //如果存在页面。则不能删除。
-        $slidePostCount = Db::name('slide_item')->where('slide_id', $id)->count();
-        if ($slidePostCount > 0) {
-            $this->error('此幻灯片有页面无法删除!');
-        }
+            //如果存在页面。则不能删除。
+            $slidePostCount = SlideItemModel::where('slide_id', $id)->count();
+            if ($slidePostCount > 0) {
+                $this->error('此幻灯片有页面无法删除!');
+            }
 
-        $data = [
-            'object_id'   => $id,
-            'create_time' => time(),
-            'table_name'  => 'slide',
-            'name'        => $result['name']
-        ];
+            $data = [
+                'object_id'   => $id,
+                'create_time' => time(),
+                'table_name'  => 'slide',
+                'name'        => $slidePostModel['name']
+            ];
 
-        $resultSlide = $slidePostModel->save(['delete_time' => time()], ['id' => $id]);
-        if ($resultSlide) {
-            Db::name('recycleBin')->insert($data);
+            $resultSlide = $slidePostModel->save(['delete_time' => time()]);
+            if ($resultSlide) {
+                RecycleBinModel::insert($data);
+            }
+            $this->success(lang('DELETE_SUCCESS'), url('Slide/index'));
         }
-        $this->success("删除成功！", url("slide/index"));
     }
 }

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,8 +10,11 @@
 // +----------------------------------------------------------------------
 namespace app\admin\controller;
 
+use app\admin\model\AdminApiModel;
+use app\admin\model\AuthAccessModel;
+use app\admin\model\RoleModel;
+use app\admin\model\RoleUserModel;
 use cmf\controller\AdminBaseController;
-use think\Db;
 use think\facade\Cache;
 use tree\Tree;
 use app\admin\model\AdminMenuModel;
@@ -23,7 +26,7 @@ class RbacController extends AdminBaseController
      * 角色管理列表
      * @adminMenu(
      *     'name'   => '角色管理',
-     *     'parent' => 'admin/User/default',
+     *     'parent' => 'user/AdminIndex/default',
      *     'display'=> true,
      *     'hasView'=> true,
      *     'order'  => 10000,
@@ -44,7 +47,7 @@ class RbacController extends AdminBaseController
             return $content;
         }
 
-        $data = Db::name('role')->order(["list_order" => "ASC", "id" => "DESC"])->select();
+        $data = RoleModel::order(["list_order" => "ASC", "id" => "DESC"])->select();
         $this->assign("roles", $data);
         return $this->fetch();
     }
@@ -96,11 +99,11 @@ class RbacController extends AdminBaseController
                 // 验证失败 输出错误信息
                 $this->error($result);
             } else {
-                $result = Db::name('role')->insert($data);
+                $result = RoleModel::insert($data);
                 if ($result) {
-                    $this->success("添加角色成功", url("rbac/index"));
+                    $this->success(lang('ADD_SUCCESS'), url("rbac/index"));
                 } else {
-                    $this->error("添加角色失败");
+                    $this->error(lang('ADD_FAILED'));
                 }
 
             }
@@ -136,7 +139,7 @@ class RbacController extends AdminBaseController
         if ($id == 1) {
             $this->error("超级管理员角色不能被修改！");
         }
-        $data = Db::name('role')->where("id", $id)->find();
+        $data = RoleModel::where("id", $id)->find();
         if (!$data) {
             $this->error("该角色不存在！");
         }
@@ -173,10 +176,10 @@ class RbacController extends AdminBaseController
                 $this->error($result);
 
             } else {
-                if (Db::name('role')->update($data) !== false) {
-                    $this->success("保存成功！", url('rbac/index'));
+                if (RoleModel::update($data) !== false) {
+                    $this->success(lang('EDIT_SUCCESS'), url('rbac/index'));
                 } else {
-                    $this->error("保存失败！");
+                    $this->error(lang('EDIT_FAILED'));
                 }
             }
         }
@@ -199,19 +202,21 @@ class RbacController extends AdminBaseController
      */
     public function roleDelete()
     {
-        $id = $this->request->param("id", 0, 'intval');
-        if ($id == 1) {
-            $this->error("超级管理员角色不能被删除！");
-        }
-        $count = Db::name('RoleUser')->where('role_id', $id)->count();
-        if ($count > 0) {
-            $this->error("该角色已经有用户！");
-        } else {
-            $status = Db::name('role')->delete($id);
-            if (!empty($status)) {
-                $this->success("删除成功！", url('rbac/index'));
+        if ($this->request->isPost()) {
+            $id = $this->request->param("id", 0, 'intval');
+            if ($id == 1) {
+                $this->error("超级管理员角色不能被删除！");
+            }
+            $count = RoleUserModel::where('role_id', $id)->count();
+            if ($count > 0) {
+                $this->error("该角色已经有用户！");
             } else {
-                $this->error("删除失败！");
+                $status = RoleModel::destroy($id);
+                if (!empty($status)) {
+                    $this->success(lang('DELETE_SUCCESS'), url('rbac/index'));
+                } else {
+                    $this->error(lang('DELETE_FAILED'));
+                }
             }
         }
     }
@@ -238,7 +243,6 @@ class RbacController extends AdminBaseController
             return $content;
         }
 
-        $AuthAccess     = Db::name("AuthAccess");
         $adminMenuModel = new AdminMenuModel();
         //角色ID
         $roleId = $this->request->param("id", 0, 'intval');
@@ -253,7 +257,7 @@ class RbacController extends AdminBaseController
         $result = $adminMenuModel->menuCache();
 
         $newMenus      = [];
-        $privilegeData = $AuthAccess->where("role_id", $roleId)->column("rule_name");//获取权限表数据
+        $privilegeData = AuthAccessModel::where("role_id", $roleId)->column("rule_name");//获取权限表数据
 
         foreach ($result as $m) {
             $newMenus[$m['id']] = $m;
@@ -267,7 +271,7 @@ class RbacController extends AdminBaseController
         }
 
         $str = "<tr id='node-\$id'\$parentIdNode  style='\$style'>
-                   <td style='padding-left:30px;'>\$spacer<input type='checkbox' name='menuId[]' value='\$id' level='\$level' \$checked onclick='javascript:checknode(this);'> \$name</td>
+                   <td style='padding-left:30px;'>\$spacer<input type='checkbox' name='menuId[]' value='\$id' level='\$level' \$checked onclick='javascript:checknode(this);'> \$name \$app/\$controller/\$action</td>
     			</tr>";
         $tree->init($result);
 
@@ -275,6 +279,7 @@ class RbacController extends AdminBaseController
 
         $this->assign("category", $category);
         $this->assign("roleId", $roleId);
+        $this->assign("role_id", $roleId);
         return $this->fetch();
     }
 
@@ -303,17 +308,18 @@ class RbacController extends AdminBaseController
             if (!$roleId) {
                 $this->error("需要授权的角色不存在！");
             }
-            if (is_array($this->request->param('menuId/a')) && count($this->request->param('menuId/a')) > 0) {
+            $menuIds = $this->request->param('menuId/a');
+            if (is_array($menuIds) && count($menuIds) > 0) {
 
-                Db::name("authAccess")->where(["role_id" => $roleId, 'type' => 'admin_url'])->delete();
-                foreach ($_POST['menuId'] as $menuId) {
-                    $menu = Db::name("adminMenu")->where("id", $menuId)->field("app,controller,action")->find();
+                AuthAccessModel::where(["role_id" => $roleId, 'type' => 'admin_url'])->delete();
+                foreach ($menuIds as $menuId) {
+                    $menu = AdminMenuModel::where("id", $menuId)->field("app,controller,action")->find();
                     if ($menu) {
                         $app    = $menu['app'];
                         $model  = $menu['controller'];
                         $action = $menu['action'];
                         $name   = strtolower("$app/$model/$action");
-                        Db::name("authAccess")->insert(["role_id" => $roleId, "rule_name" => $name, 'type' => 'admin_url']);
+                        AuthAccessModel::insert(["role_id" => $roleId, "rule_name" => $name, 'type' => 'admin_url']);
                     }
                 }
 
@@ -322,7 +328,100 @@ class RbacController extends AdminBaseController
                 $this->success("授权成功！");
             } else {
                 //当没有数据时，清除当前角色授权
-                Db::name("authAccess")->where("role_id", $roleId)->delete();
+                AuthAccessModel::where("role_id", $roleId)->where('type', 'admin_url')->delete();
+                $this->error("没有接收到数据，执行清除授权成功！");
+            }
+        }
+    }
+
+    /**
+     * 设置角色后台API权限
+     * @adminMenu(
+     *     'name'   => '设置角色后台API权限',
+     *     'parent' => 'index',
+     *     'display'=> false,
+     *     'hasView'=> true,
+     *     'order'  => 10000,
+     *     'icon'   => '',
+     *     'remark' => '设置角色后台API权限',
+     *     'param'  => ''
+     * )
+     * @return mixed
+     */
+    public function apiAuthorize()
+    {
+        //角色ID
+        $roleId = $this->request->param("id", 0, 'intval');
+        if (empty($roleId)) {
+            $this->error("参数错误！");
+        }
+
+        $privilegeData = AuthAccessModel::where("role_id", $roleId)->column('rule_name', 'rule_name');//获取权限表数据
+        $adminApis     = AdminApiModel::select();
+        $tagsAdminApis = [];
+
+        foreach ($adminApis as $adminApi) {
+            if (isset($privilegeData[strtolower('admin_api:' . $adminApi['url'])])) {
+                $adminApi['_checked'] = 1;
+            } else {
+                $adminApi['_checked'] = 0;
+            }
+            $tags = explode(',', $adminApi['tags']);
+            foreach ($tags as $tag) {
+                if (empty($tagsAdminApis[$tag])) {
+                    $tagsAdminApis[$tag] = [];
+                }
+                $tagsAdminApis[$tag][] = $adminApi;
+            }
+        }
+
+        $this->assign("admin_apis", $adminApis);
+        $this->assign("tags_admin_apis", $tagsAdminApis);
+        $this->assign("role_id", $roleId);
+        return $this->fetch('api_authorize');
+    }
+
+    /**
+     * 设置角色后台API权限提交
+     * @adminMenu(
+     *     'name'   => '设置角色后台API权限提交',
+     *     'parent' => 'index',
+     *     'display'=> false,
+     *     'hasView'=> false,
+     *     'order'  => 10000,
+     *     'icon'   => '',
+     *     'remark' => '设置角色后台API权限提交',
+     *     'param'  => ''
+     * )
+     * @throws \think\Exception
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     * @throws \think\exception\PDOException
+     */
+    public function apiAuthorizePost()
+    {
+        if ($this->request->isPost()) {
+            $roleId = $this->request->param("role_id", 0, 'intval');
+            if (!$roleId) {
+                $this->error("需要授权的角色不存在！");
+            }
+
+            $adminApiIds = $this->request->param('ids/a');
+            if (is_array($adminApiIds) && count($adminApiIds) > 0) {
+                AuthAccessModel::where(["role_id" => $roleId, 'type' => 'admin_api'])->delete();
+                foreach ($adminApiIds as $adminApiId) {
+                    $adminApi = AdminApiModel::where("id", $adminApiId)->field('url')->find();
+                    if ($adminApi) {
+                        $name = strtolower("admin_api:{$adminApi['url']}");
+                        AuthAccessModel::insert(["role_id" => $roleId, "rule_name" => $name, 'type' => 'admin_api']);
+                    }
+                }
+
+                $this->success("授权成功！");
+            } else {
+                //当没有数据时，清除当前角色授权
+                AuthAccessModel::where("role_id", $roleId)->where('type','admin_api')->delete();
                 $this->error("没有接收到数据，执行清除授权成功！");
             }
         }
@@ -336,10 +435,10 @@ class RbacController extends AdminBaseController
      */
     private function _isChecked($menu, $privData)
     {
-        $app    = $menu['app'];
-        $model  = $menu['controller'];
-        $action = $menu['action'];
-        $name   = strtolower("$app/$model/$action");
+        $app        = $menu['app'];
+        $controller = $menu['controller'];
+        $action     = $menu['action'];
+        $name       = strtolower("$app/$controller/$action");
         if ($privData) {
             if (in_array($name, $privData)) {
                 return true;

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,11 +10,21 @@
 // +----------------------------------------------------------------------
 namespace app\admin\model;
 
+use app\admin\logic\PluginLogic;
 use think\Model;
-use think\Db;
 
 class PluginModel extends Model
 {
+
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'plugin';
+
+    protected $type = [
+        'config' => 'array'
+    ];
 
     /**
      * 获取插件列表
@@ -43,10 +53,13 @@ class PluginModel extends Model
                     //TODO 加入到日志中
                     continue;
                 }
-                $obj                 = new $class;
-                $plugins[$pluginDir] = $obj->info;
 
-                if (!isset($obj->info['type']) || $obj->info['type'] == 1) {//只获取普通插件
+                $classObj            = new \ReflectionClass($class);
+                $defaultProperties   = $classObj->getDefaultProperties();
+                $info                = isset($defaultProperties['info']) ? $defaultProperties['info'] : [];
+                $plugins[$pluginDir] = $info;
+
+                if (!isset($info['type']) || $info['type'] == 1) {//只获取普通插件
                     if ($plugins[$pluginDir]) {
                         $plugins[$pluginDir]['status'] = 3;//未安装
                     }
@@ -95,7 +108,7 @@ class PluginModel extends Model
 
         ];
 
-        $dbHooks = Db::name('hook')->column('hook');
+        $dbHooks = HookModel::column('hook');
 
         $returnHooks = array_unique(array_merge($systemHooks, $dbHooks));
 
@@ -111,39 +124,8 @@ class PluginModel extends Model
         if (empty($findPlugin)) {
             return -1; //插件不存在;
         }
-        $class = cmf_get_plugin_class($findPlugin['name']);
 
-        Db::startTrans();
-        try {
-            $this->where('name', $findPlugin['name'])->delete();
-            Db::name('hook_plugin')->where('plugin', $findPlugin['name'])->delete();
-
-            if (class_exists($class)) {
-                $plugin = new $class;
-
-                $uninstallSuccess = $plugin->uninstall();
-                if (!$uninstallSuccess) {
-                    Db::rollback();
-                    return -2;
-                }
-            }
-
-            // 删除后台菜单
-            Db::name('admin_menu')->where([
-                'app' => "plugin/{$findPlugin['name']}",
-            ])->delete();
-
-            // 删除权限规则
-            Db::name('auth_rule')->where('app', "plugin/{$findPlugin['name']}")->delete();
-
-            Db::commit();
-        } catch (\Exception $e) {
-            Db::rollback();
-            return false;
-        }
-
-        return true;
-
+        return PluginLogic::uninstall($findPlugin['name']);
     }
 
 }

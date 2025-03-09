@@ -11,16 +11,27 @@
 namespace app\portal\model;
 
 use app\admin\model\RouteModel;
-use think\db\Query;
 use think\Model;
 use tree\Tree;
+use think\db\Query;
 
 class PortalCategoryModel extends Model
 {
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'portal_category';
 
     protected $type = [
         'more' => 'array',
     ];
+
+    public function getArticleTotalCountAttr($value, $data)
+    {
+        $total = PortalCategoryPostModel::where('category_id', $data['id'])->where('status', 1)->count();
+        return $total;
+    }
 
     /**
      * 生成分类 select树形结构
@@ -37,7 +48,7 @@ class PortalCategoryModel extends Model
             ->where('delete_time', 0)
             ->where(function (Query $query) use ($currentCid) {
                 if (!empty($currentCid)) {
-                    $query->where('id', 'neq', $currentCid);
+                    $query->where('id', '<>', $currentCid);
                 }
             })
             ->select()->toArray();
@@ -46,18 +57,9 @@ class PortalCategoryModel extends Model
         $tree->icon = ['&nbsp;&nbsp;│', '&nbsp;&nbsp;├─', '&nbsp;&nbsp;└─'];
         $tree->nbsp = '&nbsp;&nbsp;';
 
-        $newCategories = [];
-        foreach ($categories as $item) {
-            $item['selected'] = $selectId == $item['id'] ? "selected" : "";
-
-            array_push($newCategories, $item);
-        }
-
-        $tree->init($newCategories);
-        $str     = '<option value=\"{$id}\" {$selected}>{$spacer}{$name}</option>';
-        $treeStr = $tree->getTree(0, $str);
-
-        return $treeStr;
+        $tree->init($categories);
+        $str = '<option value="$id" $selected>$spacer$name</option>';
+        return $tree->getTree(0, $str, $selectId);
     }
 
     /**
@@ -97,13 +99,16 @@ class PortalCategoryModel extends Model
             } else {
                 $item['str_action'] .= '<a class="btn btn-xs btn-success js-ajax-dialog-btn" data-msg="您确定显示此分类吗" href="' . url('AdminCategory/toggle', ['ids' => $item['id'], 'display' => 1]) . '">显示</a>';
             }
+            if ($item['description']) {
+                $item['description'] = '<span title=' . $item['description'] . '>' . mb_substr($item['description'], 0, 50) . "…</span>";
+            }
             array_push($newCategories, $item);
         }
 
         $tree->init($newCategories);
 
         if (empty($tpl)) {
-            $tpl = " <tr id='node-\$id' \$parent_id_node style='\$style' data-parent_id='\$parent_id' data-id='\$id'>
+            $tpl = " <tr id='node-\$id' \$parent_id_node style='\$style' data-parent_id='\$parent_id' data-id='\$id' title='ID:\$id'>
                         <td style='padding-left:20px;'><input type='checkbox' class='js-check' data-yid='js-check-y' data-xid='js-check-x' name='ids[]' value='\$id' data-parent_id='\$parent_id' data-id='\$id'></td>
                         <td><input name='list_orders[\$id]' type='text' size='3' value='\$list_order' class='input-order'></td>
                         <td>\$id</td>
@@ -131,7 +136,7 @@ class PortalCategoryModel extends Model
             if (!empty($data['more']['thumbnail'])) {
                 $data['more']['thumbnail'] = cmf_asset_relative_url($data['more']['thumbnail']);
             }
-            $this->allowField(true)->save($data);
+            $this->save($data);
             $id = $this->id;
             if (empty($data['parent_id'])) {
 
@@ -183,11 +188,14 @@ class PortalCategoryModel extends Model
             $result = false;
         } else {
 
+            $categoryAlias = $data['alias'];
+            unset($data['alias']);
             $data['path'] = $newPath;
             if (!empty($data['more']['thumbnail'])) {
                 $data['more']['thumbnail'] = cmf_asset_relative_url($data['more']['thumbnail']);
             }
-            $this->isUpdate(true)->allowField(true)->save($data, ['id' => $id]);
+            $category = $this->where('id', $id)->find();
+            $category->save($data);
 
             $children = $this->field('id,path')->where('path', 'like', $oldCategory['path'] . "-%")->select();
             if (!$children->isEmpty()) {
@@ -198,9 +206,9 @@ class PortalCategoryModel extends Model
             }
 
             $routeModel = new RouteModel();
-            if (!empty($data['alias'])) {
-                $routeModel->setRoute($data['alias'], 'portal/List/index', ['id' => $data['id']], 2, 5000);
-                $routeModel->setRoute($data['alias'] . '/:id', 'portal/Article/index', ['cid' => $data['id']], 2, 4999);
+            if (!empty($categoryAlias)) {
+                $routeModel->setRoute($categoryAlias, 'portal/List/index', ['id' => $data['id']], 2, 5000);
+                $routeModel->setRoute($categoryAlias . '/:id', 'portal/Article/index', ['cid' => $data['id']], 2, 4999);
             } else {
                 $routeModel->deleteRoute('portal/List/index', ['id' => $data['id']]);
                 $routeModel->deleteRoute('portal/Article/index', ['cid' => $data['id']]);

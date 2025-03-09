@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -12,7 +12,6 @@ namespace app\user\controller;
 
 use cmf\controller\UserBaseController;
 use app\user\model\UserFavoriteModel;
-use think\Db;
 
 class FavoriteController extends UserBaseController
 {
@@ -36,13 +35,15 @@ class FavoriteController extends UserBaseController
      */
     public function delete()
     {
-        $id                = $this->request->param("id", 0, "intval");
-        $userFavoriteModel = new UserFavoriteModel();
-        $data              = $userFavoriteModel->deleteFavorite($id);
-        if ($data) {
-            $this->success("取消收藏成功！");
-        } else {
-            $this->error("取消收藏失败！");
+        if ($this->request->isPost()) {
+            $id                = $this->request->param("id", 0, "intval");
+            $userFavoriteModel = new UserFavoriteModel();
+            $data              = $userFavoriteModel->deleteFavorite($id);
+            if ($data) {
+                $this->success("取消收藏成功！");
+            } else {
+                $this->error("取消收藏失败！");
+            }
         }
     }
 
@@ -51,6 +52,9 @@ class FavoriteController extends UserBaseController
      */
     public function add()
     {
+        if (!$this->request->isPost()) {
+            $this->error(lang('illegal request'));
+        }
         $data   = $this->request->param();
         $result = $this->validate($data, 'Favorite');
 
@@ -62,7 +66,7 @@ class FavoriteController extends UserBaseController
         $table = $this->request->param('table');
 
 
-        $findFavoriteCount = Db::name("user_favorite")->where([
+        $findFavoriteCount = UserFavoriteModel::where([
             'object_id'  => $id,
             'table_name' => $table,
             'user_id'    => cmf_get_current_user_id()
@@ -78,7 +82,7 @@ class FavoriteController extends UserBaseController
         $url         = base64_decode($url);
         $description = $this->request->param('description', '', 'base64_decode');
         $description = empty($description) ? $title : $description;
-        Db::name("user_favorite")->insert([
+        UserFavoriteModel::insert([
             'user_id'     => cmf_get_current_user_id(),
             'title'       => $title,
             'description' => $description,
@@ -88,7 +92,7 @@ class FavoriteController extends UserBaseController
             'create_time' => time()
         ]);
 
-        $this->success('收藏成功');
+        $this->success(lang('Collection succeeded'));
 
     }
 }

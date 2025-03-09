@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -15,7 +15,7 @@ use think\Validate;
 class UserValidate extends Validate
 {
     protected $rule = [
-        'user_login' => 'require|unique:user,user_login',
+        'user_login' => 'require|unique:user',
         'user_pass'  => 'require',
         'user_email' => 'require|email|unique:user,user_email',
     ];
