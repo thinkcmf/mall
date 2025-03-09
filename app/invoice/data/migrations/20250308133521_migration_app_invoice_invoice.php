@@ -1,0 +1,28 @@
+<?php
+use think\migration\Migrator;
+
+class MigrationAppInvoiceInvoice extends Migrator
+{
+    public function change(): void
+    {
+        $table = $this->table('invoice', ['id' => true, 'engine' => 'InnoDB', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '发票']);
+        $table->addColumn('create_time', 'integer', ['signed' => false, 'default' => 0, 'comment' => '创建时间'])
+              ->addColumn('user_id', 'biginteger', ['signed' => false, 'default' => 0, 'comment' => '用户 id'])
+              ->addColumn('type', 'integer', ['limit' => 3, 'signed' => false, 'default' => 1, 'comment' => '发票类型;1: 个人;2:增值税普通发票;3:增值税专用发票;'])
+              ->addColumn('shipping_status', 'integer', ['limit' => 4, 'default' => 0, 'comment' => '发货状态(0:未发货;1:已发货;2:已收货;10:待发货)'])
+              ->addColumn('invoice_no', 'string', ['limit' => 500, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '发票号'])
+              ->addColumn('title', 'string', ['limit' => 255, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '发票抬头，（个人姓名，或公司名称）'])
+              ->addColumn('taxpayer_id', 'string', ['limit' => 30, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '纳税人识别码'])
+              ->addColumn('phone', 'string', ['limit' => 20, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '公司电话'])
+              ->addColumn('address', 'string', ['limit' => 100, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '公司地址'])
+              ->addColumn('bank_name', 'string', ['limit' => 60, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '开户行'])
+              ->addColumn('bank_account', 'string', ['limit' => 30, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '银行账号'])
+              ->addColumn('shipment_code', 'string', ['limit' => 20, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '物流code'])
+              ->addColumn('shipment_name', 'string', ['limit' => 30, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '物流名称'])
+              ->addColumn('tracking_number', 'string', ['limit' => 32, 'default' => '', 'collation' => 'utf8mb4_unicode_ci', 'comment' => '物流单号'])
+              ->addColumn('deliver_time', 'integer', ['signed' => false, 'default' => 0, 'comment' => '发货时间'])
+              ->addColumn('consignee_info', 'text', ['null' => true, 'collation' => 'utf8mb4_unicode_ci', 'comment' => '收件人信息'])
+              ->addIndex(['id'], ['unique' => true])
+              ->create();
+    }
+}
