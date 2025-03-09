@@ -2,13 +2,13 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: Dean <zxxjjforever@163.com>
 // +----------------------------------------------------------------------
 namespace api\wxapp\controller;
 
-use think\Db;
+use think\facade\Db;
 use cmf\controller\RestBaseController;
 use wxapp\aes\WXBizDataCrypt;
 use think\Validate;
@@ -18,14 +18,14 @@ class PublicController extends RestBaseController
     // 微信小程序用户登录 TODO 增加最后登录信息记录,如 ip
     public function login()
     {
-        $validate = new Validate([
+        $validate = new Validate();
+        $validate->rule([
             'code'           => 'require',
             'encrypted_data' => 'require',
             'iv'             => 'require',
             'raw_data'       => 'require',
             'signature'      => 'require',
         ]);
-
         $validate->message([
             'code.require'           => '缺少参数code!',
             'encrypted_data.require' => '缺少参数encrypted_data!',

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +---------------------------------------------------------------------
@@ -20,7 +20,7 @@ class Cmf extends TagLib
     protected $tags = [
         // 标签定义： attr 属性列表 close 是否闭合（0 或者1 默认1） alias 标签别名 level 嵌套层次
         'page'                => ['attr' => '', 'close' => 0],//非必须属性name
-        'widget'              => ['attr' => 'name', 'close' => 1],
+        'widget'              => ['attr' => '', 'close' => 1],
         'navigation'          => ['attr' => '', 'close' => 1],//非必须属性nav-id,root,id,class
         'navigationmenu'      => ['attr' => '', 'close' => 1],//root,class
         'navigationfolder'    => ['attr' => '', 'close' => 1],//root,class,dropdown,dropdown-class
@@ -31,7 +31,10 @@ class Cmf extends TagLib
         'slides'              => ['attr' => 'id', 'close' => 1],//非必须属性item
         'noslides'            => ['attr' => 'id', 'close' => 1],
         'captcha'             => ['attr' => 'height,width', 'close' => 0],//非必须属性font-size,length,bg,id
-        'hook'                => ['attr' => 'name,param,once', 'close' => 0]
+        'hook'                => ['attr' => 'name,param,once', 'close' => 0],
+        'tree'                => ['attr' => 'name', 'close' => 1],
+        'css'                 => ['attr' => '', 'close' => 0],//非必须属性name
+        'js'                  => ['attr' => '', 'close' => 0],//非必须属性name
     ];
 
     /**
@@ -60,30 +63,104 @@ parse;
     {
 
         if (empty($tag['name'])) {
-            return '';
+            $designingTheme = cookie('cmf_design_theme');
+            $name           = '';
+            $tagName        = '';
+            $attrsText      = '';
+            if (!empty($tag['tag'])) {
+                $tagName = $tag['tag'];
+                if (strpos($tagName, '$') === 0) {
+                    $this->autoBuildVar($tagName);
+                } else {
+                    $tagName = "{$tagName}";
+                }
+
+                $attrsText = '';
+
+                unset($tag['tag']);
+                unset($tag['name']);
+                $attrs = [];
+
+                if (!isset($tag['class'])) {
+                    $attrs[] = 'class="__cmf_widget_in_block"';
+                }
+
+                if ($designingTheme) {
+                    $attrs[] = 'data-cmf_theme_file_id="<?php echo $_theme_file_id;?>"';
+                    $attrs[] = 'data-cmf_widget_id="<?php echo $_widget_id;?>"';
+                }
+
+                if (!isset($tag['style'])) {
+                    $tag['style'] = '';
+                }
+
+
+                foreach ($tag as $attrName => $attrValue) {
+                    if (strpos($attrValue, '$') === 0) {
+                        $this->autoBuildVar($attrValue);
+                        $attrValue = "<?php echo $attrValue ?>";
+                    } else {
+                        $attrValue = "{$attrValue}";
+                    }
+
+                    if ($attrName == 'class'/* && $designingTheme*/) {
+                        $attrValue = '__cmf_widget_in_block ' . $attrValue;
+                    }
+
+                    if ($attrName == 'style') {
+                        $styles = <<<hello
+<?php 
+if(isset(\$widget['css'])){
+    foreach(\$widget['css'] as \$cssAttrName=>\$cssValue){
+        if(\$cssValue!=0){
+           echo \$cssAttrName.':'.\$cssValue.';';
         }
+    }
+}
+?>
+hello;
 
-        $name = $tag['name'];
+                        $attrValue = ltrim($attrValue . ';' . str_replace("\n", '', $styles), ';');
+                    }
 
-        if (strpos($name, '$') === 0) {
-            $this->autoBuildVar($name);
+                    $attrs[] = $attrName . '="' . $attrValue . '"';
+                }
+
+                $attrsText = ' ' . join(' ', $attrs);
+
+            } else {
+                throw new \Exception('请给控件设置tag属性');
+            }
+
+
         } else {
-            $name = "'{$name}'";
+            $name = $tag['name'];
+            if (strpos($name, '$') === 0) {
+                $this->autoBuildVar($name);
+            } else {
+                $name = "'{$name}'";
+            }
         }
 
-        $parse = <<<parse
+
+        if (empty($name)) {
+            $parse = <<<parse
+<$tagName{$attrsText}>
+{$content}
+</$tagName>
+parse;
+        } else {
+            $parse = <<<parse
 <?php
-     if(isset(\$theme_widgets[{$name}]) && \$theme_widgets[{$name}]['display']){
+     if((isset(\$theme_widgets[{$name}]) && \$theme_widgets[{$name}]['display'])){
         \$widget=\$theme_widgets[{$name}];
-     
  ?>
 {$content}
 <?php
     }
  ?>
-
-
 parse;
+        }
 
         return $parse;
 
@@ -101,7 +178,7 @@ parse;
         $root                    = isset($tag['root']) ? $tag['root'] : 'ul';
         $class                   = isset($tag['class']) ? $tag['class'] : 'nav navbar-nav';
         $maxLevel                = isset($tag['max-level']) ? intval($tag['max-level']) : 0;
-        $parseNavigationFuncName = '__parse_navigation_' . md5($navId.$id.$class);
+        $parseNavigationFuncName = '__parse_navigation_' . md5($navId . $id . $class);
 
         if (strpos($navId, '$') === 0) {
             $this->autoBuildVar($navId);
@@ -211,7 +288,7 @@ parse;
         $root                       = isset($tag['root']) ? $tag['root'] : 'ul';
         $class                      = isset($tag['class']) ? $tag['class'] : 'nav navbar-nav';
         $maxLevel                   = isset($tag['max-level']) ? intval($tag['max-level']) : 0;
-        $parseSubNavigationFuncName = '__parse_sub_navigation_' . md5($id.$class);
+        $parseSubNavigationFuncName = '__parse_sub_navigation_' . md5($id . $class);
 
         if (strpos($parent, '$') === 0) {
             $this->autoBuildVar($parent);
@@ -326,7 +403,7 @@ parse;
      */
     public function tagSlides($tag, $content)
     {
-        $id    = empty($tag['id']) ? '0' : $tag['id'];
+        $id = empty($tag['id']) ? '0' : $tag['id'];
         if (strpos($id, '$') === 0) {
             $this->autoBuildVar($id);
         }
@@ -349,7 +426,7 @@ parse;
      */
     public function tagNoSlides($tag, $content)
     {
-        $id    = empty($tag['id']) ? '0' : $tag['id'];
+        $id = empty($tag['id']) ? '0' : $tag['id'];
         if (strpos($id, '$') === 0) {
             $this->autoBuildVar($id);
         }
@@ -403,11 +480,130 @@ parse;
 
         $parse = <<<parse
 <php>
-    \\think\\facade\\Hook::listen('{$name}',{$param},{$once});
+    hook('{$name}',{$param},{$once});
 </php>
 parse;
         return $parse;
     }
 
+
+    public function tagTree($tag, $content)
+    {
+        $name = isset($tag['name']) ? $tag['name'] : 'items';
+        $item = isset($tag['item']) ? $tag['item'] : 'vo';
+
+        $parse = <<<parse
+<php>
+\$___tree= new \\tree\Tree();
+\$___tree->init(\${$name});
+\${$name}=\$___tree->createTree();
+foreach (\${$name} as \$___node) {
+    \$___stack           = [];
+    \$___node['_level']  = 1;
+    \$___node['_spacer'] = '';
+    array_push(\$___stack, \$___node);
+    \${$item} = [];
+    while (count(\$___stack) > 0) {
+        \${$item} = array_pop(\$___stack);
+        if (!\${$item}) return;
+</php>
+{$content}
+<php>
+        if (!empty(\${$item}['children'])) {
+            \$___childrenCount = count(\${$item}['children']);
+            for (\$i = \$___childrenCount - 1; \$i >= 0; \$i--) {
+                \${$item}['children'][\$i]['_level'] = \${$item}['_level'] + 1;
+                if (\$i == \$___childrenCount - 1) {
+                    \${$item}['children'][\$i]['_is_last'] = 1;
+                    \${$item}['children'][\$i]['_spacer'] = str_repeat(\$___tree->nbsp, \${$item}['children'][\$i]['_level'] - 1). \$___tree->icon[2] . ' ';
+                } else {
+                    \${$item}['children'][\$i]['_is_last'] = 0;
+                    \${$item}['children'][\$i]['_spacer'] = str_repeat(\$___tree->nbsp, \${$item}['children'][\$i]['_level'] - 1). \$___tree->icon[1] . ' ';
+                }
+                array_push(\$___stack, \${$item}['children'][\$i]);
+            }
+        }
+    }
+}
+</php>
+parse;
+
+        return $parse;
+    }
+
+    /**
+     * css标签
+     */
+    public function tagCss($tag, $content)
+    {
+        $href = isset($tag['href']) ? $tag['href'] : $tag['file'];
+        if (strpos($href, '$') === 0) {
+            $this->autoBuildVar($href);
+        } else {
+            $href = "'{$href}'";
+        }
+
+        $parse = <<<parse
+<?php
+if(!isset(\$_theme_css_href_list)){
+    \$_theme_css_href_list=[];
+}
+if(!isset(\$_theme_css_href_list[{$href}])){
+    \$_theme_css_href_list[{$href}]={$href};
+?>
+<link href="<?php echo $href;?>" rel="stylesheet">
+<?php
+}
+?>
+parse;
+
+        return $parse;
+
+    }
+
+    /**
+     * js标签
+     */
+    public function tagJs($tag, $content)
+    {
+        $src = isset($tag['src']) ? $tag['src'] : $tag['file'];
+        if (strpos($src, '$') === 0) {
+            $this->autoBuildVar($src);
+        } else {
+            $src = "'{$src}'";
+        }
+
+        $type = isset($tag['type']) ? $tag['type'] : '';
+        if (strpos($type, '$') === 0) {
+            $this->autoBuildVar($type);
+            $type = <<<hello
+ type="<?php echo \$type;?>"
+hello;
+
+        } else {
+            if (!empty($type)) {
+                $type = <<<hello
+ type="{$type}"
+hello;
+            }
+        }
+
+        $parse = <<<parse
+<?php
+if(!isset(\$_theme_js_src_list)){
+    \$_theme_js_src_list=[];
+}
+if(!isset(\$_theme_js_src_list[{$src}])){
+    \$_theme_js_src_list[{$src}]={$src};
+?>
+<script src="<?php echo $src;?>"$type></script>
+<?php
+}
+?>
+parse;
+
+        return $parse;
+
+    }
 
 }

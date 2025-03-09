@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -14,6 +14,12 @@ use think\Model;
 
 class RouteModel extends Model
 {
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'route';
+
     /**
      * 获取所有url美化规则
      * @param boolean $refresh 是否强制刷新
@@ -93,25 +99,76 @@ class RouteModel extends Model
             if (empty($appUrls[$path]['pattern'])) {
                 $allRoutes[$url] = $fullUrl;
             } else {
-                $allRoutes[$url] = [$fullUrl, [], $appUrls[$path]['pattern']];
+                $allRoutes[$url] = [$fullUrl, [], $appUrls[$path]['pattern']];//[routeUrl,options,patterns]
             }
 
         }
         cache("routes", $cacheRoutes);
 
-        if (strpos(cmf_version(), '5.0.') === false) {
-            $routeDir = CMF_DATA . "route/"; // 5.1
+        if (strpos(cmf_version(), '5.') === 0) {
+            if (strpos(cmf_version(), '5.0.') === false) {
+                $routeDir = CMF_DATA . "route/"; // 5.1
+            } else {
+                $routeDir = CMF_DATA . "conf/"; // 5.0
+            }
+
+            $content = "<?php\treturn " . var_export($allRoutes, true) . ";";
+
         } else {
-            $routeDir = CMF_DATA . "conf/"; // 5.0
+            $routeDir = CMF_DATA . "route/";
+
+            $fileStrs = [
+                '<?php',
+                'use think\facade\Route;',
+                '',
+            ];
+            foreach ($allRoutes as $rule => $route) {
+
+                if (is_array($route)) {
+                    $routeUrl = $route[0];
+                    if (!empty($route[2])) {
+                        $pattern = stripslashes(var_export($route[2], true));
+                    }
+                } else {
+                    $routeUrl = $route;
+                }
+
+                $ruleName = $routeUrl;
+                $query    = [];
+                if (strpos($routeUrl, '?') > 0) {
+                    $routeUrlArr = parse_url($routeUrl);
+                    $routeUrl    = $routeUrlArr['path'];
+                    parse_str($routeUrlArr['query'], $query);
+                }
+
+                $routeCode = "Route::get('$rule', '$ruleName')";
+//                $routeCode .= "->name('$ruleName')";
+
+                if (!empty($query)) {
+                    $query     = var_export($query, true);
+                    $query     = str_replace(["\n", 'array (  '], ['', 'array('], $query);
+                    $routeCode .= "->append($query)";
+                }
+
+                if (!empty($pattern)) {
+                    $pattern   = str_replace(["\n", 'array (  '], ['', 'array('], $pattern);
+                    $routeCode .= "\n->pattern($pattern)";
+                }
+
+                $routeCode .= ";\n";
+
+                $fileStrs[] = $routeCode;
+            }
+
+            $content = join("\n", $fileStrs);
         }
 
         if (!file_exists($routeDir)) {
             mkdir($routeDir);
         }
 
-        $route_file = $routeDir . "route.php";
-
-        file_put_contents($route_file, "<?php\treturn " . var_export($allRoutes, true) . ";");
+        $routeFile = $routeDir . "route.php";
+        file_put_contents($routeFile, $content . "\n\n");
 
         return $cacheRoutes;
     }
@@ -133,8 +190,8 @@ class RouteModel extends Model
             if (file_exists($urlConfigFile)) {
                 $urls = include $urlConfigFile;
                 foreach ($urls as $action => $url) {
-                    $action = $app . '/' . $action;
-
+                    $action           = $app . '/' . $action;
+                    $url['action']    = $action;
                     $appUrls[$action] = $url;
                     if (!empty($url['vars'])) {
                         foreach ($url['vars'] as $urlVarName => $urlVar) {
@@ -187,7 +244,7 @@ class RouteModel extends Model
 
     public function existsRoute($url, $fullUrl)
     {
-        $findRouteCount = $this->where('url', $url)->where('full_url', 'neq', $fullUrl)->count();
+        $findRouteCount = $this->where('url', $url)->whereNotLike('full_url', $fullUrl)->count();
 
         return $findRouteCount > 0 ? true : false;
     }

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -11,9 +11,9 @@
 namespace app\admin\controller;
 
 use app\admin\model\RouteModel;
+use app\admin\model\UserModel;
+use app\admin\service\SettingService;
 use cmf\controller\AdminBaseController;
-
-use think\Db;
 
 /**
  * Class SettingController
@@ -70,7 +70,62 @@ class SettingController extends AdminBaseController
         }
 
         if (APP_DEBUG && false) { // TODO 没确定要不要可以设置默认应用
-            $apps = cmf_scan_dir(APP_PATH . '*', GLOB_ONLYDIR);
+            $apps = cmf_scan_dir($this->app->getAppPath() . '*', GLOB_ONLYDIR);
+            $apps = array_diff($apps, $noNeedDirs);
+            $this->assign('apps', $apps);
+        }
+
+        $this->assign('site_info', cmf_get_option('site_info'));
+        $this->assign("admin_styles", $adminStyles);
+        $this->assign("templates", []);
+        $this->assign("admin_themes", $adminThemes);
+        $this->assign("cdn_settings", $cdnSettings);
+        $this->assign("admin_settings", $adminSettings);
+        $this->assign("cmf_settings", $cmfSettings);
+
+        return $this->fetch();
+    }
+
+    /**
+     * 后台设置
+     * @adminMenu(
+     *     'name'   => '后台设置',
+     *     'parent' => 'default',
+     *     'display'=> true,
+     *     'hasView'=> true,
+     *     'order'  => 0,
+     *     'icon'   => '',
+     *     'remark' => '后台设置',
+     *     'param'  => ''
+     * )
+     */
+    public function admin()
+    {
+        $content = hook_one('admin_setting_admin_view');
+
+        if (!empty($content)) {
+            return $content;
+        }
+
+        $noNeedDirs     = [".", "..", ".svn", 'fonts'];
+        $adminThemesDir = WEB_ROOT . config('template.cmf_admin_theme_path') . config('template.cmf_admin_default_theme') . '/public/assets/themes/';
+        $adminStyles    = cmf_scan_dir($adminThemesDir . '*', GLOB_ONLYDIR);
+        $adminStyles    = array_diff($adminStyles, $noNeedDirs);
+        $cdnSettings    = cmf_get_option('cdn_settings');
+        $cmfSettings    = cmf_get_option('cmf_settings');
+        $adminSettings  = cmf_get_option('admin_settings');
+
+        $adminThemes = [];
+        $themes      = cmf_scan_dir(WEB_ROOT . config('template.cmf_admin_theme_path') . '/*', GLOB_ONLYDIR);
+
+        foreach ($themes as $theme) {
+            if (strpos($theme, 'admin_') === 0) {
+                array_push($adminThemes, $theme);
+            }
+        }
+
+        if (APP_DEBUG && false) { // TODO 没确定要不要可以设置默认应用
+            $apps = cmf_scan_dir($this->app->getAppPath() . '*', GLOB_ONLYDIR);
             $apps = array_diff($apps, $noNeedDirs);
             $this->assign('apps', $apps);
         }
@@ -144,7 +199,7 @@ class SettingController extends AdminBaseController
 
             cmf_set_option('admin_settings', $adminSettings);
 
-            $this->success("保存成功！", '');
+            $this->success(lang('EDIT_SUCCESS'), '');
 
         }
     }
@@ -194,7 +249,7 @@ class SettingController extends AdminBaseController
 
             $userId = cmf_get_current_admin_id();
 
-            $admin = Db::name('user')->where("id", $userId)->find();
+            $admin = UserModel::where("id", $userId)->find();
 
             $oldPassword = $data['old_password'];
             $password    = $data['password'];
@@ -206,7 +261,7 @@ class SettingController extends AdminBaseController
                     if (cmf_compare_password($password, $admin['user_pass'])) {
                         $this->error("新密码不能和原始密码相同！");
                     } else {
-                        Db::name('user')->where('id', $userId)->update(['user_pass' => cmf_password($password)]);
+                        UserModel::where('id', $userId)->update(['user_pass' => cmf_password($password)]);
                         $this->success("密码修改成功！");
                     }
                 } else {
@@ -259,7 +314,7 @@ class SettingController extends AdminBaseController
             $uploadSetting = $this->request->post();
 
             cmf_set_option('upload_setting', $uploadSetting);
-            $this->success('保存成功！');
+            $this->success(lang('EDIT_SUCCESS'));
         }
 
     }
@@ -286,6 +341,27 @@ class SettingController extends AdminBaseController
         }
 
         cmf_clear_cache();
+        return $this->fetch();
+    }
+
+    /**
+     * 多语言设置
+     * @adminMenu(
+     *     'name'   => '多语言设置',
+     *     'parent' => 'default',
+     *     'display'=> true,
+     *     'hasView'=> true,
+     *     'order'  => 10000,
+     *     'icon'   => '',
+     *     'remark' => '多语言设置',
+     *     'param'  => ''
+     * )
+     */
+    public function lang()
+    {
+        $langSetting = app(SettingService::class)->getLangSetting();
+
+        $this->assign('lang_setting', $langSetting);
         return $this->fetch();
     }
 

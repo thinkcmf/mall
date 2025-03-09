@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -62,7 +62,7 @@ class BalanceController extends RestUserBaseController
             $userBalance = $userModel->where('id', $userId)->lock(true)->value('balance');
 
             if ($userBalance > $amount) {
-                $userModel->where('id', $userId)->setDec('balance', $amount);
+                $userModel->where('id', $userId)->dec('balance', $amount)->update();
                 $balanceModel->insert([
                     'user_id'     => $userId,
                     'to_user_id'  => $toUserId,
@@ -72,7 +72,7 @@ class BalanceController extends RestUserBaseController
                     'remark'      => $remark
                 ]);
 
-                $userModel->where('id', $toUserId)->setInc('balance', $amount);
+                $userModel->where('id', $toUserId)->inc('balance', $amount)->update();
 
                 $balanceModel->insert([
                     'user_id'     => $toUserId,

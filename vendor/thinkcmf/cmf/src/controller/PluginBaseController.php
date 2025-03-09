@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +---------------------------------------------------------------------
@@ -10,11 +10,10 @@
 // +----------------------------------------------------------------------
 namespace cmf\controller;
 
-use think\Container;
+use app\admin\model\PluginModel;
 use think\exception\ValidateException;
-use think\facade\Config;
-use think\Loader;
-use think\exception\TemplateNotFoundException;
+use think\template\exception\TemplateNotFoundException;
+use think\Validate;
 
 class PluginBaseController extends BaseController
 {
@@ -37,8 +36,8 @@ class PluginBaseController extends BaseController
      */
     public function __construct()
     {
-        $this->app     = Container::get('app');
-        $this->request = $this->app['request'];
+        $this->app     = app();
+        $this->request = request();
 
         $this->getPlugin();
 
@@ -57,9 +56,23 @@ class PluginBaseController extends BaseController
     {
 
         if (is_null($this->plugin)) {
-            $pluginName   = $this->request->param('_plugin');
-            $pluginName   = cmf_parse_name($pluginName, 1);
-            $class        = cmf_get_plugin_class($pluginName);
+            $pluginName = $this->request->param('_plugin');
+            $pluginName = cmf_parse_name($pluginName, 1);
+            $class      = cmf_get_plugin_class($pluginName);
+
+
+            //检查是否启用。非启用则禁止访问。
+            $pluginModel = new PluginModel();
+            $findPlugin  = $pluginModel->where('name', '=', $pluginName)->find();
+            if (empty($findPlugin)) {
+                $this->error(lang('插件未安装！'));
+            }
+
+            if ($findPlugin['status'] != 1) {
+                $this->error(lang('插件未启用！'));
+            }
+
+
             $this->plugin = new $class;
         }
 
@@ -70,6 +83,7 @@ class PluginBaseController extends BaseController
     // 初始化
     protected function initialize()
     {
+        hook('home_init');
     }
 
     /**
@@ -101,10 +115,10 @@ class PluginBaseController extends BaseController
      * @param string $template 模板文件规则
      * @return string
      */
-    private function parseTemplate($template)
+    protected function parseTemplate($template)
     {
         // 分析模板文件规则
-        $viewEngineConfig = Config::get('template.');
+        $viewEngineConfig = config('view');
 
         $path = $this->plugin->getThemeRoot();
 
@@ -116,7 +130,7 @@ class PluginBaseController extends BaseController
 
         if (0 !== strpos($template, '/')) {
             $template   = str_replace(['/', ':'], $depr, $template);
-            $controller = Loader::parseName($controller);
+            $controller = cmf_parse_name($controller);
             if ($controller) {
                 if ('' == $template) {
                     // 如果模板文件名为空 按照默认规则定位
@@ -160,7 +174,7 @@ class PluginBaseController extends BaseController
     /**
      * 设置验证失败后是否抛出异常
      * @access protected
-     * @param  bool $fail 是否抛出异常
+     * @param bool $fail 是否抛出异常
      * @return $this
      */
     protected function validateFailException($fail = true)
@@ -172,51 +186,46 @@ class PluginBaseController extends BaseController
     /**
      * 验证数据
      * @access protected
-     * @param  array        $data     数据
-     * @param  string|array $validate 验证器名或者验证规则数组
-     * @param  array        $message  提示信息
-     * @param  bool         $batch    是否批量验证
-     * @param  mixed        $callback 回调方法（闭包）
+     * @param array        $data     数据
+     * @param string|array $validate 验证器名或者验证规则数组
+     * @param array        $message  提示信息
+     * @param bool         $batch    是否批量验证
+     * @param mixed        $callback 回调方法（闭包）
      * @return array|string|true
      * @throws ValidateException
      */
-    protected function validate($data, $validate, $message = [], $batch = false, $callback = null)
+    protected function validate(array $data, $validate, array $message = [], bool $batch = false)
     {
         if (is_array($validate)) {
-            $v = $this->app->validate();
+            $v = new Validate();
             $v->rule($validate);
         } else {
             if (strpos($validate, '.')) {
                 // 支持场景
-                list($validate, $scene) = explode('.', $validate);
+                [$validate, $scene] = explode('.', $validate);
             }
-            $v = $this->app->validate('\\plugins\\' . cmf_parse_name($this->plugin->getName()) . '\\validate\\' . $validate . 'Validate');
+            $class = false !== strpos($validate, '\\') ? $validate : '\\plugins\\' . cmf_parse_name($this->plugin->getName()) . '\\validate\\' . $validate . 'Validate';
+            $v     = new $class();
             if (!empty($scene)) {
                 $v->scene($scene);
             }
         }
+
+        $v->message($message);
 
         // 是否批量验证
         if ($batch || $this->batchValidate) {
             $v->batch(true);
         }
 
-        if (is_array($message)) {
-            $v->message($message);
+        $result = $v->failException(false)->check($data);
+
+        if (!$result) {
+            $result = $v->getError();
         }
 
-        if ($callback && is_callable($callback)) {
-            call_user_func_array($callback, [$v, &$data]);
-        }
+        return $result;
 
-        if (!$v->check($data)) {
-            if ($this->failException) {
-                throw new ValidateException($v->getError());
-            }
-            return $v->getError();
-        }
-
-        return true;
     }
 
 }

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,11 +10,16 @@
 // +----------------------------------------------------------------------
 namespace app\user\model;
 
-use think\Db;
 use think\Model;
 
 class UserModel extends Model
 {
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'user';
+
     protected $type = [
         'more' => 'array',
     ];
@@ -139,13 +144,13 @@ class UserModel extends Model
     {
         switch ($type) {
             case 1:
-                $result = Db::name("user")->where('user_login', $user['user_login'])->find();
+                $result = UserModel::where('user_login', $user['user_login'])->find();
                 break;
             case 2:
-                $result = Db::name("user")->where('mobile', $user['mobile'])->find();
+                $result = UserModel::where('mobile', $user['mobile'])->find();
                 break;
             case 3:
-                $result = Db::name("user")->where('user_email', $user['user_email'])->find();
+                $result = UserModel::where('user_email', $user['user_email'])->find();
                 break;
             default:
                 $result = 0;
@@ -170,8 +175,8 @@ class UserModel extends Model
                 'user_status'     => $userStatus,
                 "user_type"       => 2,//会员
             ];
-            $userId = Db::name("user")->insertGetId($data);
-            $data   = Db::name("user")->where('id', $userId)->find();
+            $userId = UserModel::insertGetId($data);
+            $data   = UserModel::where('id', $userId)->find()->toArray();
             cmf_update_current_user($data);
             $token = cmf_generate_user_token($userId, 'web');
             if (!empty($token)) {
@@ -209,28 +214,25 @@ class UserModel extends Model
      */
     public function mobilePasswordReset($mobile, $password)
     {
-        $result = Db::name("user")->where('mobile', $mobile)->find();
+        $result = UserModel::where('mobile', $mobile)->find();
         if (!empty($result)) {
             $data = [
                 'user_pass' => cmf_password($password),
             ];
-            Db::name("user")->where('mobile', $mobile)->update($data);
+            UserModel::where('mobile', $mobile)->update($data);
             return 0;
         }
         return 1;
     }
 
-    public function editData($user)
+    public function editData($user,$field = [])
     {
         $userId = cmf_get_current_user_id();
 
         if (isset($user['birthday'])) {
             $user['birthday'] = strtotime($user['birthday']);
         }
-
-        $field = 'user_nickname,sex,birthday,user_url,signature,more';
-
-        if ($this->allowField($field)->save($user, ['id' => $userId])) {
+        if (self::update($user,['id'=>$userId],$field)) {
             $userInfo = $this->where('id', $userId)->find();
             cmf_update_current_user($userInfo->toArray());
             return 1;
@@ -245,40 +247,38 @@ class UserModel extends Model
      */
     public function editPassword($user)
     {
-        $userId    = cmf_get_current_user_id();
-        $userQuery = Db::name("user");
+        $userId = cmf_get_current_user_id();
         if ($user['password'] != $user['repassword']) {
             return 1;
         }
-        $pass = $userQuery->where('id', $userId)->find();
+        $pass = UserModel::where('id', $userId)->find();
         if (!cmf_compare_password($user['old_password'], $pass['user_pass'])) {
             return 2;
         }
         $data['user_pass'] = cmf_password($user['password']);
-        Db::name("user")->where('id', $userId)->update($data);
+        UserModel::where('id', $userId)->update($data);
         return 0;
     }
 
     public function comments()
     {
+        $where                = [];
         $userId               = cmf_get_current_user_id();
-        $userQuery            = Db::name("Comment");
         $where['user_id']     = $userId;
         $where['delete_time'] = 0;
-        $favorites            = $userQuery->where($where)->order('id desc')->paginate(10);
-        $data['page']         = $favorites->render();
-        $data['lists']        = $favorites->items();
+        $comments             = CommentModel::where($where)->order('id desc')->paginate(10);
+        $data['page']         = $comments->render();
+        $data['lists']        = $comments->items();
         return $data;
     }
 
     public function deleteComment($id)
     {
-        $userId              = cmf_get_current_user_id();
-        $userQuery           = Db::name("Comment");
-        $where['id']         = $id;
-        $where['user_id']    = $userId;
-        $data['delete_time'] = time();
-        $userQuery->where($where)->update($data);
+        $where            = [];
+        $userId           = cmf_get_current_user_id();
+        $where['id']      = $id;
+        $where['user_id'] = $userId;
+        CommentModel::where($where)->update(['delete_time' => time()]);
         return $data;
     }
 
@@ -287,10 +287,9 @@ class UserModel extends Model
      */
     public function bindingMobile($user)
     {
-        $userId          = cmf_get_current_user_id();
-        $data ['mobile'] = $user['username'];
-        Db::name("user")->where('id', $userId)->update($data);
-        $userInfo = Db::name("user")->where('id', $userId)->find();
+        $userId = cmf_get_current_user_id();
+        UserModel::where('id', $userId)->update(['mobile' => $user['username']]);
+        $userInfo = UserModel::where('id', $userId)->find()->toArray();
         cmf_update_current_user($userInfo);
         return 0;
     }
@@ -300,10 +299,9 @@ class UserModel extends Model
      */
     public function bindingEmail($user)
     {
-        $userId              = cmf_get_current_user_id();
-        $data ['user_email'] = $user['username'];
-        Db::name("user")->where('id', $userId)->update($data);
-        $userInfo = Db::name("user")->where('id', $userId)->find();
+        $userId = cmf_get_current_user_id();
+        UserModel::where('id', $userId)->update(['user_email' => $user['username']]);
+        $userInfo = UserModel::where('id', $userId)->find()->toArray();
         cmf_update_current_user($userInfo);
         return 0;
     }

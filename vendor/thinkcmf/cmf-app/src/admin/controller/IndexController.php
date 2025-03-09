@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -11,8 +11,9 @@
 namespace app\admin\controller;
 
 use cmf\controller\AdminBaseController;
-use think\Db;
+use think\facade\Db;
 use app\admin\model\AdminMenuModel;
+use app\admin\service\AdminMenuService;
 
 class IndexController extends AdminBaseController
 {
@@ -20,7 +21,11 @@ class IndexController extends AdminBaseController
     public function initialize()
     {
         $adminSettings = cmf_get_option('admin_settings');
-        if (empty($adminSettings['admin_password']) || $this->request->path() == $adminSettings['admin_password']) {
+
+        if (
+            empty($adminSettings['admin_password'])
+            || ($adminSettings['admin_password'] == str_replace('.html', '', $this->request->pathinfo()))
+        ) {
             $adminId = cmf_get_current_admin_id();
             if (empty($adminId)) {
                 session("__LOGIN_BY_CMF_ADMIN_PW__", 1);//设置后台登录加密码
@@ -33,7 +38,7 @@ class IndexController extends AdminBaseController
     /**
      * 后台首页
      */
-    public function index()
+    public function index(AdminMenuService $service)
     {
         $content = hook_one('admin_index_index_view');
 
@@ -52,16 +57,22 @@ class IndexController extends AdminBaseController
         $this->assign("menus", $menus);
 
 
-        $result = Db::name('AdminMenu')->order(["app" => "ASC", "controller" => "ASC", "action" => "ASC"])->select();
+        $result   = $service->getAll();
         $menusTmp = array();
-        foreach ($result as $item){
+        foreach ($result as $item) {
             //去掉/ _ 全部小写。作为索引。
-            $indexTmp = $item['app'].$item['controller'].$item['action'];
-            $indexTmp = preg_replace("/[\\/|_]/","",$indexTmp);
+            $indexTmp = $item['app'] . $item['controller'] . $item['action'];
+            $indexTmp = preg_replace("/[\\/|_]/", "", $indexTmp);
             $indexTmp = strtolower($indexTmp);
+
+            $lang         = strtoupper("{$item['app']}_{$item['controller']}_{$item['action']}");
+            $name         = lang($lang);
+            $name         = $name == $lang ? $item['name'] : $name;
+            $item['name'] = $name;
+
             $menusTmp[$indexTmp] = $item;
         }
-        $this->assign("menus_js_var",json_encode($menusTmp));
+        $this->assign("menus_js_var", json_encode($menusTmp));
 
         //$admin = Db::name("user")->where('id', cmf_get_current_admin_id())->find();
         //$this->assign('admin', $admin);

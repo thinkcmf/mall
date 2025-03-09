@@ -4,13 +4,15 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee
+class ComposerStaticInit409e436a19c882513f3c7d0ffdfd059f
 {
     public static $files = array (
-        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
-        '1cfd2761b63b0a29ed23657ea394cb2d' => __DIR__ . '/..' . '/topthink/think-captcha/src/helper.php',
-        '22ae91e0a0181f0ca9a02b9dde87e558' => __DIR__ . '/..' . '/thinkcmf/cmf/src/common.php',
         '9b552a3cc426e3287cc811caefa3cf53' => __DIR__ . '/..' . '/topthink/think-helper/src/helper.php',
+        '7448f3465e10b5f033e4babb31eb0b06' => __DIR__ . '/..' . '/topthink/think-orm/src/helper.php',
+        '35fab96057f1bf5e7aba31a8a6d5fdde' => __DIR__ . '/..' . '/topthink/think-orm/stubs/load_stubs.php',
+        '15ec93fa4ce4b2d53816a1a5f2c514e2' => __DIR__ . '/..' . '/topthink/think-validate/src/helper.php',
+        '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
+        '22ae91e0a0181f0ca9a02b9dde87e558' => __DIR__ . '/..' . '/thinkcmf/cmf/src/common.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -21,10 +23,15 @@ class ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee
         't' => 
         array (
             'tree\\' => 5,
-            'think\\helper\\' => 13,
-            'think\\composer\\' => 15,
+            'think\\trace\\' => 12,
+            'think\\migration\\' => 16,
             'think\\captcha\\' => 14,
             'think\\' => 6,
+            'themes\\' => 7,
+        ),
+        'p' => 
+        array (
+            'plugins\\' => 8,
         ),
         'm' => 
         array (
@@ -36,16 +43,22 @@ class ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee
         ),
         'c' => 
         array (
+            'cmf\\composer\\' => 13,
             'cmf\\' => 4,
         ),
         'a' => 
         array (
-            'app\\install\\' => 12,
+            'app\\admin\\' => 10,
             'app\\' => 4,
             'api\\' => 4,
         ),
         'P' => 
         array (
+            'Psr\\SimpleCache\\' => 16,
+            'Psr\\Log\\' => 8,
+            'Psr\\Http\\Message\\' => 17,
+            'Psr\\Container\\' => 14,
+            'Phinx\\' => 6,
             'PHPMailer\\PHPMailer\\' => 20,
         ),
     );
@@ -59,21 +72,34 @@ class ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee
         array (
             0 => __DIR__ . '/..' . '/thinkcmf/cmf-extend/src/tree',
         ),
-        'think\\helper\\' => 
+        'think\\trace\\' => 
         array (
-            0 => __DIR__ . '/..' . '/topthink/think-helper/src',
+            0 => __DIR__ . '/..' . '/topthink/think-trace/src',
         ),
-        'think\\composer\\' => 
+        'think\\migration\\' => 
         array (
-            0 => __DIR__ . '/..' . '/topthink/think-installer/src',
+            0 => __DIR__ . '/..' . '/xia/migration/src',
         ),
         'think\\captcha\\' => 
         array (
-            0 => __DIR__ . '/..' . '/topthink/think-captcha/src',
+            0 => __DIR__ . '/..' . '/thinkcmf/cmf-captcha/src',
         ),
         'think\\' => 
         array (
-            0 => __DIR__ . '/..' . '/topthink/think-image/src',
+            0 => __DIR__ . '/..' . '/thinkcmf/cmf/think',
+            1 => __DIR__ . '/..' . '/topthink/framework/src/think',
+            2 => __DIR__ . '/..' . '/topthink/think-validate/src',
+            3 => __DIR__ . '/..' . '/topthink/think-orm/src',
+            4 => __DIR__ . '/..' . '/topthink/think-container/src',
+            5 => __DIR__ . '/..' . '/topthink/think-helper/src',
+        ),
+        'themes\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/public/themes',
+        ),
+        'plugins\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/public/plugins',
         ),
         'mindplay\\annotations\\' => 
         array (
@@ -83,21 +109,48 @@ class ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee
         array (
             0 => __DIR__ . '/..' . '/thinkcmf/cmf-extend/src/dir',
         ),
+        'cmf\\composer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/thinkcmf/cmf-root/src',
+        ),
         'cmf\\' => 
         array (
             0 => __DIR__ . '/..' . '/thinkcmf/cmf/src',
         ),
-        'app\\install\\' => 
+        'app\\admin\\' => 
         array (
-            0 => __DIR__ . '/..' . '/thinkcmf/cmf-install/src',
+            0 => __DIR__ . '/..' . '/thinkcmf/cmf-appstore/src',
         ),
         'app\\' => 
         array (
-            0 => __DIR__ . '/..' . '/thinkcmf/cmf-app/src',
+            0 => __DIR__ . '/../..' . '/app',
+            1 => __DIR__ . '/..' . '/thinkcmf/cmf-install/src',
+            2 => __DIR__ . '/..' . '/thinkcmf/cmf-app/src',
         ),
         'api\\' => 
         array (
-            0 => __DIR__ . '/..' . '/thinkcmf/cmf-api/src',
+            0 => __DIR__ . '/../..' . '/api',
+            1 => __DIR__ . '/..' . '/thinkcmf/cmf-api/src',
+        ),
+        'Psr\\SimpleCache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/simple-cache/src',
+        ),
+        'Psr\\Log\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/log/src',
+        ),
+        'Psr\\Http\\Message\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+        ),
+        'Psr\\Container\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/container/src',
+        ),
+        'Phinx\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/xia/migration/phinx/src/Phinx',
         ),
         'PHPMailer\\PHPMailer\\' => 
         array (
@@ -115,38 +168,51 @@ class ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee
         ),
     );
 
+    public static $fallbackDirsPsr0 = array (
+        0 => __DIR__ . '/../..' . '/extend',
+    );
+
     public static $classMap = array (
-        'Callback' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/Callback.php',
-        'CallbackBody' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/Callback.php',
-        'CallbackParam' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/Callback.php',
-        'CallbackParameterToReference' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/Callback.php',
-        'CallbackReturnReference' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/Callback.php',
-        'CallbackReturnValue' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/Callback.php',
-        'DOMDocumentWrapper' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/DOMDocumentWrapper.php',
-        'DOMEvent' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/DOMEvent.php',
-        'ICallbackNamed' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/Callback.php',
-        'phpQuery' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery.php',
-        'phpQueryEvents' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/phpQueryEvents.php',
-        'phpQueryObject' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/phpQueryObject.php',
-        'phpQueryObjectPlugin_Scripts' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/plugins/Scripts.php',
-        'phpQueryObjectPlugin_WebBrowser' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/plugins/WebBrowser.php',
-        'phpQueryObjectPlugin_example' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/plugins/example.php',
-        'phpQueryPlugin_Scripts' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/plugins/Scripts.php',
-        'phpQueryPlugin_WebBrowser' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/plugins/WebBrowser.php',
-        'phpQueryPlugin_example' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery/plugins/example.php',
-        'phpQueryPlugins' => __DIR__ . '/..' . '/electrolinux/phpquery/phpQuery/phpQuery.php',
-        'think\\App' => __DIR__ . '/..' . '/thinkcmf/cmf/src/App.php',
-        'think\\Log' => __DIR__ . '/..' . '/thinkcmf/cmf/src/Log.php',
-        'think\\route\\dispatch\\Module' => __DIR__ . '/..' . '/thinkcmf/cmf/src/route/dispatch/Module.php',
+        'Callback' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackBody' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackParam' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackParameterToReference' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackReturnReference' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/Callback.php',
+        'CallbackReturnValue' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/Callback.php',
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'DOMDocumentWrapper' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/DOMDocumentWrapper.php',
+        'DOMEvent' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/DOMEvent.php',
+        'ICallbackNamed' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/Callback.php',
+        'PclZip' => __DIR__ . '/..' . '/chamilo/pclzip/pclzip.lib.php',
+        'phpQuery' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery.php',
+        'phpQueryEvents' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/phpQueryEvents.php',
+        'phpQueryObject' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/phpQueryObject.php',
+        'phpQueryObjectPlugin_Scripts' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/plugins/Scripts.php',
+        'phpQueryObjectPlugin_WebBrowser' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/plugins/WebBrowser.php',
+        'phpQueryObjectPlugin_example' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/plugins/example.php',
+        'phpQueryPlugin_Scripts' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/plugins/Scripts.php',
+        'phpQueryPlugin_WebBrowser' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/plugins/WebBrowser.php',
+        'phpQueryPlugin_example' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery/plugins/example.php',
+        'phpQueryPlugins' => __DIR__ . '/..' . '/obsoletepackage/phpquery/phpQuery/phpQuery.php',
+        'think\\App' => __DIR__ . '/..' . '/thinkcmf/cmf/think/App.php',
+        'think\\Console' => __DIR__ . '/..' . '/thinkcmf/cmf/think/Console.php',
+        'think\\Http' => __DIR__ . '/..' . '/thinkcmf/cmf/think/Http.php',
+        'think\\Route' => __DIR__ . '/..' . '/thinkcmf/cmf/think/Route.php',
+        'think\\View' => __DIR__ . '/..' . '/thinkcmf/cmf/think/View.php',
+        'think\\route\\Rule' => __DIR__ . '/..' . '/thinkcmf/cmf/think/route/Rule.php',
+        'think\\route\\Url' => __DIR__ . '/..' . '/thinkcmf/cmf/think/route/Url.php',
+        'think\\route\\dispatch\\Controller' => __DIR__ . '/..' . '/thinkcmf/cmf/think/route/dispatch/Controller.php',
+        'think\\route\\dispatch\\Url' => __DIR__ . '/..' . '/thinkcmf/cmf/think/route/dispatch/Url.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit5bfecc6fb5e853e2f790c7db297fb8ee::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit409e436a19c882513f3c7d0ffdfd059f::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit409e436a19c882513f3c7d0ffdfd059f::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit409e436a19c882513f3c7d0ffdfd059f::$prefixesPsr0;
+            $loader->fallbackDirsPsr0 = ComposerStaticInit409e436a19c882513f3c7d0ffdfd059f::$fallbackDirsPsr0;
+            $loader->classMap = ComposerStaticInit409e436a19c882513f3c7d0ffdfd059f::$classMap;
 
         }, null, ClassLoader::class);
     }

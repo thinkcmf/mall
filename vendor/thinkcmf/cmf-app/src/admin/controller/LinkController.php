@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -15,7 +15,13 @@ use app\admin\model\LinkModel;
 
 class LinkController extends AdminBaseController
 {
-    protected $targets = ["_blank" => "新标签页打开", "_self" => "本窗口打开"];
+    protected $targets = [];
+
+    protected function initialize()
+    {
+        parent::initialize();
+        $this->targets = ["_blank" => lang('_blank'), "_self" => lang('_self')];
+    }
 
     /**
      * 友情链接管理
@@ -83,15 +89,17 @@ class LinkController extends AdminBaseController
      */
     public function addPost()
     {
-        $data      = $this->request->param();
-        $linkModel = new LinkModel();
-        $result    = $this->validate($data, 'Link');
-        if ($result !== true) {
-            $this->error($result);
-        }
-        $linkModel->allowField(true)->save($data);
+        if ($this->request->isPost()) {
+            $data      = $this->request->param();
+            $linkModel = new LinkModel();
+            $result    = $this->validate($data, 'Link');
+            if ($result !== true) {
+                $this->error($result);
+            }
+            $linkModel->save($data);
 
-        $this->success("添加成功！", url("Link/index"));
+            $this->success(lang('ADD_SUCCESS'), url("Link/index"));
+        }
     }
 
     /**
@@ -113,7 +121,7 @@ class LinkController extends AdminBaseController
     {
         $id        = $this->request->param('id', 0, 'intval');
         $linkModel = new LinkModel();
-        $link      = $linkModel->get($id);
+        $link      = $linkModel->find($id);
         $this->assign('targets', $this->targets);
         $this->assign('link', $link);
         return $this->fetch();
@@ -134,15 +142,17 @@ class LinkController extends AdminBaseController
      */
     public function editPost()
     {
-        $data      = $this->request->param();
-        $linkModel = new LinkModel();
-        $result    = $this->validate($data, 'Link');
-        if ($result !== true) {
-            $this->error($result);
-        }
-        $linkModel->allowField(true)->isUpdate(true)->save($data);
+        if ($this->request->isPost()) {
+            $data   = $this->request->param();
+            $result = $this->validate($data, 'Link');
+            if ($result !== true) {
+                $this->error($result);
+            }
+            $linkModel = LinkModel::find($data['id']);
+            $linkModel->save($data);
 
-        $this->success("保存成功！", url("Link/index"));
+            $this->success(lang('EDIT_SUCCESS'), url("Link/index"));
+        }
     }
 
     /**
@@ -160,9 +170,11 @@ class LinkController extends AdminBaseController
      */
     public function delete()
     {
-        $id = $this->request->param('id', 0, 'intval');
-        LinkModel::destroy($id);
-        $this->success("删除成功！", url("link/index"));
+        if ($this->request->isPost()) {
+            $id = $this->request->param('id', 0, 'intval');
+            LinkModel::destroy($id);
+            $this->success(lang('DELETE_SUCCESS'), url("Link/index"));
+        }
     }
 
     /**
@@ -182,7 +194,7 @@ class LinkController extends AdminBaseController
     {
         $linkModel = new  LinkModel();
         parent::listOrders($linkModel);
-        $this->success("排序更新成功！");
+        $this->success(lang('Sort update successful'));
     }
 
     /**
@@ -200,22 +212,22 @@ class LinkController extends AdminBaseController
      */
     public function toggle()
     {
-        $data      = $this->request->param();
-        $linkModel = new LinkModel();
+        if ($this->request->isPost()) {
+            $data      = $this->request->param();
+            $linkModel = new LinkModel();
 
-        if (isset($data['ids']) && !empty($data["display"])) {
-            $ids = $this->request->param('ids/a');
-            $linkModel->where('id', 'in', $ids)->update(['status' => 1]);
-            $this->success("更新成功！");
+            if (isset($data['ids']) && !empty($data["display"])) {
+                $ids = $this->request->param('ids/a');
+                $linkModel->where('id', 'in', $ids)->update(['status' => 1]);
+                $this->success(lang('Updated successfully'));
+            }
+
+            if (isset($data['ids']) && !empty($data["hide"])) {
+                $ids = $this->request->param('ids/a');
+                $linkModel->where('id', 'in', $ids)->update(['status' => 0]);
+                $this->success(lang('Updated successfully'));
+            }
         }
-
-        if (isset($data['ids']) && !empty($data["hide"])) {
-            $ids = $this->request->param('ids/a');
-            $linkModel->where('id', 'in', $ids)->update(['status' => 0]);
-            $this->success("更新成功！");
-        }
-
-
     }
 
 }

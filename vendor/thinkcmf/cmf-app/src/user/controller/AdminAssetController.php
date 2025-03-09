@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -10,7 +10,7 @@
 // +----------------------------------------------------------------------
 namespace app\user\controller;
 
-use think\Db;
+use app\user\model\AssetModel;
 use cmf\controller\AdminBaseController;
 
 class AdminAssetController extends AdminBaseController
@@ -36,11 +36,8 @@ class AdminAssetController extends AdminBaseController
             return $content;
         }
 
-        $join   = [
-            ['__USER__ u', 'a.user_id = u.id']
-        ];
-        $result = Db::name('asset')->field('a.*,u.user_login,u.user_email,u.user_nickname')
-            ->alias('a')->join($join)
+        $result = AssetModel::field('a.*,u.user_login,u.user_email,u.user_nickname')
+            ->alias('a')->join('user u', 'a.user_id = u.id')
             ->order('create_time', 'DESC')
             ->paginate(10);
         $this->assign('assets', $result->items());
@@ -63,18 +60,20 @@ class AdminAssetController extends AdminBaseController
      */
     public function delete()
     {
-        $id            = $this->request->param('id');
-        $file_filePath = Db::name('asset')->where('id', $id)->value('file_path');
-        $file          = 'upload/' . $file_filePath;
-        $res = true;
-        if (file_exists($file)) {
-            $res = unlink($file);
-        }
-        if ($res) {
-            Db::name('asset')->where('id', $id)->delete();
-            $this->success('删除成功');
-        } else {
-            $this->error('删除失败');
+        if ($this->request->isPost()) {
+            $id            = $this->request->param('id');
+            $file_filePath = AssetModel::where('id', $id)->value('file_path');
+            $file          = 'upload/' . $file_filePath;
+            $res           = true;
+            if (file_exists($file)) {
+                $res = unlink($file);
+            }
+            if ($res) {
+                AssetModel::where('id', $id)->delete();
+                $this->success(lang('DELETE_SUCCESS'));
+            } else {
+                $this->error(lang('DELETE_FAILED'));
+            }
         }
     }
 

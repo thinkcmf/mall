@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -21,7 +21,7 @@ class PublicController extends HomeBaseController
     public function avatar()
     {
         $id   = $this->request->param("id", 0, "intval");
-        $user = UserModel::get($id);
+        $user = UserModel::find($id);
 
         $avatar = '';
         if (!empty($user)) {

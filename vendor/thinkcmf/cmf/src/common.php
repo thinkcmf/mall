@@ -2,34 +2,73 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +---------------------------------------------------------------------
 // | Author: Dean <zxxjjforever@163.com>
 // +----------------------------------------------------------------------
-use think\Db;
-use think\facade\Env;
-use think\facade\Url;
+use think\facade\Db;
+use cmf\model\OptionModel;
 use dir\Dir;
 use think\facade\Route;
-use think\Loader;
 use cmf\lib\Storage;
-use think\facade\Hook;
+use think\facade\Cache;
 
 // 应用公共文件
 
-if (PHP_SAPI == 'cli') {
-    $apps = cmf_scan_dir(APP_PATH . '*', GLOB_ONLYDIR);
+//php8.0
+if (!defined('T_NAME_RELATIVE')) {
+    define('T_NAME_RELATIVE', T_NS_SEPARATOR);
+}
 
-    foreach ($apps as $app) {
-        $commandFile = APP_PATH . $app . '/command.php';
+/**
+ * Url生成
+ * @param string      $url    路由地址
+ * @param array       $vars   变量
+ * @param bool|string $suffix 生成的URL后缀
+ * @param bool|string $domain 域名
+ * @return UrlBuild
+ */
+function url(string $url = '', array $vars = [], $suffix = true, $domain = false)
+{
+    return Route::buildUrl($url, $vars)->suffix($suffix)->domain($domain)->build();
+}
 
-        if (file_exists($commandFile)) {
-            $commands = include $commandFile;
-            // 注册命令行指令
-            \think\Console::addDefaultCommands($commands);
-        }
+/**
+ * 调用模块的操作方法 参数格式 [模块/控制器/]操作
+ * @param string       $url           调用地址
+ * @param string|array $vars          调用参数 支持字符串和数组
+ * @param string       $layer         要调用的控制层名称
+ * @param bool         $appendSuffix  是否添加类名后缀
+ * @param string       $rootNamespace 根命名空间
+ * @return mixed
+ */
+function action($url, $vars = [], $layer = 'controller', $appendSuffix = false, $rootNamespace = '')
+{
+    if (empty($rootNamespace)) {
+        $rootNamespace = $app->getRootNamespace();
+    }
+    $app        = app();
+    $urlArr     = explode('/', $url);
+    $appName    = $urlArr[0];
+    $controller = cmf_parse_name($urlArr[1], 1, true);
+    $action     = $urlArr[2];
+
+    return $app->invokeMethod(["{$rootNamespace}\\$appName\\$layer\\$controller" . ucfirst($layer), $action], $vars);
+}
+
+if (!function_exists('db')) {
+    /**
+     * 实例化数据库类
+     * @param string $name   操作的数据表名称（不含前缀）
+     * @param string $config 数据库配置参数
+     * @param bool   $force  是否强制重新连接
+     * @return \think\db\Query
+     */
+    function db($name = '', $config = null, $force = false)
+    {
+        return Db::connect($config, $force)->name($name);
     }
 }
 
@@ -104,16 +143,16 @@ function cmf_get_domain()
  */
 function cmf_get_root()
 {
-    $root = request()->root();
-    $root = str_replace("//", '/', $root);
-    $root = str_replace('/index.php', '', $root);
-    if (defined('APP_NAMESPACE') && APP_NAMESPACE == 'api') {
-        $root = preg_replace('/\/api(.php)$/', '', $root);
-    }
+//    $root = '';
+//    $root = str_replace("//", '/', $root);
+//    $root = str_replace('/index.php', '', $root);
+//    if (defined('APP_NAMESPACE') && APP_NAMESPACE == 'api') {
+//        $root = preg_replace('/\/api(.php)$/', '', $root);
+//    }
+//
+//    $root = rtrim($root, '/');
 
-    $root = rtrim($root, '/');
-
-    return $root;
+    return '';
 }
 
 /**
@@ -260,7 +299,7 @@ function cmf_password($pw, $authCode = '')
  */
 function cmf_password_old($pw)
 {
-    $decor = md5(config('database.prefix'));
+    $decor = md5(config('database.connections.mysql.prefix'));
     $mi    = md5($pw);
     return substr($decor, 0, 12) . $mi . substr($decor, -4, 4);
 }
@@ -319,41 +358,48 @@ function cmf_random_string($len = 6)
  */
 function cmf_clear_cache()
 {
-    // 清除 opcache缓存
-    if (function_exists("opcache_reset")) {
-        opcache_reset();
-    }
+    try {
+        // 清除 opcache缓存
+        if (function_exists("opcache_reset")) {
+            opcache_reset();
+        }
 
-    $dirs     = [];
-    $rootDirs = cmf_scan_dir(Env::get('runtime_path') . "*");
-    //$noNeedClear=array(".","..","Data");
-    $noNeedClear = ['.', '..', 'log'];
-    $rootDirs    = array_diff($rootDirs, $noNeedClear);
-    foreach ($rootDirs as $dir) {
+        $runtimePath = runtime_path();
+        $dirs        = [];
+        $rootDirs    = cmf_scan_dir($runtimePath . "*");
+        //$noNeedClear=array(".","..","Data");
+        $noNeedClear = ['.', '..', 'log', 'session'];
+        $rootDirs    = array_diff($rootDirs, $noNeedClear);
+        foreach ($rootDirs as $dir) {
 
-        if ($dir != "." && $dir != "..") {
-            $dir = Env::get('runtime_path') . $dir;
-            if (is_dir($dir)) {
-                //array_push ( $dirs, $dir );
-                $tmpRootDirs = cmf_scan_dir($dir . "/*");
-                foreach ($tmpRootDirs as $tDir) {
-                    if ($tDir != "." && $tDir != "..") {
-                        $tDir = $dir . '/' . $tDir;
-                        if (is_dir($tDir)) {
-                            array_push($dirs, $tDir);
-                        } else {
-//                            @unlink($tDir);
-                        }
-                    }
-                }
-            } else {
+            if ($dir != "." && $dir != "..") {
+                $dir = $runtimePath . $dir;
+                if (is_dir($dir)) {
+                    array_push($dirs, $dir);
+//                $tmpRootDirs = cmf_scan_dir($dir . "/*");
+//                foreach ($tmpRootDirs as $tDir) {
+//                    if ($tDir != "." && $tDir != "..") {
+//                        $tDir = $dir . '/' . $tDir;
+//                        if (is_dir($tDir)) {
+//                            array_push($dirs, $tDir);
+//                        } else {
+////                            @unlink($tDir);
+//                        }
+//                    }
+//                }
+                } else {
 //                @unlink($dir);
+                }
             }
         }
-    }
-    $dirTool = new Dir("");
-    foreach ($dirs as $dir) {
-        $dirTool->delDir($dir);
+        $dirTool = new Dir($runtimePath);
+        foreach ($dirs as $dir) {
+            $dirTool->delDir($dir);
+        }
+
+        Cache::clear();
+    } catch (\Exception $e) {
+
     }
 }
 
@@ -365,7 +411,7 @@ function cmf_clear_cache()
  */
 function cmf_save_var($path, $var)
 {
-    $result = file_put_contents($path, "<?php\treturn " . var_export($var, true) . ";?>");
+    $result = file_put_contents($path, "<?php\treturn " . var_export($var, true) . ";");
     return $result;
 }
 
@@ -420,7 +466,7 @@ function cmf_param_lable($tag = '')
     foreach ($array as $v) {
         $v = trim($v);
         if (!empty($v)) {
-            list($key, $val) = explode(':', $v);
+            [$key, $val] = explode(':', $v);
             $param[trim($key)] = trim($val);
         }
     }
@@ -488,24 +534,24 @@ function cmf_set_option($key, $data, $replace = false)
         return false;
     }
 
-    $key        = strtolower($key);
-    $option     = [];
-    $findOption = Db::name('option')->where('option_name', $key)->find();
+    $key    = strtolower($key);
+    $option = [];
+
+    $findOption = OptionModel::where('option_name', $key)->find();
     if ($findOption) {
         if (!$replace) {
-            $oldOptionValue = json_decode($findOption['option_value'], true);
+            $oldOptionValue = $findOption['option_value'];
             if (!empty($oldOptionValue)) {
                 $data = array_merge($oldOptionValue, $data);
             }
         }
 
-        $option['option_value'] = json_encode($data);
-        Db::name('option')->where('option_name', $key)->update($option);
-//        echo Db::name('option')->getLastSql() . "\n";
+        $option['option_value'] = json_encode($data, JSON_UNESCAPED_UNICODE);
+        OptionModel::where('option_name', $key)->update($option);
     } else {
         $option['option_name']  = $key;
-        $option['option_value'] = json_encode($data);
-        Db::name('option')->insert($option);
+        $option['option_value'] = $data;
+        OptionModel::create($option);
     }
 
     cache('cmf_options_' . $key, null);//删除缓存
@@ -654,8 +700,8 @@ function cmf_strip_chars($str, $chars = '?<*.>\'\"')
  * @return array<br>
  *                        返回格式：<br>
  *                        array(<br>
- *                        "error"=>0|1,//0代表出错<br>
- *                        "message"=> "出错信息"<br>
+ *                        &nbsp;"error"=>0|1,//0代表出错<br>
+ *                        &nbsp;"message"=> "出错信息"<br>
  *                        );
  * @throws phpmailerException
  */
@@ -794,9 +840,10 @@ function cmf_get_image_preview_url($file, $style = 'watermark')
  * 获取文件下载链接
  * @param string $file    文件路径，数据库里保存的相对路径
  * @param int    $expires 过期时间，单位 s
+ * @param bool   $force   是否直接下载
  * @return string 文件链接
  */
-function cmf_get_file_download_url($file, $expires = 3600)
+function cmf_get_file_download_url($file, $expires = 3600, $force = true)
 {
     if (empty($file)) {
         return '';
@@ -806,12 +853,23 @@ function cmf_get_file_download_url($file, $expires = 3600)
         return $file;
     } else if (strpos($file, "/") === 0) {
         return $file;
-    } else if(strpos($file, "#") === 0) {
+    } else if (strpos($file, "#") === 0) {
         return $file;
     } else {
         $storage = Storage::instance();
-        return $storage->getFileDownloadUrl($file, $expires);
+        return $storage->getFileDownloadUrl($file, $expires, $force);
     }
+}
+
+/**
+ * 获取文件访问链接
+ * @param string $file    文件路径，数据库里保存的相对路径
+ * @param int    $expires 过期时间，单位 s
+ * @return string 文件链接
+ */
+function cmf_get_file_url($file, $expires = 3600)
+{
+    return cmf_get_file_download_url($file, $expires, false);
 }
 
 /**
@@ -915,7 +973,7 @@ function cmf_asset_relative_url($assetUrl)
 function cmf_check_user_action($object = "", $countLimit = 1, $ipLimit = false, $expire = 0)
 {
     $request = request();
-    $action  = $request->module() . "/" . $request->controller() . "/" . $request->action();
+    $action  = app()->http->getName() . "/" . $request->controller() . "/" . $request->action();
 
     if (is_array($object)) {
         $userId = $object['user_id'];
@@ -955,7 +1013,8 @@ function cmf_check_user_action($object = "", $countLimit = 1, $ipLimit = false, 
             "action"          => $action,
             "object"          => $object,
             "count"           => Db::raw("count+1"),
-            "last_visit_time" => $time, "ip" => $ip
+            "last_visit_time" => $time,
+            "ip"              => $ip
         ]);
     }
 
@@ -1044,11 +1103,13 @@ function cmf_is_ipad()
  * 添加钩子
  * @param string $hook   钩子名称
  * @param mixed  $params 传入参数
- * @return void
+ * @param bool   $once
+ * @return mixed
  */
-function hook($hook, $params = null)
+function hook($hook, $params = null, $once = false)
 {
-    return Hook::listen($hook, $params);
+    $hook = cmf_parse_name($hook, 1);
+    return \think\facade\Event::trigger($hook, $params, $once);
 }
 
 /**
@@ -1059,7 +1120,21 @@ function hook($hook, $params = null)
  */
 function hook_one($hook, $params = null)
 {
-    return Hook::listen($hook, $params, true);
+    $hook = cmf_parse_name($hook, 1);
+    return \think\facade\Event::trigger($hook, $params, true);
+}
+
+/**
+ * 获取应用类名，
+ * @param $name      纯字母应用名，如:portal
+ * @return string
+ */
+function cmf_get_app_class($name)
+{
+    $name        = strtolower($name);
+    $classPrefix = ucwords($name);
+    $class       = "app\\{$name}\\{$classPrefix}App";
+    return $class;
 }
 
 /**
@@ -1098,7 +1173,7 @@ function cmf_get_plugin_config($name)
  * @param        $pattern
  * @return array
  */
-function cmf_scan_dir($pattern, $flags = null)
+function cmf_scan_dir($pattern, $flags = 0)
 {
     $files = glob($pattern, $flags);
     if (empty($files)) {
@@ -1117,7 +1192,7 @@ function cmf_scan_dir($pattern, $flags = null)
  */
 function cmf_sub_dirs($dir)
 {
-    $dir     = ltrim($dir, "/");
+    $dir     = rtrim($dir, "/");
     $dirs    = [];
     $subDirs = cmf_scan_dir("$dir/*", GLOB_ONLYDIR);
     if (!empty($subDirs)) {
@@ -1152,8 +1227,8 @@ function cmf_plugin_url($url, $vars = [], $domain = false)
 
     $url              = parse_url($url);
     $case_insensitive = true;
-    $plugin           = $case_insensitive ? Loader::parseName($url['scheme']) : $url['scheme'];
-    $controller       = $case_insensitive ? Loader::parseName($url['host']) : $url['host'];
+    $plugin           = $case_insensitive ? cmf_parse_name($url['scheme']) : $url['scheme'];
+    $controller       = $case_insensitive ? cmf_parse_name($url['host']) : $url['host'];
     $action           = trim($case_insensitive ? strtolower($url['path']) : $url['path'], '/');
 
     /* 解析URL带的参数 */
@@ -1176,10 +1251,10 @@ function cmf_plugin_url($url, $vars = [], $domain = false)
         foreach ($CMF_GV_routes[$pluginUrl] as $actionRoute) {
             $sameVars = array_intersect_assoc($vars, $actionRoute['vars']);
 
-            if (count($sameVars) == count($actionRoute['vars'])) {
+            if (!empty($sameVars) && count($sameVars) == count($actionRoute['vars'])) {
                 ksort($sameVars);
-                $pluginUrl  = $pluginUrl . '&' . http_build_query($sameVars);
-                $vars = array_diff_assoc($vars, $sameVars);
+                $pluginUrl = $pluginUrl . '&' . http_build_query($sameVars);
+                $vars      = array_diff_assoc($vars, $sameVars);
                 break;
             }
         }
@@ -1189,13 +1264,32 @@ function cmf_plugin_url($url, $vars = [], $domain = false)
 }
 
 /**
+ * 检查插件是否启用
+ * @param $pluginName
+ * @return bool
+ * @throws \think\db\exception\DataNotFoundException
+ * @throws \think\db\exception\DbException
+ * @throws \think\db\exception\ModelNotFoundException
+ */
+function cmf_plugin_is_enabled($pluginName)
+{
+    $pluginName = cmf_parse_name($pluginName, 1);
+    $findPlugin = db('plugin')->field('status')->where('name', $pluginName)->find();
+    if (!empty($findPlugin['status'])) {
+        return true;
+    }
+    return false;
+}
+
+/**
  * 检查权限
  * @param $userId   int        要检查权限的用户 ID
  * @param $name     string|array  需要验证的规则列表,支持逗号分隔的权限规则或索引数组
  * @param $relation string    如果为 'or' 表示满足任一条规则即通过验证;如果为 'and'则表示需满足所有规则才能通过验证
+ * @param $roleType string    角色类型
  * @return boolean            通过验证返回true;失败返回false
  */
-function cmf_auth_check($userId, $name = null, $relation = 'or')
+function cmf_auth_check($userId, $name = null, $relation = 'or', $roleType = 'admin')
 {
     if (empty($userId)) {
         return false;
@@ -1208,12 +1302,12 @@ function cmf_auth_check($userId, $name = null, $relation = 'or')
     $authObj = new \cmf\lib\Auth();
     if (empty($name)) {
         $request    = request();
-        $module     = $request->module();
+        $app        = app()->http->getName();
         $controller = $request->controller();
         $action     = $request->action();
-        $name       = strtolower($module . "/" . $controller . "/" . $action);
+        $name       = strtolower($app . "/" . $controller . "/" . $action);
     }
-    return $authObj->check($userId, $name, $relation);
+    return $authObj->check($userId, $name, $relation, $roleType);
 }
 
 function cmf_alpha_id($in, $to_num = false, $pad_up = 4, $passKey = null)
@@ -1284,9 +1378,7 @@ function cmf_alpha_id($in, $to_num = false, $pad_up = 4, $passKey = null)
  */
 function cmf_captcha_check($value, $id = "", $reset = true)
 {
-    $captcha        = new \think\captcha\Captcha();
-    $captcha->reset = $reset;
-    return $captcha->check($value, $id);
+    return \think\captcha\facade\Captcha::check($value);
 }
 
 /**
@@ -1323,16 +1415,117 @@ function cmf_split_sql($file, $tablePre, $charset = 'utf8mb4', $defaultTablePre 
  */
 function cmf_current_lang()
 {
-    return request()->langset();
+    return app()->lang->getLangSet();
 }
 
 /**
- * 获取惟一订单号
+ * 判断当前的语言包，并返回语言包名
+ * @return string  语言包名
+ */
+function cmf_current_home_lang()
+{
+    $langSet = session('current_home_lang');
+    if (empty($langSet)) {
+        return app()->lang->getLangSet();
+    }
+    return $langSet;
+}
+
+
+/**
+ * 判断当前的语言包，并返回语言包名
+ * @return string  语言包名
+ */
+function cmf_current_admin_lang()
+{
+    $langSet = session('current_admin_lang');
+    if (empty($langSet)) {
+        return app()->lang->getLangSet();
+    }
+    return $langSet;
+}
+
+/**
+ * 获取前台语言包列表
+ * @return array  语言包列表
+ */
+function cmf_allow_lang_list(): array
+{
+    $langConfig = app()->lang->getConfig();
+    return $langConfig['allow_lang_list'] ?? [];
+}
+
+/**
+ * 获取后台语言包列表
+ * @return array  语言包列表
+ */
+function cmf_admin_allow_lang_list(): array
+{
+    $langConfig = app()->lang->getConfig();
+    return $langConfig['admin_allow_lang_list'] ?? [];
+}
+
+/**
+ * 判断是否开启前台多语言
+ * @return bool
+ */
+function cmf_home_multi_lang(): bool
+{
+    $langConfig = app()->lang->getConfig();
+    if (!empty($langConfig['home_multi_lang']) && !empty($langConfig['allow_lang_list']) && count($langConfig['allow_lang_list']) > 1) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 判断是否开启后台多语言
+ * @return bool
+ */
+function cmf_admin_multi_lang(): bool
+{
+    $langConfig = app()->lang->getConfig();
+    if (!empty($langConfig['admin_multi_lang']) && !empty($langConfig['admin_allow_lang_list']) && count($langConfig['admin_allow_lang_list']) > 1) {
+        return true;
+    }
+    return false;
+}
+
+/**
+ * 获取多语言设置
+ * @return array  多语言设置
+ */
+function cmf_lang_config(): array
+{
+    $langConfig = app()->lang->getConfig();
+
+    $defaultConfig = [
+        // 前台多语言开关
+        'home_multi_lang'       => 0,
+        // 后台多语言开关
+        'admin_multi_lang'      => 0,
+        // 多语言模式;1:pathinfo前缀;2:域名前缀;
+        'multi_lang_mode'       => 1,
+        // 后台默认语言
+        'admin_default_lang'    => 'zh-cn',
+        // 后台允许的语言列表
+        'admin_allow_lang_list' => [],
+        // 多语言域名列表 ['cmf.im'=>'zh-cn']
+        'lang_domain_list'      => [],
+        // 语言包别名 ['zh-cn' => 'cn']
+        'lang_alias'            => [],
+    ];
+
+    return array_merge($defaultConfig, $langConfig);
+}
+
+/**
+ * 获取订单号
  * @return string
  */
 function cmf_get_order_sn()
 {
-    return date('Ymd') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
+    return date('Ymd') . substr(implode('', array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
 }
 
 /**
@@ -1343,7 +1536,10 @@ function cmf_get_order_sn()
 function cmf_get_file_extension($filename)
 {
     $pathinfo = pathinfo($filename);
-    return strtolower($pathinfo['extension']);
+    if (isset($pathinfo['extension'])) {
+        return strtolower($pathinfo['extension']);
+    }
+    return '';
 }
 
 /**
@@ -1568,7 +1764,14 @@ function cmf_generate_user_token($userId, $deviceType)
  */
 function cmf_parse_name($name, $type = 0, $ucfirst = true)
 {
-    return Loader::parseName($name, $type, $ucfirst);
+    if ($type) {
+        $name = preg_replace_callback('/_([a-zA-Z])/', function ($match) {
+            return strtoupper($match[1]);
+        }, $name);
+        return $ucfirst ? ucfirst($name) : lcfirst($name);
+    }
+
+    return strtolower(trim(preg_replace("/[A-Z]/", "_\\0", $name), "_"));
 }
 
 /**
@@ -1629,9 +1832,9 @@ function cmf_get_cmf_settings($key = "")
 }
 
 /**
+ * @return bool
  * @deprecated
  * 判读是否sae环境
- * @return bool
  */
 function cmf_is_sae()
 {
@@ -1671,17 +1874,76 @@ function cmf_url_encode($url, $params)
 }
 
 /**
+ * 生成当前请求地址的多语言链接
+ * @param string $langSet 语言包
+ * @param string $url     不带语言的URL
+ * @return string
+ */
+function cmf_lang_url(string $langSet = '', string $url = ''): string
+{
+    $request = request();
+    if (empty($url)) {
+        $pathInfo = $request->pathinfo();
+        $query    = $request->get();
+        $url      = $pathInfo;
+        if (!empty($query)) {
+            $url .= '?' . http_build_query($query);
+        }
+    } else {
+        $url = trim($url, '/');
+    }
+
+    $langConfig = app()->lang->getConfig();
+
+    if (empty($langConfig['multi_lang_mode'])) {
+        $langConfig['multi_lang_mode'] = 1;
+    }
+
+    if (empty($langSet)) {
+        $langSet = app()->lang->getLangSet();
+    }
+
+    switch ($langConfig['multi_lang_mode']) {
+        case 1: // URL模式
+        {
+            if (!empty($langConfig['lang_alias'][$langSet])) {
+                $langSet = $langConfig['lang_alias'][$langSet];
+            }
+
+            $url = rtrim(cmf_get_root() . "/$langSet", '/') . "/$url";
+            break;
+        }
+        case 2: // 域名模式
+        {
+            $domain = $request->host();
+            if (!empty($langConfig['lang_domain_list'])) {
+                $langDomainList = array_flip($langConfig['lang_domain_list']);
+                if (!empty($langDomainList[$langSet])) {
+                    $domain = $langDomainList[$langSet];
+                }
+            }
+
+            $url = $request->scheme() . "://$domain" . cmf_get_root() . "/$url";
+            break;
+        }
+    }
+
+    return $url;
+}
+
+/**
  * CMF Url生成
  * @param string       $url    路由地址
  * @param string|array $vars   变量
  * @param bool|string  $suffix 生成的URL后缀
  * @param bool|string  $domain 域名
+ * @param bool|string  $lang   语言
  * @return string
  * @throws \think\db\exception\DataNotFoundException
  * @throws \think\db\exception\ModelNotFoundException
  * @throws \think\exception\DbException
  */
-function cmf_url($url = '', $vars = '', $suffix = true, $domain = false)
+function cmf_url($url = '', $vars = '', $suffix = true, $domain = false, $lang = true)
 {
     global $CMF_GV_routes;
 
@@ -1698,15 +1960,15 @@ function cmf_url($url = '', $vars = '', $suffix = true, $domain = false)
             $anchor = $info['fragment'];
             if (false !== strpos($anchor, '?')) {
                 // 解析参数
-                list($anchor, $info['query']) = explode('?', $anchor, 2);
+                [$anchor, $info['query']] = explode('?', $anchor, 2);
             }
             if (false !== strpos($anchor, '@')) {
                 // 解析域名
-                list($anchor, $domain) = explode('@', $anchor, 2);
+                [$anchor, $domain] = explode('@', $anchor, 2);
             }
         } elseif (strpos($url, '@') && false === strpos($url, '\\')) {
             // 解析域名
-            list($url, $domain) = explode('@', $url, 2);
+            [$url, $domain] = explode('@', $url, 2);
         }
     }
 
@@ -1744,7 +2006,7 @@ function cmf_url($url = '', $vars = '', $suffix = true, $domain = false)
 //        $url = $url . '@' . $domain;
 //    }
 
-    return Url::build($url, $vars, $suffix, $domain);
+    return Route::buildUrl($url, $vars)->suffix($suffix)->domain($domain)->lang($lang)->build();
 }
 
 /**
@@ -1768,7 +2030,6 @@ function cmf_is_installed()
  */
 function cmf_replace_content_file_url($content, $isForDbSave = false)
 {
-    //import('phpQuery.phpQuery', EXTEND_PATH);
     \phpQuery::newDocumentHTML($content);
     $pq = pq(null);
 
@@ -1815,6 +2076,7 @@ function cmf_replace_content_file_url($content, $isForDbSave = false)
                 }
 
             } else {
+                $href = empty($href) ? '' : $href;
                 if (!(preg_match("/^\//", $href) || preg_match("/^http/", $href))) {
                     $link->attr("href", cmf_get_file_download_url($href));
                 }
@@ -1824,7 +2086,7 @@ function cmf_replace_content_file_url($content, $isForDbSave = false)
         }
     }
 
-    $content = $pq->html();
+    $content = $pq->htmlOuter();
 
     \phpQuery::$documents = null;
 
@@ -1837,10 +2099,10 @@ function cmf_replace_content_file_url($content, $isForDbSave = false)
  * 获取后台风格名称
  * @return string
  */
-function cmf_get_admin_style()
+function cmf_get_admin_style($defaultStyle = 'arcoadmin')
 {
     $adminSettings = cmf_get_option('admin_settings');
-    return empty($adminSettings['admin_style']) ? 'simpleadmin' : $adminSettings['admin_style'];
+    return empty($adminSettings['admin_style']) ? $defaultStyle : $adminSettings['admin_style'];
 }
 
 /**
@@ -1858,10 +2120,10 @@ function cmf_curl_get($url)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_TIMEOUT, 5);
     $SSL = substr($url, 0, 8) == "https://" ? true : false;
-//    if ($SSL) {
-//        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 信任任何证书
-//        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // 检查证书中是否设置域名
-//    }
+    if ($SSL) {
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // 信任任何证书
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); // 检查证书中是否设置域名
+    }
     $content = curl_exec($ch);
     curl_close($ch);
     return $content;
@@ -1905,10 +2167,11 @@ function cmf_user_action($action)
                     $endDayEndTime     = strtotime(date('Y-m-d', strtotime("+{$cycleTime} day", $firstDayStartTime)));
 //                    $todayStartTime        = strtotime(date('Y-m-d'));
 //                    $todayEndTime          = strtotime(date('Y-m-d', strtotime('+1 day')));
-                    $findUserScoreLogCount = Db::name('user_score_log')->where([
-                        'user_id'     => $userId,
-                        'create_time' => [['gt', $firstDayStartTime], ['lt', $endDayEndTime]]
-                    ])->count();
+                    $findUserScoreLogCount = Db::name('user_score_log')
+                        ->where('user_id', $userId)
+                        ->where('create_time', '>', $firstDayStartTime)
+                        ->where('create_time', '<', $endDayEndTime)
+                        ->count();
                     if ($findUserScoreLogCount < $findUserAction['reward_number']) {
                         $changeScore = true;
                     }
@@ -1928,13 +2191,15 @@ function cmf_user_action($action)
     }
 
     if ($changeScore) {
-        Db::name('user_score_log')->insert([
-            'user_id'     => $userId,
-            'create_time' => time(),
-            'action'      => $action,
-            'score'       => $findUserAction['score'],
-            'coin'        => $findUserAction['coin'],
-        ]);
+        if (!empty($findUserAction['score']) || !empty($findUserAction['coin'])) {
+            Db::name('user_score_log')->insert([
+                'user_id'     => $userId,
+                'create_time' => time(),
+                'action'      => $action,
+                'score'       => $findUserAction['score'],
+                'coin'        => $findUserAction['coin'],
+            ]);
+        }
 
         $data = [];
         if ($findUserAction['score'] > 0) {
@@ -2147,7 +2412,7 @@ function cmf_version()
     try {
         $version = trim(file_get_contents(CMF_ROOT . 'version'));
     } catch (\Exception $e) {
-        $version = '0.0.0';
+        $version = '6.0.0-unknown';
     }
     return $version;
 }
@@ -2172,12 +2437,12 @@ function cmf_get_app_config_file($app, $file)
             $configFile = cmf_core_path() . "{$file}.php";
             break;
         case 'swoole':
-            $configFile = Env::get('root_path') . "vendor/thinkcmf/cmf-swoole/src/{$file}.php";
+            $configFile = CMF_ROOT . "vendor/thinkcmf/cmf-swoole/src/{$file}.php";
             break;
         default:
             $configFile = APP_PATH . $app . "/{$file}.php";
             if (!file_exists($configFile)) {
-                $configFile = Env::get('root_path') . "vendor/thinkcmf/cmf-app/src/{$app}/{$file}.php";
+                $configFile = CMF_ROOT . "vendor/thinkcmf/cmf-app/src/{$app}/{$file}.php";
             }
     }
 
@@ -2187,9 +2452,9 @@ function cmf_get_app_config_file($app, $file)
 
 /**
  * 转换+-为desc和asc
- * @deprecated
  * @param $order array 转换对象
  * @return array
+ * @deprecated
  */
 function order_shift($order)
 {
@@ -2211,10 +2476,10 @@ function order_shift($order)
 
 /**
  * 模型检查
- * @deprecated
  * @param $relationFilter array 检查的字段
  * @param $relations      string 被检查的字段
  * @return array|bool
+ * @deprecated
  */
 function allowed_relations($relationFilter, $relations)
 {
@@ -2229,12 +2494,67 @@ function allowed_relations($relationFilter, $relations)
 
 /**
  * 字符串转数组
- * @deprecated
  * @param string $string 字符串
  * @return array
+ * @deprecated
  */
 function str_to_arr($string)
 {
     $result = is_string($string) ? explode(',', $string) : $string;
     return $result;
 }
+
+/**
+ * 检测是否是命令行
+ * @return bool
+ */
+function cmf_is_cli()
+{
+    return PHP_SAPI === 'cli' || defined('STDIN');
+}
+
+/**
+ * 检查目录是否可写
+ * @param $d
+ * @return bool
+ */
+function cmf_test_write($d)
+{
+    $tfile = "_test_write.cmf";
+    $fp    = @fopen($d . "/" . $tfile, "w");
+    if (!$fp) {
+        return false;
+    }
+    fclose($fp);
+    $rs = @unlink($d . "/" . $tfile);
+    if ($rs) {
+        return true;
+    }
+    return false;
+}
+
+function cmf_mobile_mask($mobile)
+{
+    return substr($mobile, 0, 3) . '****' . substr($mobile, -4, 4);
+}
+
+/**
+ * UTF8 BOM，多用于CSV导出
+ * @return string
+ */
+function cmf_utf8_bom()
+{
+    return "\xEF\xBB\xBF";
+}
+
+/**
+ * 吾辈当自强
+ * @param string $dayDayUp
+ * @return string
+ */
+function cmf_together(string $dayDayUp = '2022-08-03 01:58')
+{
+    return "吾辈当自强!\n$dayDayUp";
+}
+
+

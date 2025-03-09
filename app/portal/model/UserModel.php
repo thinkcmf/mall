@@ -15,6 +15,12 @@ use think\Model;
 class UserModel extends Model
 {
 
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'user';
+
     protected $type = [
         'more' => 'array',
     ];

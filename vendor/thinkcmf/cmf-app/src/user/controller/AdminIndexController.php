@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -11,8 +11,8 @@
 
 namespace app\user\controller;
 
+use app\user\model\UserModel;
 use cmf\controller\AdminBaseController;
-use think\Db;
 use think\db\Query;
 
 /**
@@ -33,7 +33,7 @@ use think\db\Query;
  *     'name'   =>'用户组',
  *     'action' =>'default1',
  *     'parent' =>'user/AdminIndex/default',
- *     'display'=> true,
+ *     'display'=> false,
  *     'order'  => 10000,
  *     'icon'   =>'',
  *     'remark' =>'用户组'
@@ -46,7 +46,7 @@ class AdminIndexController extends AdminBaseController
      * 后台本站用户列表
      * @adminMenu(
      *     'name'   => '本站用户',
-     *     'parent' => 'default1',
+     *     'parent' => 'user/AdminIndex/default',
      *     'display'=> true,
      *     'hasView'=> true,
      *     'order'  => 10000,
@@ -63,20 +63,18 @@ class AdminIndexController extends AdminBaseController
             return $content;
         }
 
-        $list = Db::name('user')
-            ->where(function (Query $query) {
-                $data = $this->request->param();
-                if (!empty($data['uid'])) {
-                    $query->where('id', intval($data['uid']));
-                }
+        $list = UserModel::where(function (Query $query) {
+            $data = $this->request->param();
+            if (!empty($data['uid'])) {
+                $query->where('id', intval($data['uid']));
+            }
 
-                if (!empty($data['keyword'])) {
-                    $keyword = $data['keyword'];
-                    $query->where('user_login|user_nickname|user_email|mobile', 'like', "%$keyword%");
-                }
+            if (!empty($data['keyword'])) {
+                $keyword = $data['keyword'];
+                $query->where('user_login|user_nickname|user_email|mobile', 'like', "%$keyword%");
+            }
 
-            })
-            ->order("create_time DESC")
+        })->order("create_time DESC")
             ->paginate(10);
         // 获取分页显示
         $page = $list->render();
@@ -101,9 +99,9 @@ class AdminIndexController extends AdminBaseController
      */
     public function ban()
     {
-        $id = input('param.id', 0, 'intval');
+        $id = $this->request->param('id', 0, 'intval');
         if ($id) {
-            $result = Db::name("user")->where(["id" => $id, "user_type" => 2])->setField('user_status', 0);
+            $result = UserModel::where(["id" => $id, "user_type" => 2])->update(['user_status' => 0]);
             if ($result) {
                 $this->success("会员拉黑成功！", "adminIndex/index");
             } else {
@@ -129,10 +127,14 @@ class AdminIndexController extends AdminBaseController
      */
     public function cancelBan()
     {
-        $id = input('param.id', 0, 'intval');
+        $id = $this->request->param('id', 0, 'intval');
         if ($id) {
-            Db::name("user")->where(["id" => $id, "user_type" => 2])->setField('user_status', 1);
-            $this->success("会员启用成功！", '');
+            $result = UserModel::where(["id" => $id, "user_type" => 2])->update(['user_status' => 1]);
+            if ($result) {
+                $this->success("会员启用成功！", "adminIndex/index");
+            } else {
+                $this->error('会员启用失败,会员不存在,或者是管理员！');
+            }
         } else {
             $this->error('数据传入失败！');
         }

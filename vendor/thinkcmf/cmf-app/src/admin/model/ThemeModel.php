@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -11,10 +11,14 @@
 namespace app\admin\model;
 
 use think\Model;
-use think\Db;
 
 class ThemeModel extends Model
 {
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'theme';
 
     /**
      * 获取插件列表
@@ -34,7 +38,7 @@ class ThemeModel extends Model
 
             $this->updateThemeFiles($theme);
 
-            $this->data($themeData)->save();
+            $this->save($themeData);
             return true;
         } else {
             return false;
@@ -50,7 +54,7 @@ class ThemeModel extends Model
 
             $this->updateThemeFiles($theme);
 
-            $this->save($themeData, ['theme' => $theme]);
+            $this->where('theme', $theme)->update($themeData);
             return true;
         } else {
             return false;
@@ -69,7 +73,7 @@ class ThemeModel extends Model
     {
         $theme = config('template.cmf_default_theme');
 
-        return Db::name('theme_file')->where(['theme' => $theme, 'action' => $action])->select();
+        return ThemeFileModel::where(['theme' => $theme, 'action' => $action])->select();
     }
 
     private function updateThemeFiles($theme, $suffix = 'html')
@@ -84,7 +88,6 @@ class ThemeModel extends Model
             $root_tpl_file_no_suffix = preg_replace("/\.$suffix$/", '', $root_tpl_file);
             if (is_file($root_tpl_file) && file_exists_case($configFile)) {
                 array_push($tplFiles, $root_tpl_file_no_suffix);
-
             }
         }
         $subDirs = cmf_sub_dirs($dir);
@@ -100,19 +103,21 @@ class ThemeModel extends Model
             }
         }
 
+
         foreach ($tplFiles as $tplFile) {
             $configFile = $tplFile . ".json";
-            $file       = preg_replace('/^themes\/' . $theme . '\//', '', $tplFile);
+            $file       = str_replace($themeDir . '/', '', $tplFile);
             $file       = strtolower($file);
             $config     = json_decode(file_get_contents($configFile), true);
-            $findFile   = Db::name('theme_file')->where(['theme' => $theme, 'file' => $file])->find();
+            $findFile   = ThemeFileModel::where(['theme' => $theme, 'file' => $file])->find();
             $isPublic   = empty($config['is_public']) ? 0 : 1;
             $listOrder  = empty($config['order']) ? 0 : floatval($config['order']);
             $configMore = empty($config['more']) ? [] : $config['more'];
             $more       = $configMore;
 
             if (empty($findFile)) {
-                Db::name('theme_file')->insert([
+                $more = $this->loadWidgetDefaultValue($configMore, $themeDir);
+                ThemeFileModel::insert([
                     'theme'       => $theme,
                     'action'      => $config['action'],
                     'file'        => $file,
@@ -124,9 +129,11 @@ class ThemeModel extends Model
                     'list_order'  => $listOrder
                 ]);
             } else { // 更新文件
-                $moreInDb = json_decode($findFile['more'], true);
-                $more     = $this->updateThemeConfigMore($configMore, $moreInDb);
-                Db::name('theme_file')->where(['theme' => $theme, 'file' => $file])->update([
+                $moreInDb = $findFile['more'];
+                $more     = $this->updateThemeConfigMore($more, $moreInDb);
+                $more     = $this->loadWidgetDefaultValue($more, $themeDir);
+
+                ThemeFileModel::where(['theme' => $theme, 'file' => $file])->update([
                     'theme'       => $theme,
                     'action'      => $config['action'],
                     'file'        => $file,
@@ -137,20 +144,94 @@ class ThemeModel extends Model
                     'is_public'   => $isPublic,
                     'list_order'  => $listOrder
                 ]);
+
+                $findFileI18nList = ThemeFileI18nModel::where(['theme' => $theme, 'file' => $file])->select();
+                foreach ($findFileI18nList as $findFileI18n) {
+                    $moreInDb = $findFileI18n['more'];
+                    $more     = $this->updateThemeConfigMore($configMore, $moreInDb);
+                    $more     = $this->loadWidgetDefaultValue($more, $themeDir);
+
+                    ThemeFileI18nModel::where('id', $findFileI18n['id'])->update([
+                        'theme'  => $theme,
+                        'action' => $config['action'],
+                        'file'   => $file,
+                        'more'   => json_encode($more),
+                    ]);
+                }
             }
         }
 
         // 检查安装过的模板文件是否已经删除
-        $files = Db::name('theme_file')->where('theme', $theme)->select();
+        $files = ThemeFileModel::where('theme', $theme)->select();
 
         foreach ($files as $themeFile) {
             $tplFile           = $themeDir . '/' . $themeFile['file'] . '.' . $suffix;
             $tplFileConfigFile = $themeDir . '/' . $themeFile['file'] . '.json';
             if (!is_file($tplFile) || !file_exists_case($tplFileConfigFile)) {
-                Db::name('theme_file')->where(['theme' => $theme, 'file' => $themeFile['file']])->delete();
+                ThemeFileModel::where(['theme' => $theme, 'file' => $themeFile['file']])->delete();
             }
         }
     }
+
+    private function loadWidgetDefaultValue($more, $themeDir)
+    {
+        if (isset($more['widgets_blocks'])) {
+            foreach ($more['widgets_blocks'] as $widgetsBlockName => $widgetsBlock) {
+                $widgets = [];
+                if (!empty($widgetsBlock['widgets'])) {
+                    foreach ($widgetsBlock['widgets'] as $widgetId => $widget) {
+                        if (!empty($widget['name'])) {
+                            if (!isset($widget['display']) || !isset($widget['vars'])) {
+                                $widgetName   = $widget['name'];
+                                $widgetDir    = $themeDir . "/public/widgets/{$widget['name']}/";
+                                $manifestFile = $widgetDir . 'manifest.json';
+                                if (is_file($manifestFile)) {
+                                    $widgetInfo = json_decode(file_get_contents($manifestFile), true);
+                                    if (!empty($widgetInfo)) {
+                                        if (!isset($widget['title'])) {
+                                            $widget['title'] = $widgetInfo['title'];
+                                        }
+
+                                        if (!isset($widget['display'])) {
+                                            $widget['display'] = $widgetInfo['display'];
+                                        }
+
+                                        if (!isset($widget['version'])) {
+                                            $widget['version'] = $widgetInfo['version'];
+                                        }
+
+                                        if (!isset($widget['action'])) {
+                                            $widget['action'] = $widgetInfo['action'];
+                                        }
+
+                                        $mWidgetVars = [];
+                                        if (!empty($widgetInfo['vars'])) {
+                                            foreach ($widgetInfo['vars'] as $widgetVarName => $widgetVar) {
+                                                $mWidgetVars[$widgetVarName] = $widgetVar['value'];
+                                            }
+                                        }
+
+                                        $widget['vars'] = $mWidgetVars;
+                                        if (is_int($widgetId)) {
+                                            $widgetId = uniqid($widgetsBlockName . $widgetInfo['name']) . $widgetId;
+                                        }
+
+                                    }
+                                }
+                            }
+
+                            $widgets[$widgetId] = $widget;
+                        }
+                    }
+                }
+
+                $more['widgets_blocks'][$widgetsBlockName]['widgets'] = $widgets;
+            }
+        }
+
+        return $more;
+    }
+
 
     private function updateThemeConfigMore($configMore, $moreInDb)
     {
@@ -193,6 +274,27 @@ class ThemeModel extends Model
                 }
 
             }
+        }
+
+        if (!empty($configMore['widgets_blocks'])) {
+            foreach ($configMore['widgets_blocks'] as $widgetsBlockName => $widgetsBlock) {
+                if (isset($moreInDb['widgets_blocks'][$widgetsBlockName]['widgets'])) {
+                    if (!empty($moreInDb['edited_by_designer'])) {
+                        // 以设计器编辑的数据为准
+                        $configMore['widgets_blocks'][$widgetsBlockName]['widgets'] = $moreInDb['widgets_blocks'][$widgetsBlockName]['widgets'];
+                    } else {
+                        foreach ($configMore['widgets_blocks'][$widgetsBlockName]['widgets'] as $widgetId => $configMoreBlockWidget) {
+                            if (!empty($moreInDb['widgets_blocks'][$widgetsBlockName]['widgets'][$widgetId])) {
+                                $configMore['widgets_blocks'][$widgetsBlockName]['widgets'][$widgetId] = $moreInDb['widgets_blocks'][$widgetsBlockName]['widgets'][$widgetId];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (isset($moreInDb['edited_by_designer'])) {
+            $configMore['edited_by_designer'] = $moreInDb['edited_by_designer'];
         }
 
         return $configMore;

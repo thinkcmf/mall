@@ -2,14 +2,14 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: Dean <zxxjjforever@163.com>
 // +----------------------------------------------------------------------
 namespace api\user\controller;
 
+use api\user\model\UserModel;
 use cmf\controller\RestUserBaseController;
-use think\Db;
 use think\Validate;
 
 class ProfileController extends RestUserBaseController
@@ -21,12 +21,12 @@ class ProfileController extends RestUserBaseController
      */
     public function changePassword()
     {
-        $validate = new Validate([
+        $validate = new Validate();
+        $validate->rule([
             'old_password'     => 'require',
             'password'         => 'require',
             'confirm_password' => 'require|confirm:password'
         ]);
-
         $validate->message([
             'old_password.require'     => '请输入您的旧密码!',
             'password.require'         => '请输入您的新密码!',
@@ -40,13 +40,13 @@ class ProfileController extends RestUserBaseController
         }
 
         $userId       = $this->getUserId();
-        $userPassword = Db::name("user")->where('id', $userId)->value('user_pass');
+        $userPassword = UserModel::where('id', $userId)->value('user_pass');
 
         if (!cmf_compare_password($data['old_password'], $userPassword)) {
             $this->error('旧密码不正确!');
         }
 
-        Db::name("user")->where('id', $userId)->update(['user_pass' => cmf_password($data['password'])]);
+        UserModel::where('id', $userId)->update(['user_pass' => cmf_password($data['password'])]);
 
         $this->success("密码修改成功!");
 
@@ -62,11 +62,11 @@ class ProfileController extends RestUserBaseController
      */
     public function bindingEmail()
     {
-        $validate = new Validate([
+        $validate = new Validate();
+        $validate->rule([
             'email'             => 'require|email|unique:user,user_email',
             'verification_code' => 'require'
         ]);
-
         $validate->message([
             'email.require'             => '请输入您的邮箱!',
             'email.email'               => '请输入正确的邮箱格式!',
@@ -80,7 +80,7 @@ class ProfileController extends RestUserBaseController
         }
 
         $userId    = $this->getUserId();
-        $userEmail = Db::name("user")->where('id', $userId)->value('user_email');
+        $userEmail = UserModel::where('id', $userId)->value('user_email');
 
         if (!empty($userEmail)) {
             $this->error("您已经绑定邮箱!");
@@ -91,7 +91,7 @@ class ProfileController extends RestUserBaseController
             $this->error($errMsg);
         }
 
-        Db::name("user")->where('id', $userId)->update(['user_email' => $data['email']]);
+        UserModel::where('id', $userId)->update(['user_email' => $data['email']]);
 
         $this->success("绑定成功!");
     }
@@ -106,11 +106,11 @@ class ProfileController extends RestUserBaseController
      */
     public function bindingMobile()
     {
-        $validate = new Validate([
+        $validate = new Validate();
+        $validate->rule([
             'mobile'            => 'require|unique:user,mobile',
             'verification_code' => 'require'
         ]);
-
         $validate->message([
             'mobile.require'            => '请输入您的手机号!',
             'mobile.unique'             => '手机号已经存在！',
@@ -128,7 +128,7 @@ class ProfileController extends RestUserBaseController
 
 
         $userId = $this->getUserId();
-        $mobile = Db::name("user")->where('id', $userId)->value('mobile');
+        $mobile = UserModel::where('id', $userId)->value('mobile');
 
         if (!empty($mobile)) {
             $this->error("您已经绑定手机!");
@@ -139,7 +139,7 @@ class ProfileController extends RestUserBaseController
             $this->error($errMsg);
         }
 
-        Db::name("user")->where('id', $userId)->update(['mobile' => $data['mobile']]);
+        UserModel::where('id', $userId)->update(['mobile' => $data['mobile']]);
 
         $this->success("绑定成功!");
     }
@@ -160,7 +160,7 @@ class ProfileController extends RestUserBaseController
             $userId   = $this->getUserId();
             $fieldStr = 'user_type,user_login,mobile,user_email,user_nickname,avatar,signature,user_url,sex,birthday,score,coin,user_status,user_activation_key,create_time,last_login_time,last_login_ip';
             if (empty($field)) {
-                $userData = Db::name("user")->field($fieldStr)->find($userId);
+                $userData = UserModel::field($fieldStr)->find($userId);
             } else {
                 $fieldArr     = explode(',', $fieldStr);
                 $postFieldArr = explode(',', $field);
@@ -170,9 +170,9 @@ class ProfileController extends RestUserBaseController
                 }
                 if (count($mixedField) > 1) {
                     $fieldStr = implode(',', $mixedField);
-                    $userData = Db::name("user")->field($fieldStr)->find($userId);
+                    $userData = UserModel::field($fieldStr)->find($userId);
                 } else {
-                    $userData = Db::name("user")->where('id', $userId)->value($mixedField);
+                    $userData = UserModel::where('id', $userId)->value($mixedField);
                 }
             }
             $this->success('获取成功！', $userData);
@@ -190,7 +190,7 @@ class ProfileController extends RestUserBaseController
                 $data['birthday'] = strtotime($data['birthday']);
             }
 
-            $upData = Db::name("user")->where('id', $userId)->field($fieldStr)->update($data);
+            $upData = UserModel::where('id', $userId)->field($fieldStr)->update($data);
             if ($upData !== false) {
                 $this->success('修改成功！');
             } else {

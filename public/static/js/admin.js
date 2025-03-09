@@ -1,7 +1,52 @@
+Wind.use('noty', function () {
+});
+
+function _loginExpiredNoty() {
+    noty({
+        text: GV.lang('LOGIN_INVALID_TIPS'),
+        type: 'error',
+        layout: 'topCenter',
+        modal: true,
+        // animation: {
+        //     open: 'animated bounceInDown', // Animate.css class names
+        //     close: 'animated bounceOutUp', // Animate.css class names
+        // },
+        timeout: 800,
+        callback: {
+            afterClose: function () {
+                $.ajax({
+                    url: GV.ROOT + 'admin/public/logout',
+                    type: 'get',
+                    dataType: 'JSON',
+                    success: function (data) {
+                        if (data.code == 1) {
+                            if (parent) {
+                                parent.location.reload()
+                            } else {
+                                window.location.reload();
+                            }
+                        }
+                    }
+                })
+            }
+        }
+    })
+}
+
 ;(function () {
     //全局ajax处理
+    var headers = {'XX-Device-Type': 'web'};
+    var token   = localStorage.getItem('token');
+    if (token) {
+        headers['Authorization'] = token;
+    }
     $.ajaxSetup({
+        headers: headers,
         complete: function (jqXHR) {
+            var data = jqXHR.responseJSON;
+            if (data.code == 10001) {
+                _loginExpiredNoty();
+            }
         },
         data: {},
         error: function (jqXHR, textStatus, errorThrown) {
@@ -67,7 +112,7 @@
             var $btn;
             $('button.js-ajax-submit').on('click', function (e) {
                 var btn = $(this), form = btn.parents('form.js-ajax-form');
-                $btn    = btn;
+                $btn = btn;
                 if (btn.data("loading")) {
                     return;
                 }
@@ -77,7 +122,7 @@
                     if (form.find('input.js-check:checked').length) {
                         btn.data('subcheck', false);
                     } else {
-                        $('<span class="tips_error">请至少选择一项</span>').appendTo(btn.parent()).fadeIn('fast');
+                        $('<span class="tips_error">' + GV.lang("Please select at least one") + '</span>').appendTo(btn.parent()).fadeIn('fast');
                         return false;
                     }
                 }
@@ -88,8 +133,8 @@
                     art.dialog({
                         id: 'warning',
                         icon: 'warning',
-                        content: btn.data('msg'),
-                        cancelVal: '关闭',
+                        content: msg,
+                        cancelVal: GV.lang('Close'),
                         cancel: function () {
                             //btn.data('subcheck', false);
                             //btn.click();
@@ -97,6 +142,7 @@
                         ok: function () {
                             btn.data('msg', false);
                             btn.click();
+                            btn.data('msg', msg);
                         }
                     });
 
@@ -172,16 +218,40 @@
                     },
                     submitHandler: function (form) {
                         var $form = $(form);
-                        $form.ajaxSubmit({
-                            url: $btn.data('action') ? $btn.data('action') : $form.attr('action'), //按钮上是否自定义提交地址(多按钮情况)
-                            dataType: 'json',
-                            beforeSubmit: function (arr, $form, options) {
+                        var url = $btn.data('action');
+                        var apiNamespace = '';
+                        var method = 'post';
+                        if (url) {
+                            apiNamespace = $btn.data('api');
+                            if ($btn.data('method')) {
+                                method = $btn.data('method');
+                            }
+                        } else {
+                            url = $form.attr('action');
+                            apiNamespace = $form.data('api');
+                            method = $form.attr('method');
+                        }
 
+                        if (apiNamespace !== undefined || (url.indexOf('/') !== 0 && url.indexOf(':') < 0)) {
+                            apiNamespace = apiNamespace ? apiNamespace : 'api';
+                            if (GV.API_ROOT && GV.API_ROOT[apiNamespace]) {
+                                url = GV.API_ROOT[apiNamespace] + url;
+                            } else {
+                                alert('请在全局变量GV中定义API_ROOT');
+                                return;
+                            }
+                        }
+
+                        $form.ajaxSubmit({
+                            url: url, //按钮上是否自定义提交地址(多按钮情况)
+                            dataType: 'json',
+                            method: method,
+                            beforeSubmit: function (arr, $form, options) {
                                 $btn.data("loading", true);
-                                var text = $btn.text();
+                                var html = $btn.html();
 
                                 //按钮文案、状态修改
-                                $btn.text(text + '...').prop('disabled', true).addClass('disabled');
+                                $btn.html(html + '...').prop('disabled', true).addClass('disabled');
                             },
                             success: function (data, statusText, xhr, $form) {
 
@@ -197,10 +267,10 @@
                                     }
                                 }
 
-                                var text = $btn.text();
+                                var html = $btn.html();
 
                                 //按钮文案、状态修改
-                                $btn.removeClass('disabled').prop('disabled', false).text(text.replace('...', '')).parent().find('span').remove();
+                                $btn.removeClass('disabled').prop('disabled', false).html(html.replace('...', '')).parent().find('span').remove();
                                 if (data.code == 1) {
                                     if ($btn.data('success')) {
                                         var successCallback = $btn.data('success');
@@ -263,16 +333,16 @@
                                         }
                                     }).show();
                                     $(window).focus();
+                                } else if (data.code == 10001) {
+                                    _loginExpiredNoty();
                                 }
-
-
                             },
                             error: function (xhr, e, statusText) {
                                 art.dialog({
                                     id: 'warning',
                                     icon: 'warning',
                                     content: statusText,
-                                    cancelVal: '关闭',
+                                    cancelVal: GV.lang('Close'),
                                     cancel: function () {
                                         reloadPage(window);
                                     },
@@ -313,103 +383,49 @@
         Wind.use('artDialog', 'noty', function () {
             $('body').on('click', '.js-ajax-delete', function (e) {
                 e.preventDefault();
-                var $_this  = this,
-                    $this   = $($_this),
-                    href    = $this.data('href'),
+                var $_this = this,
+                    $this = $($_this),
+                    url = $this.data('href'),
                     refresh = $this.data('refresh'),
-                    msg     = $this.data('msg');
-                href        = href ? href : $this.attr('href');
+                    msg = $this.data('msg');
+                url = url ? url : $this.attr('href');
 
                 art.dialog({
                     title: false,
                     icon: 'question',
-                    content: msg ? msg : '确定要删除吗？',
+                    content: msg ? msg : GV.lang('You sure you want to delete it?'),
                     follow: $_this,
                     close: function () {
                         $_this.focus(); //关闭时让触发弹窗的元素获取焦点
                         return true;
                     },
-                    okVal: "确定",
+                    okVal: GV.lang('OK'),
                     ok: function () {
-                        $.getJSON(href).done(function (data) {
-                            if (data.code == '1') {
-                                noty({
-                                    text: data.msg,
-                                    type: 'success',
-                                    layout: 'topCenter',
-                                    modal: true,
-                                    // animation: {
-                                    //     open: 'animated bounceInDown', // Animate.css class names
-                                    //     close: 'animated bounceOutUp', // Animate.css class names
-                                    // },
-                                    timeout: 800,
-                                    callback: {
-                                        afterClose: function () {
-                                            if (refresh == undefined || refresh) {
-                                                if (data.url) {
-                                                    //返回带跳转地址
-                                                    window.location.href = data.url;
-                                                } else {
-                                                    //刷新当前页
-                                                    reloadPage(window);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }).show();
+                        var apiNamespace = $this.data('api');
+                        var method = 'post';
 
-                            } else if (data.code == '0') {
-                                //art.dialog.alert(data.info);
-                                //alert(data.info);//暂时处理方案
-                                art.dialog({
-                                    content: data.msg,
-                                    icon: 'warning',
-                                    ok: function () {
-                                        this.title(data.msg);
-                                        return true;
-                                    }
-                                });
+                        if (apiNamespace !== undefined || (url.indexOf('/') !== 0 && url.indexOf(':') < 0)) {
+                            apiNamespace = apiNamespace ? apiNamespace : 'api';
+                            if (GV.API_ROOT && GV.API_ROOT[apiNamespace]) {
+                                url = GV.API_ROOT[apiNamespace] + url;
+                            } else {
+                                alert('请在全局变量GV中定义API_ROOT');
+                                return;
                             }
-                        });
-                    },
-                    cancelVal: '关闭',
-                    cancel: true
-                });
-            });
 
-        });
-    }
-
-
-    if ($('a.js-ajax-dialog-btn').length) {
-        Wind.use('artDialog', 'noty', function () {
-            $('.js-ajax-dialog-btn').on('click', function (e) {
-                e.preventDefault();
-                var $_this  = this,
-                    $this   = $($_this),
-                    href    = $this.data('href'),
-                    refresh = $this.data('refresh'),
-                    msg     = $this.data('msg');
-                href        = href ? href : $this.attr('href');
-                if (!msg) {
-                    msg = "您确定要进行此操作吗？";
-                }
-                art.dialog({
-                    title: false,
-                    icon: 'question',
-                    content: msg,
-                    follow: $_this,
-                    close: function () {
-                        $_this.focus(); //关闭时让触发弹窗的元素获取焦点
-                        return true;
-                    },
-                    ok: function () {
+                            if ($this.data('method')) {
+                                method = $this.data('method');
+                            } else {
+                                method = 'delete';
+                            }
+                        }
 
                         $.ajax({
-                            url: href,
-                            type: 'post',
+                            url: url,
+                            type: method,
+                            dataType: 'JSON',
                             success: function (data) {
-                                if (data.code == 1) {
+                                if (data.code == '1') {
                                     noty({
                                         text: data.msg,
                                         type: 'success',
@@ -435,8 +451,9 @@
                                         }
                                     }).show();
 
-                                } else if (data.code == 0) {
+                                } else if (data.code == '0') {
                                     //art.dialog.alert(data.info);
+                                    //alert(data.info);//暂时处理方案
                                     art.dialog({
                                         content: data.msg,
                                         icon: 'warning',
@@ -449,7 +466,7 @@
                             }
                         })
                     },
-                    cancelVal: '关闭',
+                    cancelVal: GV.lang('Close'),
                     cancel: true
                 });
             });
@@ -457,51 +474,190 @@
         });
     }
 
+
+    Wind.use('artDialog', 'noty', function () {
+        $('body').on('click', '.js-ajax-dialog-btn', function (e) {
+            e.preventDefault();
+            var $_this = this,
+                $this = $($_this),
+                url = $this.data('href'),
+                refresh = $this.data('refresh'),
+                msg = $this.data('msg'),
+                waitMsg = $this.data('wait-msg');
+            url = url ? url : $this.attr('href');
+            if (!msg) {
+                msg = GV.lang('Are you sure you want to do this?');
+            }
+            art.dialog({
+                title: false,
+                icon: 'question',
+                content: msg,
+                follow: $_this,
+                close: function () {
+                    $_this.focus(); //关闭时让触发弹窗的元素获取焦点
+                    return true;
+                },
+                ok: function () {
+                    var waitNoty;
+                    if (waitMsg) {
+                        waitNoty = noty({
+                            text: waitMsg,
+                            type: 'information',
+                            layout: 'topCenter',
+                            modal: true,
+                            // animation: {
+                            //     open: 'animated bounceInDown', // Animate.css class names
+                            //     close: 'animated bounceOutUp', // Animate.css class names
+                            // },
+                            timeout: false
+                        });
+                    }
+
+                    var apiNamespace = $this.data('api');
+                    var method = 'post';
+
+                    if (apiNamespace !== undefined || (url.indexOf('/') !== 0 && url.indexOf(':') < 0)) {
+                        apiNamespace = apiNamespace ? apiNamespace : 'api';
+                        if (GV.API_ROOT && GV.API_ROOT[apiNamespace]) {
+                            url = GV.API_ROOT[apiNamespace] + url;
+                        } else {
+                            alert('请在全局变量GV中定义API_ROOT');
+                            return;
+                        }
+
+                        if ($this.data('method')) {
+                            method = $this.data('method');
+                        }
+                    }
+
+                    $.ajax({
+                        url: url,
+                        type: method,
+                        dataType: 'JSON',
+                        success: function (data) {
+                            if (waitNoty) {
+                                waitNoty.close();
+                            }
+                            if (data.code == 1) {
+                                noty({
+                                    text: data.msg,
+                                    type: 'success',
+                                    layout: 'topCenter',
+                                    modal: true,
+                                    // animation: {
+                                    //     open: 'animated bounceInDown', // Animate.css class names
+                                    //     close: 'animated bounceOutUp', // Animate.css class names
+                                    // },
+                                    timeout: 800,
+                                    callback: {
+                                        afterClose: function () {
+                                            if (refresh == undefined || refresh) {
+                                                if (data.url) {
+                                                    //返回带跳转地址
+                                                    window.location.href = data.url;
+                                                } else {
+                                                    //刷新当前页
+                                                    reloadPage(window);
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+
+                            } else if (data.code == 0) {
+                                //art.dialog.alert(data.info);
+                                art.dialog({
+                                    content: data.msg,
+                                    icon: 'warning',
+                                    ok: function () {
+                                        this.title(data.msg);
+                                        return true;
+                                    }
+                                });
+                            }
+                        },
+                        error: function () {
+                            if (waitNoty) {
+                                waitNoty.close();
+                            }
+                        }
+
+                    })
+                },
+                cancelVal: GV.lang('Close'),
+                cancel: true
+            });
+        });
+
+    });
+
     if ($('a.js-ajax-btn').length) {
         Wind.use('noty', function () {
             $('.js-ajax-btn').on('click', function (e) {
                 e.preventDefault();
                 var $_this = this,
-                    $this  = $($_this),
-                    href   = $this.data('href'),
-                    msg    = $this.data('msg');
-                refresh    = $this.data('refresh');
-                href       = href ? href : $this.attr('href');
-                refresh    = refresh == undefined ? 1 : refresh;
+                    $this = $($_this),
+                    url = $this.data('href'),
+                    msg = $this.data('msg');
+                refresh = $this.data('refresh');
+                url = url ? url : $this.attr('href');
+                refresh = refresh == undefined ? 1 : refresh;
+
+                var apiNamespace = $this.data('api');
+                var method = 'post';
+
+                if (apiNamespace !== undefined || (url.indexOf('/') !== 0 && url.indexOf(':') < 0)) {
+                    apiNamespace = apiNamespace ? apiNamespace : 'api';
+                    if (GV.API_ROOT && GV.API_ROOT[apiNamespace]) {
+                        url = GV.API_ROOT[apiNamespace] + url;
+                    } else {
+                        alert('请在全局变量GV中定义API_ROOT');
+                        return;
+                    }
+
+                    if ($this.data('method')) {
+                        method = $this.data('method');
+                    }
+                }
 
 
-                $.getJSON(href).done(function (data) {
-                    if (data.code == 1) {
-                        noty({
-                            text: data.msg,
-                            type: 'success',
-                            layout: 'center',
-                            callback: {
-                                afterClose: function () {
-                                    if (data.url) {
-                                        location.href = data.url;
-                                        return;
-                                    }
+                $.ajax({
+                    url: url,
+                    type: method,
+                    dataType: 'JSON',
+                    success: function (data) {
+                        if (data.code == 1) {
+                            noty({
+                                text: data.msg,
+                                type: 'success',
+                                layout: 'center',
+                                callback: {
+                                    afterClose: function () {
+                                        if (data.url) {
+                                            location.href = data.url;
+                                            return;
+                                        }
 
-                                    if (refresh || refresh == undefined) {
-                                        reloadPage(window);
+                                        if (refresh || refresh == undefined) {
+                                            reloadPage(window);
+                                        }
                                     }
                                 }
-                            }
-                        });
-                    } else if (data.code == 0) {
-                        noty({
-                            text: data.msg,
-                            type: 'error',
-                            layout: 'center',
-                            callback: {
-                                afterClose: function () {
-                                    if (data.url) {
-                                        location.href = data.url;
+                            });
+                        } else if (data.code == 0) {
+                            noty({
+                                text: data.msg,
+                                type: 'error',
+                                layout: 'center',
+                                callback: {
+                                    afterClose: function () {
+                                        if (data.url) {
+                                            location.href = data.url;
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 });
 
@@ -530,8 +686,8 @@
 
             //分组各纵横项
             var check_all_direction = check_all.data('direction');
-            check_items             = $('input.js-check[data-' + check_all_direction + 'id="' + check_all.data('checklist') + '"]').not(":disabled");
-            if($('.js-check-all').is(':checked')) {
+            check_items = $('input.js-check[data-' + check_all_direction + 'id="' + check_all.data('checklist') + '"]').not(":disabled");
+            if ($('.js-check-all').is(':checked')) {
                 check_items.prop('checked', true);
             }
             //点击全选框
@@ -549,12 +705,15 @@
 
                 } else {
                     //非全选状态
+                    check_items.prop('checked', false);
+                    check_wrap.find(total_check_all).prop('checked', false);
                     check_items.removeProp('checked');
 
                     check_wrap.find(total_check_all).removeProp('checked');
 
                     //另一方向的全选框取消全选状态
                     var direction_invert = check_all_direction === 'x' ? 'y' : 'x';
+                    check_wrap.find($('input.js-check-all[data-direction="' + direction_invert + '"]')).prop('checked', false);
                     check_wrap.find($('input.js-check-all[data-direction="' + direction_invert + '"]')).removeProp('checked');
                 }
 
@@ -571,6 +730,7 @@
                     }
 
                 } else {
+                    check_all.prop('checked', false);
                     check_all.removeProp('checked');
                 }
 
@@ -622,7 +782,8 @@
                 minView: 'decade',
                 startView: 'decade',
                 todayBtn: 1,
-                autoclose: true
+                autoclose: true,
+                fontAwesome: true,
             });
         });
     }
@@ -637,7 +798,25 @@
                 format: 'yyyy-mm-dd',
                 minView: 'month',
                 todayBtn: 1,
-                autoclose: true
+                autoclose: true,
+                fontAwesome: true,
+            });
+        });
+    }
+
+    // bootstrap年月份选择器
+    var bootstrapYearMonthInput = $("input.js-bootstrap-year-month");
+    if (bootstrapYearMonthInput.length) {
+        Wind.css('bootstrapDatetimePicker');
+        Wind.use('bootstrapDatetimePicker', function () {
+            bootstrapYearMonthInput.datetimepicker({
+                language: 'zh-CN',
+                format: 'yyyy-mm',
+                minView: 'year',
+                startView: 'decade',
+                todayBtn: 1,
+                autoclose: true,
+                fontAwesome: true,
             });
         });
     }
@@ -651,7 +830,8 @@
                 language: 'zh-CN',
                 format: 'yyyy-mm-dd hh:ii',
                 todayBtn: 1,
-                autoclose: true
+                autoclose: true,
+                fontAwesome: true,
             });
         });
     }
@@ -667,16 +847,22 @@
     //地址联动
     var $js_address_select = $('.js-address-select');
     if ($js_address_select.length > 0) {
-        $('.js-address-province-select,.js-address-city-select').change(function () {
-            var $this                   = $(this);
-            var id                      = $this.val();
+        $('.js-address-country-select,.js-address-province-select,.js-address-city-select,.js-address-district-select').change(function () {
+            var $this = $(this);
+            var id = $this.val();
             var $child_area_select;
             var $this_js_address_select = $this.parents('.js-address-select');
-            if ($this.is('.js-address-province-select')) {
+            if ($this.is('.js-address-country-select')) {
+                $child_area_select = $this_js_address_select.find('.js-address-province-select');
+                $this_js_address_select.find('.js-address-city-select').hide();
+            } else if ($this.is('.js-address-province-select')) {
                 $child_area_select = $this_js_address_select.find('.js-address-city-select');
                 $this_js_address_select.find('.js-address-district-select').hide();
-            } else {
+            } else if ($this.is('.js-address-city-select')) {
                 $child_area_select = $this_js_address_select.find('.js-address-district-select');
+                $this_js_address_select.find('.js-address-town-select').hide();
+            } else {
+                $child_area_select = $this_js_address_select.find('.js-address-town-select');
             }
 
             var empty_option = '<option class="js-address-empty-option" value="">' + $child_area_select.find('.js-address-empty-option').text() + '</option>';
@@ -689,11 +875,16 @@
                 return;
             }
 
+            var isCountry = 0;
+            if ($this.is('.js-address-country-select')) {
+                isCountry = 1;
+            }
+
             $.ajax({
                 url: $this_js_address_select.data('url'),
                 type: 'POST',
                 dataType: 'JSON',
-                data: {id: id},
+                data: {id: id, is_country: isCountry},
                 success: function (data) {
                     if (data.code == 1) {
                         if (data.data.areas.length > 0) {
@@ -701,8 +892,8 @@
 
                             $.each(data.data.areas, function (i, area) {
                                 var area_html = '<option value="[id]">[name]</option>';
-                                area_html     = area_html.replace('[name]', area.name);
-                                area_html     = area_html.replace('[id]', area.id);
+                                area_html = area_html.replace('[name]', area.name);
+                                area_html = area_html.replace('[id]', area.id);
                                 html.push(area_html);
                             });
                             html = html.join('', html);
@@ -726,12 +917,34 @@
 
     }
     //地址联动end
+    Wind.css('artDialog');
+    Wind.use('artDialog', 'noty', function () {
+        $('body').on('click', '.js-click2call-btn', function (e) {
+            e.preventDefault();
+            var $_this = this,
+                $this = $($_this),
+                title = $this.data('title');
+            title = title ? title : '点击下面链接,直接拨打电话';
+            art.dialog({
+                title: title,
+                icon: 'question',
+                content: $this.next('.js-click2call-mobiles').html(),
+                follow: $_this,
+                close: function () {
+                    $_this.focus(); //关闭时让触发弹窗的元素获取焦点
+                    return true;
+                },
+                cancelVal: GV.lang('Close'),
+                cancel: true
+            });
+        });
+    });
 
 })();
 
 //重新刷新页面，使用location.reload()有可能导致重新提交
 function reloadPage(win) {
-    var location  = win.location;
+    var location = win.location;
     location.href = location.pathname + location.search;
 }
 
@@ -770,7 +983,7 @@ function getCookie(name) {
 function setCookie(name, value, options) {
     options = options || {};
     if (value === null) {
-        value           = '';
+        value = '';
         options.expires = -1;
     }
     var expires = '';
@@ -784,9 +997,9 @@ function setCookie(name, value, options) {
         }
         expires = '; expires=' + date.toUTCString(); // use expires attribute, max-age is not supported by IE
     }
-    var path        = options.path ? '; path=' + options.path : '';
-    var domain      = options.domain ? '; domain=' + options.domain : '';
-    var secure      = options.secure ? '; secure' : '';
+    var path = options.path ? '; path=' + options.path : '';
+    var domain = options.domain ? '; domain=' + options.domain : '';
+    var secure = options.secure ? '; secure' : '';
     document.cookie = [name, '=', encodeURIComponent(value), expires, path, domain, secure].join('');
 }
 
@@ -805,7 +1018,7 @@ function openIframeDialog(url, title, options) {
         width: "95%",
         height: '90%'
     };
-    params     = options ? $.extend(params, options) : params;
+    params = options ? $.extend(params, options) : params;
     Wind.use('artDialog', 'iframeTools', function () {
         art.dialog.open(url, params);
     });
@@ -813,7 +1026,6 @@ function openIframeDialog(url, title, options) {
 
 /**
  * 打开地图对话框
- *
  * @param url
  * @param title
  * @param options
@@ -829,19 +1041,19 @@ function openMapDialog(url, title, options, callback) {
         height: 400,
         ok: function () {
             if (callback) {
-                var d            = this.iframe.contentWindow;
-                var lng          = $("#lng_input", d.document).val();
-                var lat          = $("#lat_input", d.document).val();
-                var address      = {};
-                address.address  = $("#address_input", d.document).val();
+                var d = this.iframe.contentWindow;
+                var lng = $("#lng_input", d.document).val();
+                var lat = $("#lat_input", d.document).val();
+                var address = {};
+                address.address = $("#address_input", d.document).val();
                 address.province = $("#province_input", d.document).val();
-                address.city     = $("#city_input", d.document).val();
+                address.city = $("#city_input", d.document).val();
                 address.district = $("#district_input", d.document).val();
                 callback.apply(this, [lng, lat, address]);
             }
         }
     };
-    params     = options ? $.extend(params, options) : params;
+    params = options ? $.extend(params, options) : params;
     Wind.use('artDialog', 'iframeTools', function () {
         art.dialog.open(url, params);
     });
@@ -855,38 +1067,31 @@ function openMapDialog(url, title, options, callback) {
  * @param multi 是否可以多选
  * @param filetype 文件类型，image,video,audio,file
  * @param app  应用名，CMF的应用名
+ * @param openIn 打开窗口
  */
-function openUploadDialog(dialog_title, callback, extra_params, multi, filetype, app) {
-    Wind.css('artDialog');
-    multi      = multi ? 1 : 0;
-    filetype   = filetype ? filetype : 'image';
-    app        = app ? app : GV.APP;
+function openUploadDialog(dialog_title, callback, extra_params, multi, filetype, app, openIn) {
+    multi = multi ? 1 : 0;
+    filetype = filetype ? filetype : 'image';
+    app = app ? app : GV.APP;
     var params = '&multi=' + multi + '&filetype=' + filetype + '&app=' + app;
-    Wind.use("artDialog", "iframeTools", function () {
-        art.dialog.open(GV.ROOT + 'user/Asset/webuploader?' + params, {
-            title: dialog_title,
-            id: new Date().getTime(),
-            width: '600px',
-            height: '350px',
-            lock: true,
-            fixed: true,
-            background: "#CCCCCC",
-            opacity: 0,
-            ok: function () {
-                if (typeof callback == 'function') {
-                    var iframewindow = this.iframe.contentWindow;
-                    var files        = iframewindow.get_selected_files();
-                    console.log(files);
-                    if (files && files.length > 0) {
-                        callback.apply(this, [this, files, extra_params]);
-                    } else {
-                        return false;
-                    }
 
+    openIn = openIn ? openIn : window;
+    openIn.openIframeLayer(GV.ROOT + 'user/Asset/webuploader?' + params, dialog_title, {
+        btn: [GV.lang('OK')], area: ['600px', '450px'], yes: function (index, layero) {
+            if (typeof callback == 'function') {
+                // var body = openIn.layer.getChildFrame('body', index);
+                //得到iframe页的窗口对象，执行iframe页的方法：iframeWin.method();
+                var iframeWin = openIn[layero.find('iframe')[0]['name']];
+                var files = iframeWin.get_selected_files();
+                console.log(files);
+                if (files && files.length > 0) {
+                    callback.apply(this, [this, files, extra_params]);
+                    openIn.layer.close(index);
+                } else {
+                    // return false;
                 }
-            },
-            cancel: true
-        });
+            }
+        }
     });
 }
 
@@ -897,16 +1102,28 @@ function openUploadDialog(dialog_title, callback, extra_params, multi, filetype,
  * @param filetype 文件类型，image,video,audio,file
  * @param extra_params 额外参数，object
  * @param app  应用名,CMF的应用名
+ * @param openIn 打开窗口
  */
-function uploadOne(dialog_title, input_selector, filetype, extra_params, app) {
+function uploadOne(dialog_title, input_selector, filetype, extra_params, app, openIn) {
     filetype = filetype ? filetype : 'file';
     openUploadDialog(dialog_title, function (dialog, files) {
         $(input_selector).val(files[0].filepath);
         $(input_selector + '-preview').attr('href', files[0].preview_url);
-
         $(input_selector + '-name').val(files[0].name);
         $(input_selector + '-name-text').text(files[0].name);
-    }, extra_params, 0, filetype, app);
+    }, extra_params, 0, filetype, app, openIn);
+}
+
+/**
+ * 单个文件上传(在父级窗口打开)
+ * @param dialog_title 上传对话框标题
+ * @param input_selector 图片容器
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF的应用名
+ */
+function parentUploadOne(dialog_title, input_selector, filetype, extra_params, app) {
+    uploadOne(dialog_title, input_selector, filetype, extra_params, app, parent);
 }
 
 /**
@@ -914,17 +1131,27 @@ function uploadOne(dialog_title, input_selector, filetype, extra_params, app) {
  * @param dialog_title 上传对话框标题
  * @param input_selector 图片容器
  * @param extra_params 额外参数，object
- * @param app  应用名,CMF的应用名
+ * @param app 应用名,CMF的应用名
+ * @param openIn 打开窗口
  */
-function uploadOneImage(dialog_title, input_selector, extra_params, app) {
+function uploadOneImage(dialog_title, input_selector, extra_params, app, openIn) {
     openUploadDialog(dialog_title, function (dialog, files) {
         $(input_selector).val(files[0].filepath);
         $(input_selector + '-preview').attr('src', files[0].preview_url);
-
         $(input_selector + '-name').val(files[0].name);
         $(input_selector + '-name-text').text(files[0].name);
+    }, extra_params, 0, 'image', app, openIn);
+}
 
-    }, extra_params, 0, 'image', app);
+/**
+ * 单个图片上传(在父级窗口打开)
+ * @param dialog_title 上传对话框标题
+ * @param input_selector 图片容器
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF的应用名
+ */
+function parentUploadOneImage(dialog_title, input_selector, extra_params, app) {
+    uploadOneImage(dialog_title, input_selector, extra_params, app, parent);
 }
 
 /**
@@ -933,24 +1160,66 @@ function uploadOneImage(dialog_title, input_selector, extra_params, app) {
  * @param container_selector 图片容器
  * @param item_tpl_wrapper_id 单个图片html模板容器id
  * @param extra_params 额外参数，object
- * @param app  应用名,CMF 的应用名
+ * @param app  应用名,CMF的应用名
+ * @param openIn 打开窗口
  */
-function uploadMultiImage(dialog_title, container_selector, item_tpl_wrapper_id, extra_params, app) {
+function uploadMultiImage(dialog_title, container_selector, item_tpl_wrapper_id, extra_params, app, openIn) {
     openUploadDialog(dialog_title, function (dialog, files) {
-        var tpl  = $('#' + item_tpl_wrapper_id).html();
+        var tpl = $('#' + item_tpl_wrapper_id).html();
         var html = '';
         $.each(files, function (i, item) {
             var itemtpl = tpl;
-            itemtpl     = itemtpl.replace(/\{id\}/g, item.id);
-            itemtpl     = itemtpl.replace(/\{url\}/g, item.url);
-            itemtpl     = itemtpl.replace(/\{preview_url\}/g, item.preview_url);
-            itemtpl     = itemtpl.replace(/\{filepath\}/g, item.filepath);
-            itemtpl     = itemtpl.replace(/\{name\}/g, item.name);
+            itemtpl = itemtpl.replace(/\{id\}/g, item.id);
+            itemtpl = itemtpl.replace(/\{url\}/g, item.url);
+            itemtpl = itemtpl.replace(/\{preview_url\}/g, item.preview_url);
+            itemtpl = itemtpl.replace(/\{filepath\}/g, item.filepath);
+            itemtpl = itemtpl.replace(/\{name\}/g, item.name);
             html += itemtpl;
         });
         $(container_selector).append(html);
 
-    }, extra_params, 1, 'image', app);
+    }, extra_params, 1, 'image', app, openIn);
+}
+
+/**
+ * 多图上传(在父级窗口打开)
+ * @param dialog_title 上传对话框标题
+ * @param container_selector 图片容器
+ * @param item_tpl_wrapper_id 单个图片html模板容器id
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF的应用名
+ */
+function parentUploadMultiImage(dialog_title, container_selector, item_tpl_wrapper_id, extra_params, app) {
+    uploadMultiImage(dialog_title, container_selector, item_tpl_wrapper_id, extra_params, app, parent)
+}
+
+/**
+ * 多文件上传
+ * @param dialog_title 上传对话框标题
+ * @param container_selector 图片容器
+ * @param item_tpl_wrapper_id 单个图片html模板容器id
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF 的应用名
+ * @param openIn 打开窗口
+ */
+function uploadMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, openIn) {
+    filetype = filetype ? filetype : 'file';
+    openUploadDialog(dialog_title, function (dialog, files) {
+        var tpl = $('#' + item_tpl_wrapper_id).html();
+        var html = '';
+        $.each(files, function (i, item) {
+            var itemtpl = tpl;
+            itemtpl = itemtpl.replace(/\{id\}/g, item.id);
+            itemtpl = itemtpl.replace(/\{url\}/g, item.url);
+            itemtpl = itemtpl.replace(/\{preview_url\}/g, item.preview_url);
+            itemtpl = itemtpl.replace(/\{filepath\}/g, item.filepath);
+            itemtpl = itemtpl.replace(/\{name\}/g, item.name);
+            html += itemtpl;
+        });
+        $(container_selector).append(html);
+
+    }, extra_params, 1, filetype, app, openIn);
 }
 
 /**
@@ -962,53 +1231,39 @@ function uploadMultiImage(dialog_title, container_selector, item_tpl_wrapper_id,
  * @param extra_params 额外参数，object
  * @param app  应用名,CMF 的应用名
  */
-function uploadMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app) {
-    filetype = filetype ? filetype : 'file';
-    openUploadDialog(dialog_title, function (dialog, files) {
-        var tpl  = $('#' + item_tpl_wrapper_id).html();
-        var html = '';
-        $.each(files, function (i, item) {
-            var itemtpl = tpl;
-            itemtpl     = itemtpl.replace(/\{id\}/g, item.id);
-            itemtpl     = itemtpl.replace(/\{url\}/g, item.url);
-            itemtpl     = itemtpl.replace(/\{preview_url\}/g, item.preview_url);
-            itemtpl     = itemtpl.replace(/\{filepath\}/g, item.filepath);
-            itemtpl     = itemtpl.replace(/\{name\}/g, item.name);
-            html += itemtpl;
-        });
-        $(container_selector).append(html);
-
-    }, extra_params, 1, filetype, app);
+function parentUploadMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, openIn) {
+    uploadMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, parent)
 }
 
 /**
  * 查看图片对话框
  * @param img 图片地址
  */
-function imagePreviewDialog(img) {
+function imagePreviewDialog(img, options) {
     Wind.css('layer');
-
+    var params = {
+        photos: {
+            "title": "", //相册标题
+            "id": 'image_preview', //相册id
+            "start": 0, //初始显示的图片序号，默认0
+            "data": [   //相册包含的图片，数组格式
+                {
+                    "alt": "",
+                    "pid": 666, //图片id
+                    "src": img, //原图地址
+                    "thumb": img //缩略图地址
+                }
+            ]
+        } //格式见API文档手册页
+        , anim: 5, //0-6的选择，指定弹出图片动画类型，默认随机
+        shadeClose: true,
+        // skin: 'layui-layer-nobg',
+        shade: [0.5, '#000000'],
+        shadeClose: true,
+    };
+    params = options ? $.extend(params, options) : params;
     Wind.use("layer", function () {
-        layer.photos({
-            photos: {
-                "title": "", //相册标题
-                "id": 'image_preview', //相册id
-                "start": 0, //初始显示的图片序号，默认0
-                "data": [   //相册包含的图片，数组格式
-                    {
-                        "alt": "",
-                        "pid": 666, //图片id
-                        "src": img, //原图地址
-                        "thumb": img //缩略图地址
-                    }
-                ]
-            } //格式见API文档手册页
-            , anim: 5, //0-6的选择，指定弹出图片动画类型，默认随机
-            shadeClose: true,
-            // skin: 'layui-layer-nobg',
-            shade: [0.5, '#000000'],
-            shadeClose: true,
-        })
+        layer.photos(params)
     });
 }
 
@@ -1033,6 +1288,14 @@ function artdialogAlert(msg) {
 
 function openIframeLayer(url, title, options) {
 
+    if (GV.IS_MOBILE) {
+        if (!options) {
+            options = {};
+        }
+        options.area = ['100%', '100%'];
+        options.offset = ['0px', '0px'];
+    }
+
     var params = {
         type: 2,
         title: title,
@@ -1041,7 +1304,8 @@ function openIframeLayer(url, title, options) {
         anim: -1,
         shade: [0.001, '#000000'],
         shadeClose: true,
-        area: ['95%', '90%'],
+        area: GV.IS_MOBILE ? ['100%', '100%'] : ['95%', '95%'],
+        offset: GV.IS_MOBILE ? ['0px', '0px'] : 'auto',
         move: false,
         content: url,
         yes: function (index, layero) {
@@ -1049,7 +1313,7 @@ function openIframeLayer(url, title, options) {
             layer.close(index); //如果设定了yes回调，需进行手工关闭
         }
     };
-    params     = options ? $.extend(params, options) : params;
+    params = options ? $.extend(params, options) : params;
 
     Wind.css('layer');
 
@@ -1057,4 +1321,113 @@ function openIframeLayer(url, title, options) {
         layer.open(params);
     });
 
+}
+
+/**
+ * 打开文件上传对话框
+ * @param dialog_title 对话框标题
+ * @param callback 回调方法，参数有（当前dialog对象，选择的文件数组，你设置的extra_params）
+ * @param extra_params 额外参数，object
+ * @param multi 是否可以多选
+ * @param filetype 文件类型，image,video,audio,file
+ * @param app  应用名，CMF的应用名
+ * @param openIn 打开窗口
+ */
+function openUploadPrivateDialog(dialog_title, callback, extra_params, multi, filetype, app, openIn) {
+    multi = multi ? 1 : 0;
+    filetype = filetype ? filetype : 'image';
+    app = app ? app : GV.APP;
+    var params = '&multi=' + multi + '&filetype=' + filetype + '&app=' + app;
+
+    openIn = openIn ? openIn : window;
+    openIn.openIframeLayer(GV.ROOT + 'user/Asset/upload?' + params, dialog_title, {
+        btn: [GV.lang('OK')], area: ['600px', '450px'], yes: function (index, layero) {
+            if (typeof callback == 'function') {
+                // var body = openIn.layer.getChildFrame('body', index);
+                //得到iframe页的窗口对象，执行iframe页的方法：iframeWin.method();
+                var iframeWin = openIn[layero.find('iframe')[0]['name']];
+                var files = iframeWin.get_selected_files();
+                console.log(files);
+                if (files && files.length > 0) {
+                    callback.apply(this, [this, files, extra_params]);
+                    openIn.layer.close(index);
+                } else {
+                    // return false;
+                }
+            }
+        }
+    });
+}
+
+/**
+ * 单个文件上传
+ * @param dialog_title 上传对话框标题
+ * @param input_selector 图片容器
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF的应用名
+ * @param openIn 打开窗口
+ */
+function uploadPrivateOne(dialog_title, input_selector, filetype, extra_params, app, openIn) {
+    filetype = filetype ? filetype : 'file';
+    openUploadPrivateDialog(dialog_title, function (dialog, files) {
+        $(input_selector).val(files[0].filepath);
+        $(input_selector + '-preview').attr('href', files[0].preview_url);
+        $(input_selector + '-name').val(files[0].name);
+        $(input_selector + '-name-text').text(files[0].name);
+    }, extra_params, 0, filetype, app, openIn);
+}
+
+/**
+ * 单个文件上传(在父级窗口打开)
+ * @param dialog_title 上传对话框标题
+ * @param input_selector 图片容器
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF的应用名
+ */
+function parentUploadPrivateOne(dialog_title, input_selector, filetype, extra_params, app) {
+    uploadPrivateOne(dialog_title, input_selector, filetype, extra_params, app, parent);
+}
+
+/**
+ * 多文件上传
+ * @param dialog_title 上传对话框标题
+ * @param container_selector 图片容器
+ * @param item_tpl_wrapper_id 单个图片html模板容器id
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF 的应用名
+ * @param openIn 打开窗口
+ */
+function uploadPrivateMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, openIn) {
+    filetype = filetype ? filetype : 'file';
+    openUploadPrivateDialog(dialog_title, function (dialog, files) {
+        var tpl = $('#' + item_tpl_wrapper_id).html();
+        var html = '';
+        $.each(files, function (i, item) {
+            var itemtpl = tpl;
+            itemtpl = itemtpl.replace(/\{id\}/g, item.id);
+            itemtpl = itemtpl.replace(/\{url\}/g, item.url);
+            itemtpl = itemtpl.replace(/\{preview_url\}/g, item.preview_url);
+            itemtpl = itemtpl.replace(/\{filepath\}/g, item.filepath);
+            itemtpl = itemtpl.replace(/\{name\}/g, item.name);
+            html += itemtpl;
+        });
+        $(container_selector).append(html);
+
+    }, extra_params, 1, filetype, app, openIn);
+}
+
+/**
+ * 多文件上传
+ * @param dialog_title 上传对话框标题
+ * @param container_selector 图片容器
+ * @param item_tpl_wrapper_id 单个图片html模板容器id
+ * @param filetype 文件类型，image,video,audio,file
+ * @param extra_params 额外参数，object
+ * @param app  应用名,CMF 的应用名
+ */
+function parentUploadPrivateMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, openIn) {
+    uploadPrivateMultiFile(dialog_title, container_selector, item_tpl_wrapper_id, filetype, extra_params, app, parent)
 }

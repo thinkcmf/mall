@@ -1,0 +1,28 @@
+{
+    "name": "thinkcmf/cmf-appstore",
+    "description": "The ThinkCMF App Store Package",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "catman",
+            "email": "catman@thinkcmf.com"
+        }
+    ],
+    "require": {
+        "chamilo/pclzip": "^2.8"
+    },
+    "extra": {
+        "think": {
+            "services": [
+                "app\\admin\\AppStoreService"
+            ]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "app\\admin\\": "src"
+        },
+        "files": [
+        ]
+    }
+}

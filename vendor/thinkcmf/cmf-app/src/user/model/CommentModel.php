@@ -7,12 +7,18 @@ use think\Model;
 class CommentModel extends Model
 {
     /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'comment';
+
+    /**
      * 关联 user表
      * @return $this
      */
     public function user()
     {
-        return $this->belongsTo('UserModel', 'user_id')->setEagerlyType(1);
+        return $this->belongsTo('UserModel', 'user_id');
     }
 
 

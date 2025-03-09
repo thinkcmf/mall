@@ -11,8 +11,8 @@
 namespace app\portal\controller;
 
 use app\portal\model\PortalTagModel;
+use app\portal\model\PortalTagPostModel;
 use cmf\controller\AdminBaseController;
-use think\Db;
 
 /**
  * Class AdminTagController 标签管理控制器
@@ -42,9 +42,14 @@ class AdminTagController extends AdminBaseController
         }
 
         $portalTagModel = new PortalTagModel();
-        $tags           = $portalTagModel->paginate();
+        $tags           = $portalTagModel->where(function ($query) {
+            $keyword = $this->request->param('keyword');
+            if (!empty($keyword)) {
+                $query->where('name', 'like', "$keyword%");
+            }
+        })->paginate();
 
-        $this->assign("arrStatus", $portalTagModel::$STATUS);
+        $this->assign("arrStatus", PortalTagModel::$STATUS);
         $this->assign("tags", $tags);
         $this->assign('page', $tags->render());
         return $this->fetch();
@@ -86,10 +91,24 @@ class AdminTagController extends AdminBaseController
     public function addPost()
     {
 
-        $arrData = $this->request->param();
+        $tagData = $this->request->param();
+        $result  = $this->validate(
+            $tagData,
+            [
+                'name' => 'require|max:20',
+            ],
+            [
+                'name.require' => '标签名称必填！',
+                'name.max'     => '标签名称超过最大长度！！',
+            ]
+        );
 
+        if (true !== $result) {
+            // 验证失败 输出错误信息
+            $this->error($result);
+        }
         $portalTagModel = new PortalTagModel();
-        $portalTagModel->isUpdate(false)->allowField(true)->save($arrData);
+        $portalTagModel->save($tagData);
 
         $this->success(lang("SAVE_SUCCESS"));
 
@@ -118,7 +137,7 @@ class AdminTagController extends AdminBaseController
         }
 
         $portalTagModel = new PortalTagModel();
-        $portalTagModel->isUpdate(true)->save(["status" => $intStatus], ["id" => $intId]);
+        $portalTagModel->where("id", $intId)->update(["status" => $intStatus]);
 
         $this->success(lang("SAVE_SUCCESS"));
 
@@ -144,10 +163,9 @@ class AdminTagController extends AdminBaseController
         if (empty($intId)) {
             $this->error(lang("NO_ID"));
         }
-        $portalTagModel = new PortalTagModel();
 
-        $portalTagModel->where('id' , $intId)->delete();
-        Db::name('portal_tag_post')->where('tag_id', $intId)->delete();
+        PortalTagModel::where('id', $intId)->delete();
+        PortalTagPostModel::where('tag_id', $intId)->delete();
         $this->success(lang("DELETE_SUCCESS"));
     }
 }

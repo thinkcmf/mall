@@ -1,0 +1,27 @@
+{
+  "name": "xia/migration",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "小夏",
+      "email": "iygwei@qq.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Phinx\\": "phinx/src/Phinx",
+      "think\\migration\\": "src"
+    }
+  },
+  "extra": {
+    "think": {
+      "services": [
+        "think\\migration\\Service"
+      ]
+    }
+  },
+  "minimum-stability": "dev"
+}

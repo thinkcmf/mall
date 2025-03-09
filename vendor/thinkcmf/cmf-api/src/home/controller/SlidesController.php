@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | 文件说明：幻灯片
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: wuwu <15093565100@163.com>
 // +----------------------------------------------------------------------
@@ -22,6 +22,28 @@ class SlidesController extends RestBaseController
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\ModelNotFoundException
      * @throws \think\exception\DbException
+     * @OA\Get(
+     *     tags={"home"},
+     *     path="/home/slides/{id}",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="幻灯片分组 id",
+     *         required=true,
+     *         @OA\Schema(
+     *             type="integer",
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="1",
+     *         description="登录成功",
+     *         @OA\JsonContent(ref="#/components/schemas/HomeSlidesReadResponse")
+     *     ),
+     *     @OA\Response(
+     *          response="0",
+     *          @OA\JsonContent(example={"code": 0,"msg": "该组幻灯片显示数据为空!","data": null})
+     *     ),
+     * )
      */
     public function read()
     {

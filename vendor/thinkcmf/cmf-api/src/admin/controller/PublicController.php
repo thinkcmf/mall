@@ -2,23 +2,57 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2017 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: Dean <zxxjjforever@163.com>
 // +----------------------------------------------------------------------
 namespace api\admin\controller;
 
 use cmf\controller\RestBaseController;
-use think\Db;
+use think\facade\Db;
 use think\facade\Validate;
+use OpenApi\Annotations as OA;
 
 class PublicController extends RestBaseController
 {
 
-    // 用户登录 TODO 增加最后登录信息记录,如 ip
+    /**
+     * 后台管理员登录
+     * @throws \think\exception\DbException
+     * @OA\Tag(
+     *     name="admin",
+     *     description="系统核心后台管理"
+     * )
+     * @OA\Post(
+     *     tags={"admin"},
+     *     path="/admin/public/login",
+     *     summary="后台管理员登录",
+     *     description="后台管理员登录(请先使用原来登录页面登录，登录获取token后再使用后台API)",
+     *     @OA\RequestBody(
+     *         description="请求参数",
+     *         @OA\MediaType(
+     *             mediaType="application/x-www-form-urlencoded",
+     *             @OA\Schema(ref="#/components/schemas/LoginRequest")
+     *         ),
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(ref="#/components/schemas/LoginRequest")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response="1",
+     *         description="登录成功",
+     *         @OA\JsonContent(ref="#/components/schemas/AdminPublicLoginResponse")
+     *     ),
+     *     @OA\Response(response="0",ref="#/components/responses/0"),
+     * )
+     */
     public function login()
     {
-        $validate = new \think\Validate([
+        $this->error('请先使用原来登录页面登录，登录获取token 后再使用后台API');
+        // TODO 增加最后登录信息记录,如 ip
+        $validate = new \think\Validate();
+        $validate->rule([
             'username' => 'require',
             'password' => 'require'
         ]);
@@ -63,7 +97,7 @@ class PublicController extends RestBaseController
 
         if (empty($this->deviceType) && (empty($data['device_type']) || !in_array($data['device_type'], $this->allowedDeviceTypes))) {
             $this->error("请求错误,未知设备!");
-        } else if(!empty($data['device_type'])) {
+        } else if (!empty($data['device_type'])) {
             $this->deviceType = $data['device_type'];
         }
 
@@ -101,7 +135,24 @@ class PublicController extends RestBaseController
         $this->success("登录成功!", ['token' => $token]);
     }
 
-    // 管理员退出
+    /**
+     * 后台管理员退出
+     * @throws \think\exception\DbException
+     * @OA\Post(
+     *     tags={"admin"},
+     *     path="/admin/public/logout",
+     *     summary="后台管理员退出",
+     *     description="后台管理员退出",
+     *     @OA\Response(
+     *          response="1",
+     *          @OA\JsonContent(example={"code": 1,"msg": "退出成功!","data": null})
+     *     ),
+     *     @OA\Response(
+     *          response="0",
+     *          @OA\JsonContent(example={"code": 0,"msg": "退出失败!","data": null})
+     *     ),
+     * )
+     */
     public function logout()
     {
         $userId = $this->getUserId();
@@ -111,6 +162,7 @@ class PublicController extends RestBaseController
             'device_type' => $this->deviceType
         ])->update(['token' => '']);
 
+        session('ADMIN_ID', null);
         $this->success("退出成功!");
     }
 

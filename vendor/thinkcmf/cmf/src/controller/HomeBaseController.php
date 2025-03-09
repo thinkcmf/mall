@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +---------------------------------------------------------------------
@@ -10,9 +10,9 @@
 // +----------------------------------------------------------------------
 namespace cmf\controller;
 
-use think\Db;
+use app\admin\model\ThemeFileI18nModel;
+use think\facade\Db;
 use app\admin\model\ThemeModel;
-use think\facade\View;
 
 class HomeBaseController extends BaseController
 {
@@ -22,18 +22,14 @@ class HomeBaseController extends BaseController
         // 监听home_init
         hook('home_init');
         parent::initialize();
-        $siteInfo = cmf_get_site_info();
-        View::share('site_info', $siteInfo);
     }
 
     protected function _initializeView()
     {
         $cmfThemePath    = config('template.cmf_theme_path');
         $cmfDefaultTheme = cmf_get_current_theme();
-
-        $themePath = "{$cmfThemePath}{$cmfDefaultTheme}";
-
-        $root = cmf_get_root();
+        $root            = cmf_get_root();
+        $themePath       = "{$cmfThemePath}{$cmfDefaultTheme}";
         //使cdn设置生效
         $cdnSettings = cmf_get_option('cdn_settings');
         if (empty($cdnSettings['cdn_static_root'])) {
@@ -53,18 +49,21 @@ class HomeBaseController extends BaseController
             ];
         }
 
-        config('template.view_base', WEB_ROOT . "{$themePath}/");
-        config('template.tpl_replace_string', $viewReplaceStr);
+        $this->view->engine()->config([
+            'view_base'          => WEB_ROOT . $themePath . '/',
+            'tpl_replace_string' => $viewReplaceStr,
+            'cache_prefix'       => cmf_current_lang() . '_',
+        ]);
 
-        $themeErrorTmpl = "{$themePath}/error.html";
-        if (file_exists_case($themeErrorTmpl)) {
-            config('dispatch_error_tmpl', $themeErrorTmpl);
-        }
-
-        $themeSuccessTmpl = "{$themePath}/success.html";
-        if (file_exists_case($themeSuccessTmpl)) {
-            config('dispatch_success_tmpl', $themeSuccessTmpl);
-        }
+//        $themeErrorTmpl = "{$themePath}/error.html";
+//        if (file_exists_case($themeErrorTmpl)) {
+//            config('dispatch_error_tmpl', $themeErrorTmpl);
+//        }
+//
+//        $themeSuccessTmpl = "{$themePath}/success.html";
+//        if (file_exists_case($themeSuccessTmpl)) {
+//            config('dispatch_success_tmpl', $themeSuccessTmpl);
+//        }
 
 
     }
@@ -81,25 +80,22 @@ class HomeBaseController extends BaseController
     {
         $template = $this->parseTemplate($template);
         $more     = $this->getThemeFileMore($template);
-        $this->assign('theme_vars', $more['vars']);
-        $this->assign('theme_widgets', $more['widgets']);
-        $content = $this->view->fetch($template, $vars, $config);
-
+        $this->assign($more);
+        $content        = $this->view->fetch($template, $vars, $config);
         $designingTheme = cookie('cmf_design_theme');
 
         if ($designingTheme) {
-            $app        = $this->request->module();
+            $app        = $this->app->http->getName();
             $controller = $this->request->controller();
             $action     = $this->request->action();
-
-            $output = <<<hello
+            $output     = <<<hello
 <script>
 var _themeDesign=true;
 var _themeTest="test";
 var _app='{$app}';
 var _controller='{$controller}';
 var _action='{$action}';
-var _themeFile='{$more['file']}';
+var _themeFile='{$more['_theme_file']}';
 if(parent && parent.simulatorRefresh){
   parent.simulatorRefresh();  
 }
@@ -114,7 +110,7 @@ hello;
             }
         }
 
-        return parent::display($content, $vars, $config);;
+        return $content;
     }
 
     /**
@@ -123,8 +119,11 @@ hello;
      * @param string $template 模板文件规则
      * @return string
      */
-    private function parseTemplate($template)
+    protected function parseTemplate($template)
     {
+        $siteInfo = cmf_get_site_info();
+        $this->view->assign('site_info', $siteInfo);
+
         // 分析模板文件规则
         $request = $this->request;
         // 获取视图根目录
@@ -133,17 +132,23 @@ hello;
             list($module, $template) = explode('@', $template);
         }
 
-        $viewBase = config('template.view_base');
+        $cmfThemePath    = config('template.cmf_theme_path');
+        $cmfDefaultTheme = cmf_get_current_theme();
+        $themePath       = WEB_ROOT . "{$cmfThemePath}{$cmfDefaultTheme}/";
 
-        if ($viewBase) {
-            // 基础视图目录
-            $module = isset($module) ? $module : $request->module();
-            $path   = $viewBase . ($module ? $module . DIRECTORY_SEPARATOR : '');
-        } else {
-            $path = isset($module) ? APP_PATH . $module . DIRECTORY_SEPARATOR . 'view' . DIRECTORY_SEPARATOR : config('template.view_path');
+        $allowLangList = cmf_allow_lang_list();
+        if (count($allowLangList) > 1) {
+            $langSet = cmf_current_lang();
+            $this->app->lang->load([
+                $themePath . "public/lang/$langSet.php",
+            ]);
         }
 
-        $depr = config('template.view_depr');
+        // 基础视图目录
+        $module = isset($module) ? $module : $this->app->http->getName();
+        $path   = $themePath . ($module ? $module . DIRECTORY_SEPARATOR : '');
+
+        $depr = config('view.view_depr');
         if (0 !== strpos($template, '/')) {
             $template   = str_replace(['/', ':'], $depr, $template);
             $controller = cmf_parse_name($request->controller());
@@ -158,7 +163,8 @@ hello;
         } else {
             $template = str_replace(['/', ':'], $depr, substr($template, 1));
         }
-        return $path . ltrim($template, '/') . '.' . ltrim(config('template.view_suffix'), '.');
+
+        return $path . ltrim($template, '/') . '.' . ltrim(config('view.view_suffix'), '.');
     }
 
     /**
@@ -167,9 +173,8 @@ hello;
      * @param string $theme
      * @return array
      */
-    private function getThemeFileMore($file, $theme = "")
+    private function getThemeFileMore($file, $theme = '')
     {
-
         //TODO 增加缓存
         $theme = empty($theme) ? cmf_get_current_theme() : $theme;
 
@@ -183,17 +188,41 @@ hello;
         $file      = str_replace('\\', '/', $file);
         $file      = str_replace('//', '/', $file);
         $webRoot   = str_replace('\\', '/', WEB_ROOT);
-        $themeFile = str_replace(['.html', '.php', $themePath . $theme . "/", $webRoot], '', $file);
+        $themeFile = str_replace(['.html', '.php', $themePath . $theme . '/', $webRoot], '', $file);
 
-        $files = Db::name('theme_file')->field('more')->where('theme', $theme)
+        $files = Db::name('theme_file')->field('more,file,id,is_public')->where('theme', $theme)
             ->where(function ($query) use ($themeFile) {
                 $query->where('is_public', 1)->whereOr('file', $themeFile);
-            })->select();
+            })->order('is_public desc')->select();
 
-        $vars    = [];
-        $widgets = [];
+        $vars           = [];
+        $widgets        = [];
+        $widgetsBlocks  = [];
+        $widgetsInBlock = [];
+        $config         = [];
+
+        $currentLang = cmf_current_home_lang();
+        $loadI18n    = false;
+        if (!empty($currentLang) && $currentLang != $this->app->lang->defaultLangSet()) {
+            $loadI18n = true;
+        }
+
         foreach ($files as $file) {
             $oldMore = json_decode($file['more'], true);
+
+            if ($file['is_public'] && !empty($oldMore['vars'])) {
+                foreach ($oldMore['vars'] as $varName => $var) {
+                    $config[$varName] = $var['value'];
+                }
+            }
+
+            if ($loadI18n) {
+                $findThemeFileI18n = ThemeFileI18nModel::where('file_id', $file['id'])->where('lang', $currentLang)->find();
+                if (!empty($findThemeFileI18n)) {
+                    $oldMore = $findThemeFileI18n['more'];
+                }
+            }
+
             if (!empty($oldMore['vars'])) {
                 foreach ($oldMore['vars'] as $varName => $var) {
                     $vars[$varName] = $var['value'];
@@ -202,7 +231,6 @@ hello;
 
             if (!empty($oldMore['widgets'])) {
                 foreach ($oldMore['widgets'] as $widgetName => $widget) {
-
                     $widgetVars = [];
                     if (!empty($widget['vars'])) {
                         foreach ($widget['vars'] as $varName => $var) {
@@ -225,19 +253,60 @@ hello;
                     }
                 }
             }
+
+            if (!empty($oldMore['widgets_blocks'])) {
+                if (!empty($oldMore['widgets_blocks'])) {
+                    foreach ($oldMore['widgets_blocks'] as $widgetsBlockName => $widgetsBlock) {
+                        $widgetsBlock['_file_id'] = $file['id'];
+                        if (!empty($widgetsBlock['widgets'])) {
+                            foreach ($widgetsBlock['widgets'] as $widgetId => $widget) {
+
+                                if (!empty($widget['vars'])) {
+                                    foreach ($widget['vars'] as $varName => $varValue) {
+                                        if (isset($widget['vars'][$varName . '_type_']) && $widget['vars'][$varName . '_type_'] == 'rich_text') {
+                                            $widget['vars'][$varName] = cmf_replace_content_file_url(htmlspecialchars_decode($varValue));
+                                        }
+                                    }
+                                }
+
+                                $widgetsBlock['widgets'][$widgetId]['vars'] = $widget['vars'];
+
+                                $widgetsInBlock[$widget['name']] = [
+                                    'name'    => $widget['name'],
+                                    'display' => $widget['display']
+                                ];
+                            }
+                        }
+                        $widgetsBlocks[$widgetsBlockName] = $widgetsBlock;
+                    }
+                }
+            }
         }
 
-        return ['vars' => $vars, 'widgets' => $widgets, 'file' => $themeFile];
+        return [
+            'theme_config'         => $config,
+            'theme_vars'           => $vars,
+            'theme_widgets'        => $widgets,
+            'theme_widgets_blocks' => $widgetsBlocks,
+            '_theme_widgets'       => $widgetsInBlock,
+            '_theme_file'          => $themeFile
+        ];
     }
 
-    public function checkUserLogin()
+    public function checkUserLogin($isreurl = false)
     {
+        $refer  = $this->request->server('HTTP_REFERER');
         $userId = cmf_get_current_user_id();
         if (empty($userId)) {
-            if ($this->request->isAjax()) {
-                $this->error("您尚未登录", cmf_url("user/Login/index"));
+            if ($isreurl !== false) {
+                $tourl = cmf_url('user/Login/index', ['redirect' => $refer]);
             } else {
-                $this->redirect(cmf_url("user/Login/index"));
+                $tourl = cmf_url('user/Login/index');
+            }
+            if ($this->request->isAjax()) {
+                $this->error(lang('您尚未登录！'), $tourl);
+            } else {
+                $this->redirect($tourl);
             }
         }
     }

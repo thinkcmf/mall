@@ -12,8 +12,8 @@ namespace app\portal\service;
 
 use app\portal\model\PortalPostModel;
 use app\portal\model\PortalCategoryModel;
-use think\Db;
 use think\db\Query;
+use app\portal\model\PortalTagModel;
 
 class ApiService
 {
@@ -31,15 +31,7 @@ class ApiService
      *                     )
      *                     字段说明:
      *                     category_ids:文章所在分类,可指定一个或多个分类id,以英文逗号分隔,如1或1,2,3 默认值为全部
-     *                     field:调用指定的字段@todo
-     *                     如只调用posts表里的id和post_title字段可以是post.id,post.post_title; 默认全部,
-     *                     此方法查询时关联两个表portal_category_post(category_post),portal_post(post);
-     *                     所以最好指定一下表名,以防字段冲突
-     *                     limit:数据条数,默认值为10,可以指定从第几条开始,如3,8(表示共调用8条,从第3条开始)
-     *                     order:排序方式,如按posts表里的published_time字段倒序排列：post.published_time desc
-     *                     where:查询条件,字符串形式,和sql语句一样,请在事先做好安全过滤,最好使用第二个参数$where的数组形式进行过滤,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突,查询条件(只支持数组),格式和thinkPHP的where方法一样,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突;
-     *                     </pre>
-     * @return array 包括分页的文章列表<pre>
+     *                     field:调用指定的字段@return array 包括分页的文章列表<pre>
      *                     格式:
      *                     array(
      *                     "articles"=>array(),//文章列表,array
@@ -47,6 +39,14 @@ class ApiService
      *                     "total"=>100, //符合条件的文章总数,不分页则没有此项
      *                     "total_pages"=>5 // 总页数,不分页则没有此项
      *                     )</pre>
+     * @todo
+     *                     如只调用posts表里的id和post_title字段可以是post.id,post.post_title; 默认全部,
+     *                     此方法查询时关联两个表portal_category_post(category_post),portal_post(post);
+     *                     所以最好指定一下表名,以防字段冲突
+     *                     limit:数据条数,默认值为10,可以指定从第几条开始,如3,8(表示共调用8条,从第3条开始)
+     *                     order:排序方式,如按posts表里的published_time字段倒序排列：post.published_time desc
+     *                     where:查询条件,字符串形式,和sql语句一样,请在事先做好安全过滤,最好使用第二个参数$where的数组形式进行过滤,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突,查询条件(只支持数组),格式和thinkPHP的where方法一样,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突;
+     *                     </pre>
      */
     public static function articles($param)
     {
@@ -58,6 +58,11 @@ class ApiService
             'post.delete_time' => 0
         ];
 
+        $wherePublishedTime = function (Query $query) {
+            $query->where('post.published_time', '>', 0)
+                ->where('post.published_time', '<', time());
+        };
+
         $paramWhere = empty($param['where']) ? '' : $param['where'];
 
         $limit       = empty($param['limit']) ? 10 : $param['limit'];
@@ -66,16 +71,11 @@ class ApiService
         $relation    = empty($param['relation']) ? '' : $param['relation'];
         $categoryIds = empty($param['category_ids']) ? '' : $param['category_ids'];
 
-        $join = [
-            //['__USER__ user', 'post.user_id = user.id'],
-        ];
-
         $whereCategoryId = null;
 
         if (!empty($categoryIds)) {
 
             $field = !empty($param['field']) ? $param['field'] : 'post.*,min(category_post.category_id) as category_id';
-            array_push($join, ['__PORTAL_CATEGORY_POST__ category_post', 'post.id = category_post.post_id']);
 
             if (!is_array($categoryIds)) {
                 $categoryIds = explode(',', $categoryIds);
@@ -93,22 +93,29 @@ class ApiService
         } else {
 
             $field = !empty($param['field']) ? $param['field'] : 'post.*,min(category_post.category_id) as category_id';
-            array_push($join, ['__PORTAL_CATEGORY_POST__ category_post', 'post.id = category_post.post_id']);
+
         }
 
         $articles = $portalPostModel->alias('post')->field($field)
-            ->join($join)
+            ->join('portal_category_post category_post', 'post.id = category_post.post_id')
             ->where($where)
             ->where($paramWhere)
             ->where($whereCategoryId)
-            ->where('post.published_time', ['> time', 0], ['<', time()], 'and')
+            ->where($wherePublishedTime)
             ->order($order)
             ->group('post.id');
 
         $return = [];
 
         if (empty($page)) {
-            $articles = $articles->limit($limit)->select();
+            $length = null;
+            if (strpos($limit, ',')) {
+                list($offset, $length) = explode(',', $limit);
+            } else {
+                $offset = $limit;
+            }
+
+            $articles = $articles->limit($offset, $length)->select();
 
             if (!empty($relation) && !empty($articles['items'])) {
                 $articles->load($relation);
@@ -158,15 +165,7 @@ class ApiService
      *                     'relation'=>''
      *                     )
      *                     字段说明:
-     *                     field:调用指定的字段@todo
-     *                     如只调用posts表里的id和post_title字段可以是post.id,post.post_title; 默认全部,
-     *                     此方法查询时关联两个表portal_tag_post(category_post),portal_post(post);
-     *                     所以最好指定一下表名,以防字段冲突
-     *                     limit:数据条数,默认值为10,可以指定从第几条开始,如3,8(表示共调用8条,从第3条开始)
-     *                     order:排序方式,如按posts表里的published_time字段倒序排列：post.published_time desc
-     *                     where:查询条件,字符串形式,和sql语句一样,请在事先做好安全过滤,最好使用第二个参数$where的数组形式进行过滤,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突,查询条件(只支持数组),格式和thinkPHP的where方法一样,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突;
-     *                     </pre>
-     * @return array 包括分页的文章列表<pre>
+     *                     field:调用指定的字段@return array 包括分页的文章列表<pre>
      *                     格式:
      *                     array(
      *                     "articles"=>array(),//文章列表,array
@@ -174,6 +173,14 @@ class ApiService
      *                     "total"=>100, //符合条件的文章总数,不分页则没有此项
      *                     "total_pages"=>5 // 总页数,不分页则没有此项
      *                     )</pre>
+     * @todo
+     *                     如只调用posts表里的id和post_title字段可以是post.id,post.post_title; 默认全部,
+     *                     此方法查询时关联两个表portal_tag_post(category_post),portal_post(post);
+     *                     所以最好指定一下表名,以防字段冲突
+     *                     limit:数据条数,默认值为10,可以指定从第几条开始,如3,8(表示共调用8条,从第3条开始)
+     *                     order:排序方式,如按posts表里的published_time字段倒序排列：post.published_time desc
+     *                     where:查询条件,字符串形式,和sql语句一样,请在事先做好安全过滤,最好使用第二个参数$where的数组形式进行过滤,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突,查询条件(只支持数组),格式和thinkPHP的where方法一样,此方法查询时关联多个表,所以最好指定一下表名,以防字段冲突;
+     *                     </pre>
      */
     public static function tagArticles($param)
     {
@@ -193,32 +200,31 @@ class ApiService
         $relation = empty($param['relation']) ? '' : $param['relation'];
         $tagId    = empty($param['tag_id']) ? '' : $param['tag_id'];
 
-        $join = [
-            //['__USER__ user', 'post.user_id = user.id'],
-        ];
-
+        $articles = $portalPostModel->alias('post');
         if (empty($tagId)) {
             return null;
 
         } else {
-            $field = !empty($param['field']) ? $param['field'] : 'post.*';
-            array_push($join, ['__PORTAL_TAG_POST__ tag_post', 'post.id = tag_post.post_id']);
-
-            $where['tag_post.tag_id'] = $tagId;
+            $field    = !empty($param['field']) ? $param['field'] : 'post.*';
+            $articles = $articles->join('portal_tag_post tag_post', 'post.id = tag_post.post_id');
+            $where[]  = ['tag_post.tag_id', '=', $tagId];
         }
 
-        $articles = $portalPostModel->alias('post')->field($field)
-            ->join($join)
+        $wherePublishedTime = function (Query $query) {
+            $query->where('post.published_time', '>', 0)
+                ->where('post.published_time', '<', time());
+        };
+
+        $articles = $articles->field($field)
             ->where($where)
             ->where($paramWhere)
-            ->where('post.published_time', ['> time', 0], ['<', time()], 'and')
+            ->where($wherePublishedTime)
             ->order($order);
 
         $return = [];
 
         if (empty($page)) {
             $articles = $articles->limit($limit)->select();
-
             if (!empty($relation) && !empty($articles['items'])) {
                 $articles->load($relation);
             }
@@ -236,7 +242,7 @@ class ApiService
                 $articles = $articles->paginate(intval($page));
             }
 
-            if (!empty($relation) && !empty($articles['items'])) {
+            if (!empty($relation) && !empty($articles->items())) {
                 $articles->load($relation);
             }
 
@@ -268,8 +274,13 @@ class ApiService
             'delete_time' => 0
         ];
 
+        $wherePublishedTime = function (Query $query) {
+            $query->where('published_time', '>', 0)
+                ->where('published_time', '<', time());
+        };
+
         return $portalPostModel->where($where)
-            ->where('published_time', ['> time', 0], ['<', time()], 'and')
+            ->where($wherePublishedTime)
             ->find();
     }
 
@@ -296,10 +307,15 @@ class ApiService
             'delete_time' => 0
         ];
 
+        $wherePublishedTime = function (Query $query) {
+            $query->where('published_time', '>', 0)
+                ->where('published_time', '<', time());
+        };
+
         return $portalPostModel
             ->where($where)
             ->where($paramWhere)
-            ->where('published_time', [['> time', 0], ['<', time()]], 'and')
+            ->where($wherePublishedTime)
             ->order($order)
             ->select();
     }
@@ -320,8 +336,13 @@ class ApiService
             'delete_time' => 0
         ];
 
+        $wherePublishedTime = function (Query $query) {
+            $query->where('published_time', '>', 0)
+                ->where('published_time', '<', time());
+        };
+
         return $portalPostModel->where($where)
-            ->where('published_time', ['> time', 0], ['<', time()], 'and')
+            ->where($wherePublishedTime)
             ->find();
     }
 
@@ -347,10 +368,10 @@ class ApiService
      * 返回指定分类下的子分类
      * @param int $categoryId 分类id
      * @param     $field      string  指定查询字段
-     * @throws \think\db\exception\DataNotFoundException
+     * @return false|\PDOStatement|string|\think\Collection 返回指定分类下的子分类
      * @throws \think\db\exception\ModelNotFoundException
      * @throws \think\exception\DbException
-     * @return false|\PDOStatement|string|\think\Collection 返回指定分类下的子分类
+     * @throws \think\db\exception\DataNotFoundException
      */
     public static function subCategories($categoryId, $field = '*')
     {
@@ -362,8 +383,8 @@ class ApiService
             'parent_id'   => $categoryId
         ];
 
-		return $portalCategoryModel->field($field)->where($where)->order('list_order ASC')->select();
-	}
+        return $portalCategoryModel->field($field)->where($where)->order('list_order ASC')->select();
+    }
 
     /**
      * 返回指定分类下的所有子分类
@@ -390,11 +411,10 @@ class ApiService
 
         $where = [
             'status'      => 1,
-            'delete_time' => 0,
-            'path'        => ['like', "$categoryPath-%"]
+            'delete_time' => 0
         ];
 
-        return $portalCategoryModel->where($where)->select();
+        return $portalCategoryModel->where($where)->whereLike('path', "$categoryPath-%")->select();
     }
 
     /**
@@ -419,11 +439,15 @@ class ApiService
             'delete_time' => 0,
         ];
 
-        return $portalCategoryModel
+        $temp = $portalCategoryModel
             ->where($where)
             ->where($paramWhere)
-            ->order($order)
-            ->select();
+            ->order($order);
+
+        if (!empty($param['ids'])) {
+            $temp->whereIn('id', $param['ids']);
+        }
+        return $temp->select();
     }
 
     /**
@@ -451,6 +475,26 @@ class ApiService
         }
 
         return $data;
+    }
+
+    /**
+     * 返回指定文章的标签
+     * @param int $id 文章ID
+     * @return array 返回符合条件的所有标签
+     */
+    public static function tags($id)
+    {
+        $portalTagModel = new PortalTagModel();
+
+        $where = [
+            'tags.status'      => 1,
+            'tag_post.post_id' => $id
+        ];
+
+        return $portalTagModel->alias('tags')
+            ->where($where)
+            ->join('portal_tag_post tag_post', 'tags.id = tag_post.tag_id')
+            ->select();
     }
 
 }

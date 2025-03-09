@@ -14,7 +14,6 @@ use cmf\controller\HomeBaseController;
 use app\portal\model\PortalCategoryModel;
 use app\portal\service\PostService;
 use app\portal\model\PortalPostModel;
-use think\Db;
 
 class ArticleController extends HomeBaseController
 {
@@ -67,7 +66,7 @@ class ArticleController extends HomeBaseController
             $tplName = empty($category["one_tpl"]) ? $tplName : $category["one_tpl"];
         }
 
-        Db::name('portal_post')->where('id', $articleId)->setInc('post_hits');
+        PortalPostModel::where('id', $articleId)->inc('post_hits')->update();
 
 
         hook('portal_before_assign_article', $article);
@@ -91,7 +90,7 @@ class ArticleController extends HomeBaseController
         $canLike = cmf_check_user_action("posts$articleId", 1);
 
         if ($canLike) {
-            Db::name('portal_post')->where('id', $articleId)->setInc('post_like');
+            PortalPostModel::where('id', $articleId)->inc('post_like')->update();
 
             $this->success("赞好啦！");
         } else {

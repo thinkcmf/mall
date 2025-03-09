@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +----------------------------------------------------------------------
@@ -13,10 +13,15 @@ namespace app\admin\model;
 use think\Exception;
 use think\Model;
 use tree\Tree;
-use think\Db;
 
 class NavMenuModel extends Model
 {
+    /**
+     * 模型名称
+     * @var string
+     */
+    protected $name = 'nav_menu';
+
     /**
      * 获取某导航下所有菜单树形结构数组
      * @param int $navId    导航id
@@ -29,7 +34,7 @@ class NavMenuModel extends Model
     public function navMenusTreeArray($navId = 0, $maxLevel = 0)
     {
         if (empty($navId)) {
-            $navId = Db::name('nav')->where('is_main', 1)->value('id');
+            $navId = NavModel::where('is_main', 1)->value('id');
         }
         $navMenus     = $this->where('nav_id', $navId)->where('status', 1)->order('list_order ASC')->select()->toArray();
         $navMenusTree = [];
@@ -86,7 +91,21 @@ class NavMenuModel extends Model
                 $href = cmf_url($href['action'], $href['param']);
             } else {
                 if ($hrefOld == "home") {
-                    $href = request()->root() . "/";
+                    $app     = app();
+                    $langSet = '';
+                    if ($app->lang->getLangSet() != $app->lang->defaultLangSet()) {
+                        $langConfig = $app->lang->getConfig();
+                        if (!empty($langConfig['home_multi_lang'])) {
+                            $langSet = $app->lang->getLangSet();
+                            if (!empty($langConfig['lang_alias'][$langSet])) {
+                                $langSet = $langConfig['lang_alias'][$langSet] . '/';
+                            } else {
+                                $langSet = $langSet . '/';
+                            }
+                        }
+                    }
+
+                    $href = request()->root() . "/" . $langSet;
                 } else {
                     $href = $hrefOld;
                 }
@@ -144,7 +163,7 @@ class NavMenuModel extends Model
 
                                 if (!empty($navApi['api'])) {
                                     try {
-                                        $navData = action($app . '/' . $navApi['api'], [], 'api');
+                                        $navData = action($app . '/' . $navApi['api'], [], 'api',false,'app');
                                     } catch (Exception $e) {
                                         $navData = null;
                                     }

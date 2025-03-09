@@ -2,6 +2,7 @@
 .DS_Store
 .project
 .settings
+.vscode
 .idea
 .git
 /build
@@ -9,5 +10,8 @@
 /node_modules
 Vagrantfile
 .vagrant
-/.vscode
-/.idea
+*.log
+.env
+/config
+/docker/redis/data
+/docker/mysql/data

@@ -2,7 +2,7 @@
 // +----------------------------------------------------------------------
 // | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
 // +----------------------------------------------------------------------
-// | Copyright (c) 2013-2019 http://www.thinkcmf.com All rights reserved.
+// | Copyright (c) 2013-present http://www.thinkcmf.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
 // +---------------------------------------------------------------------
@@ -11,14 +11,14 @@
 namespace cmf\controller;
 
 use think\facade\App;
-use think\Loader;
+use think\facade\Request;
 
-class PluginController extends HomeBaseController
+class PluginController
 {
     public function index($_plugin, $_controller, $_action)
     {
 
-        $_controller = Loader::parseName($_controller, 1);
+        $_controller = cmf_parse_name($_controller, 1);
 
         if (!preg_match('/^[A-Za-z](\w|\.)*$/', $_controller)) {
             abort(404, 'controller not exists:' . $_controller);
@@ -29,9 +29,10 @@ class PluginController extends HomeBaseController
         }
 
         $pluginControllerClass = "plugins\\{$_plugin}\\controller\\{$_controller}Controller";;
-
+        Request::setAction($_action);
+        Request::setController($_controller);
         $vars = [];
-        return App::invokeMethod([$pluginControllerClass, $_action, $vars]);
+        return App::invokeMethod([$pluginControllerClass, $_action], $vars);
     }
 
 }
